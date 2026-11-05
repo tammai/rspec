@@ -12,7 +12,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.8.1"
+  version: "0.8.2"
 ---
 
 # /rspec:pipeline
@@ -76,6 +76,7 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 **Before anything runs, collect every answer in one round**, so nothing waits on the user later:
 - If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, focus, stack, layout; for modernize the repos, current stack, drivers and strategy; then the rules below.
 - In a headless session (`claude -p`) nothing can be asked: if the rules file is missing or lacks the product or track, stop at once and list what is missing.
+- If `build_engine` is `sdlc` and `.sdlc/config.json` is missing at the project root, `/sdlc:setup` would stop the run later with its own questions. Ask the user to run `/sdlc:setup` first (it can be done now, before the run); in a headless session stop at once with that message. Never run sdlc setup unattended.
 - Save the answers in `rspec.json` as `"autopilot": {"enabled": true, "rules": {…}}` (after init has created it) and create `<spec>/autopilot-log.md` from `${CLAUDE_PLUGIN_ROOT}/templates/autopilot-log.md`.
 
 **Rules** (`autopilot.rules`), and what each gate does with them:

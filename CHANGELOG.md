@@ -4,6 +4,13 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-11-06
+Fixes for building with sdlc, found by the Linear end-to-end run.
+### Fixed
+- With sdlc, the build plan is cut so that no slice has more than 10 acceptance criteria; a bigger story is a slice of its own. Before, handoff also asked for 3–8 slices, which forced oversized ones.
+- If the engine becomes sdlc after the plan was cut, `progress.py` sends the pipeline back to re-cut the slices not yet started, instead of building oversized ones.
+- Autopilot with build engine sdlc asks for `/sdlc:setup` before the run starts (headless: stops at once), instead of stalling at setup's own questions mid-run.
+
 ## [0.8.1] - 2026-11-06
 Fixes from an end-to-end autopilot run on Linear.
 ### Fixed

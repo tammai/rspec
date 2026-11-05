@@ -212,6 +212,14 @@ def criteria_count(text):
     return len(CRITERION_RE.findall(m.group(2))) if m else 0
 
 
+SDLC_MAX_CRITERIA = 10  # sdlc takes about 10 acceptance criteria per change
+
+
+def slice_criteria(story_map, ids):
+    """Total acceptance criteria of the given features' stories."""
+    return sum(criteria_count(story_map[i][1]) for i in ids if i in story_map)
+
+
 def sdlc_status(root, feature):
     """The `Status:` of an sdlc feature's state file (.sdlc/state/<feature>.md), or '' if absent."""
     p = Path(root) / ".sdlc" / "state" / f"{feature}.md"

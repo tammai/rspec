@@ -8,7 +8,8 @@ import json, re, sys
 from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
-                       build_slices, criteria_count, GOALS, md_table, readiness_open, parked_decisions)
+                       build_slices, GOALS, md_table, readiness_open, parked_decisions,
+                       slice_criteria, SDLC_MAX_CRITERIA)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8"))) if STORY_TPL.exists() else set()
@@ -179,8 +180,8 @@ def main():
             if text and fid not in text: E(f"build-plan.md does not include MVP {fid}")
         if (cfg.get("build") or {}).get("engine") == "sdlc":
             for num, name, ids in build_slices(docs):
-                total = sum(criteria_count(story_map[i][1]) for i in ids if i in story_map)
-                if total > 10:
+                total = slice_criteria(story_map, ids)
+                if total > SDLC_MAX_CRITERIA:
                     W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
         if modernize:
             cp = docs / "cutover-plan.md"
