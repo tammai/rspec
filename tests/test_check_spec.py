@@ -25,14 +25,14 @@ As a member, I want to create an issue so that work is tracked.
 - research/iss-issues.md, Flows
 """
 
-def run(edge):
+def run(edge, research="# ISS"):
     root = Path(tempfile.mkdtemp())
     docs = root / "docs"
     for d in ("research", "features", "decisions"):
         (docs / d).mkdir(parents=True)
     (docs / "rspec.json").write_text(json.dumps({"product": "X", "goal": "learn", "stage": "stories",
         "modules": [{"code": "ISS", "name": "Issues"}]}), encoding="utf-8")
-    (docs / "research" / "iss-issues.md").write_text("# ISS", encoding="utf-8")
+    (docs / "research" / "iss-issues.md").write_text(research, encoding="utf-8")
     (docs / "features.md").write_text("| ID | Module | Feature | Behaviour | Priority | Reason |\n"
         "| F-ISS-01 | ISS | Create | Create an issue | MVP | |\n", encoding="utf-8")
     (docs / "features" / "F-ISS-01-create.md").write_text(STORY.format(edge=edge), encoding="utf-8")
@@ -47,6 +47,11 @@ class CheckSpec(unittest.TestCase):
         r = run("- <case>: <expected behaviour>")
         self.assertEqual(r.returncode, 1, r.stdout)
         self.assertIn("template placeholders", r.stdout)
+
+    def test_email_in_research_warns(self):
+        r = run("- Empty title: not created.", research="Assignee seen: jane.doe@example.com [observed]")
+        self.assertIn("WARN", r.stdout)
+        self.assertIn("email", r.stdout)
 
 if __name__ == "__main__":
     unittest.main()

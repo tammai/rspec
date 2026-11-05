@@ -37,6 +37,8 @@ Produce an original specification of an existing product, written in the project
 
 ## Rules that apply at every stage
 
+- The plugin's scripts are run with `python3`; if that command is not found (common on Windows), use `python` instead.
+
 - Read `${CLAUDE_PLUGIN_ROOT}/references/writing-rules.md` and `${CLAUDE_PLUGIN_ROOT}/references/legal-notes.md` before writing any spec file.
 - Prefer current sources over prior knowledge; products change.
 - Parallel work happens only in `discover`, `stories` and `tech`, through the plugin's subagents. Launch all subagents of one batch in a **single message** so they run concurrently. Subagents cannot launch further subagents.

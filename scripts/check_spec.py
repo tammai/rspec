@@ -46,6 +46,10 @@ def main():
         for c in codes:
             if not list((docs / "research").glob(f"{c.lower()}*.md")) and not list((docs / "research").glob(f"{c}*.md")):
                 W(f"no research file for module {c} in docs/research/")
+        email = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+        for p in sorted((docs / "research").glob("*.md")):
+            if email.search(p.read_text(encoding="utf-8")):
+                W(f"research/{p.name}: contains an email address; remove personal data before committing")
 
     # features.md
     feats = {}

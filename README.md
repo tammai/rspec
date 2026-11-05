@@ -15,9 +15,11 @@ Then, in an empty project folder:
 /rspec:pipeline Trello
 ```
 
-It runs every step and pauses once, so you can approve the feature list. Stop any time and continue later, even in a new session, with `/rspec:pipeline continue`.
+It runs every step and stops for your approval of the feature list, or if a check fails. Stop any time and continue later, even in a new session, with `/rspec:pipeline continue`. You can also just say "clone Linear to learn": the `reverse-spec` skill picks it up and suggests the next step.
 
-Needs Python 3. A browser MCP (Playwright or Chrome) is optional; it lets the plugin look at the real UI.
+Needs Python 3 (`python3` or `python`). The [Playwright](https://github.com/microsoft/playwright-mcp) MCP is optional; it lets the plugin look at the real UI, read-only.
+
+Update with `/plugin marketplace update rspec`. To try a local checkout: `claude --plugin-dir /path/to/rspec`.
 
 ## Commands
 
@@ -36,6 +38,7 @@ Needs Python 3. A browser MCP (Playwright or Chrome) is optional; it lets the pl
 ```
 docs/
   rspec.json         state and pipeline checkpoint
+  README.md          scope, sources, disclaimer
   research/          notes per module, with sources
   screens.md         sitemap and main flows
   features.md        feature list and priorities
@@ -52,14 +55,14 @@ The spec it writes follows these formats:
 | Part | Standard |
 |---|---|
 | User stories | "As a <role>, I want <capability> so that <benefit>", with testable `- [ ]` acceptance criteria |
-| Architecture decisions | ADRs in the Michael Nygard style: status, context, decision, consequences |
+| Architecture decisions | ADRs based on Michael Nygard's format (status, context, decision, consequences), plus date and alternatives considered |
 | Data model | Mermaid `erDiagram` |
 | Non-functional requirements | Measurable targets (a number or a clear pass/fail), one ID each (`NFR-01`) |
 | Changelog | [Keep a Changelog](https://keepachangelog.com/) |
 | Feature IDs | `F-<MODULE>-<NN>`, e.g. `F-ISS-01`, never reused |
-| Evidence | Every fact tagged `[docs]`, `[observed]`, `[inferred]` or `[3p]`, every file lists its sources |
+| Evidence | Every fact tagged `[docs]`, `[observed]`, `[inferred]` or `[3p]`; research and story files list their sources |
 
-Content rules: write in your own words, cite a source for every claim, never copy the original's code, text, images or brand. See [legal notes](references/legal-notes.md) (not legal advice).
+Content rules: write in your own words, cite a source for every claim, never copy the original's code, text or images, give the rebuild its own name and logo, and keep other people's personal data out. See [legal notes](references/legal-notes.md) (not legal advice).
 
 ## Contributing
 
