@@ -1,0 +1,19 @@
+{
+  "name": "rspec",
+  "version": "0.2.0",
+  "description": "Reverse-spec an existing product: discover its features (parallel per module), prioritise an MVP, write user stories and technical specs, ready to rebuild it for personal use or learning.",
+  "author": {
+    "name": "Tam Mai"
+  },
+  "keywords": [
+    "reverse-spec",
+    "rebuild",
+    "clone",
+    "prd",
+    "requirements",
+    "subagents"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/tammai/rspec",
+  "repository": "https://github.com/tammai/rspec"
+}

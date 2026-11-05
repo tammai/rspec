@@ -1,0 +1,17 @@
+{
+  "name": "rspec",
+  "owner": {
+    "name": "Tam Mai"
+  },
+  "metadata": {
+    "description": "The rspec plugin: reverse-spec an existing product and turn it into a rebuildable spec."
+  },
+  "plugins": [
+    {
+      "name": "rspec",
+      "source": "./",
+      "description": "Reverse-spec an existing product: discover its features, prioritise an MVP, write user stories and technical specs, ready to rebuild it for personal use or learning.",
+      "version": "0.2.0"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "product": "",
+  "working_name": "",
+  "goal": "learn",
+  "focus": [],
+  "lang": "en",
+  "stack": "",
+  "sources": {
+    "site": "",
+    "docs": "",
+    "changelog": "",
+    "api": "",
+    "repo": "",
+    "license": ""
+  },
+  "modules": [],
+  "stage": "init",
+  "pipeline": { "status": "", "stop_after": null, "current": "", "last": "", "updated": "" },
+  "updated": ""
+}
