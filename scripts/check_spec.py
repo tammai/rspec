@@ -8,7 +8,7 @@ import json, re, sys
 from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycle, feature_refs, contract_files, adr_statuses,
-                       build_slices, criteria_count, GOALS, md_table, readiness_open)
+                       build_slices, criteria_count, GOALS, md_table, readiness_open, parked_decisions)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8"))) if STORY_TPL.exists() else set()
@@ -197,6 +197,10 @@ def main():
                 if left: W(f"production-readiness.md: {left} item(s) still open; the pipeline is not done until they are")
         for name, status in adrs.items():
             if status.lower() == "proposed": E(f"decisions/{name} is still Proposed; accept or reject it before building")
+
+    parked = parked_decisions(docs)
+    if parked:
+        W(f"{len(parked)} autopilot decision(s) parked for you in autopilot-log.md")
 
     print(f"product={cfg.get('product')} stage={stage} modules={len(codes)} features={len(feats)} "
           f"mvp={len(mvp)} stories={len(story_map)} contracts={len(contract_files(contracts))} adrs={len(adrs)}")

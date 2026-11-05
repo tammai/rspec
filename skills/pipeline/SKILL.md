@@ -6,12 +6,13 @@ description: >
   status of it, including in a new session ("do the full spec for Linear", "run all
   rspec steps", "continue the spec", "pause the pipeline", "where is the spec at"). Also
   for modernizing your own product ("modernize our legacy app", "rewrite our product
-  on a new stack", "migrate our app from X to Y").
+  on a new stack", "migrate our app from X to Y"). Also
+  runs unattended ("run the spec on autopilot", "--autopilot").
   Drives init → discover → features → stories → tech → handoff → check, then hands the build to sdlc slice by slice, from where it left off,
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.7.0"
+  version: "0.8.0"
 ---
 
 # /rspec:pipeline
@@ -28,6 +29,7 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | `pause` | Pause: save the checkpoint, keep the run's settings, end the turn |
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
+| `--autopilot [rules.json]` | Run unattended: ask everything once up front (or read the rules file), then apply the rules at every gate; see Autopilot |
 | `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`, `build`, `readiness`) |
 
 Plain words count too: "pause", "stop here", "carry on", "resume" in the user's language mean the same as the arguments.
@@ -67,9 +69,38 @@ Write it whenever status changes and after each batch of subagents returns, so a
 3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn.
 4. If the user has asked to pause or stop, or the finished stage equals `stop_after`, apply Pause/Stop below. Otherwise continue with the next step.
 
+## Autopilot
+
+Unattended mode, for a product you know well or a second run. Started by `--autopilot`, or by "run it unattended / autopilot" in plain words.
+
+**Before anything runs, collect every answer in one round**, so nothing waits on the user later:
+- If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, focus, stack, layout; for modernize the repos, current stack, drivers and strategy; then the rules below.
+- In a headless session (`claude -p`) nothing can be asked: if the rules file is missing or lacks the product or track, stop at once and list what is missing.
+- Save the answers in `rspec.json` as `"autopilot": {"enabled": true, "rules": {…}}` (after init has created it) and create `<spec>/autopilot-log.md` from `${CLAUDE_PLUGIN_ROOT}/templates/autopilot-log.md`.
+
+**Rules** (`autopilot.rules`), and what each gate does with them:
+
+| Rule | Gate | Values |
+|---|---|---|
+| `read_oss_code` | init: clone an open-source product's code | `true` / `false` |
+| `features`, `mvp_max`, `retire_used_features` | features approval | `approve-as-proposed`: approve the list if MVP ≤ `mvp_max`; above it, cut the lowest-value MVP features to Later until it fits, each logged. Modernize: a feature that still has users is never retired unless `retire_used_features` is true; otherwise keep it MVP and park it |
+| `adrs` | ADR approval in handoff | `accept-recommended`: accept each ADR's recommended decision. `park`: leave them Proposed and stop before the build plan |
+| `build_engine` | build engine in handoff | `sdlc`, `claude-code` or `none` |
+| `accept_risks` | readiness items that can only be closed by accepting a risk | `false` (default): park them. Never `true` for security or privacy items |
+
+**At every gate:** apply the rule, write the decision into the spec as usual (e.g. ADR `Status: Accepted (autopilot: accept-recommended)`), and add a line under `## Decisions` in the log: date, gate, what was decided, rule. When no rule covers a decision, take the safe default (keep a feature, keep a risk open), add `- [ ] <what needs deciding>` under `## Parked`, and continue with everything that does not depend on it.
+
+**The build** runs with `--autopilot` appended to each `sdlc:start` request, so sdlc does not stop for its own approvals.
+
+**Still stops:** check errors not fixed after one attempt, a test still failing after a fix attempt, anything needing credentials or a login, usage limits. Save the checkpoint with `status: paused` and report. **Never automatic:** deploying to production; sdlc's go-ahead for it stays with the user.
+
+**At the end**, report the parked count from `progress.py` first: the spec or build is not finished while anything is parked. The user resolves parked items (checks them and writes the decision) and runs `/rspec:pipeline continue`.
+
+**Running without a terminal:** `claude -p "/rspec:pipeline --autopilot rspec-autopilot.json"` with the allowed tools in the README, or `/loop /rspec:pipeline continue` to keep it going across sessions.
+
 ## Approval gate
 
-`rspec:features` ends by asking the user to approve the feature list. Set `status` to `awaiting-approval` and end the turn. This holds across sessions: a later `continue` with status `awaiting-approval` shows the MVP list again and asks for approval. Never approve on the user's behalf, and never treat "continue", "run everything" or silence as approval of the list. When the user explicitly approves (with or without adjustments), finish step 6 of `rspec:features`, set `status` to `running` and resume at `stories`.
+`rspec:features` ends by asking the user to approve the feature list. Set `status` to `awaiting-approval` and end the turn. This holds across sessions: a later `continue` with status `awaiting-approval` shows the MVP list again and asks for approval. Never approve on the user's behalf, and never treat "continue", "run everything" or silence as approval of the list. The only exception is autopilot, where the user approved in advance by setting a rule: apply it and log it. When the user explicitly approves (with or without adjustments), finish step 6 of `rspec:features`, set `status` to `running` and resume at `stories`.
 
 ## ADR approval gate
 

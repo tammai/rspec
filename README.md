@@ -30,7 +30,7 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 
 | Command | Does |
 |---|---|
-| `/rspec:pipeline [product]` | Everything below, in order. Also `continue`, `pause`, `stop`, `status`, `--until <stage>` |
+| `/rspec:pipeline [product]` | Everything below, in order. Also `continue`, `pause`, `stop`, `status`, `--until <stage>`, `--autopilot` |
 | `/rspec:init <product>` | Goal, focus, official sources, `docs/` skeleton |
 | `/rspec:discover` | Researches each module in parallel, maps the screens |
 | `/rspec:features` | Feature list with MVP / Later / Drop, **waits for your approval** |
@@ -122,6 +122,28 @@ For your own product. `/rspec:init` asks for the source repos, current and targe
 - `/rspec:handoff` writes `production-readiness.md`, and after the last build slice the pipeline hands each open category to sdlc. It is done only when every item is checked with evidence.
 
 The plugin makes production work explicit and checked; it does not replace a security review, load testing on your infrastructure or legal advice.
+
+## Autopilot
+
+`/rspec:pipeline --autopilot` runs unattended. It asks everything once at the start (or reads `rspec-autopilot.json`; copy [templates/autopilot.json](templates/autopilot.json)), including your rule for each approval:
+
+- **features**: approve as proposed, capped at `mvp_max` MVP features; never retire a feature that still has users unless you allow it;
+- **ADRs**: accept the recommended decisions, or park them;
+- **build engine**: sdlc (run with its own `--autopilot`), Claude Code or none;
+- **risks**: never accepted for you by default.
+
+Every automatic decision is written to `autopilot-log.md` with the rule it used. Anything a rule does not cover is **parked** there with a safe default (keep the feature, keep the risk open), and the run carries on with the rest. The run is not finished while anything is parked: `/rspec:check` and `/rspec:pipeline status` show the count. Deploying to production is never automatic.
+
+Headless, with no terminal:
+
+```
+claude -p "/rspec:pipeline --autopilot rspec-autopilot.json" \
+  --allowedTools Skill Agent WebSearch WebFetch Read Write Edit Glob Grep "Bash(python3:*)" "Bash(python:*)" "Bash(git clone:*)"
+```
+
+The build stage also needs whatever sdlc runs (git, your package manager, tests); allow those too, or stop at `--until handoff` and build interactively. For a run longer than one session, use `/loop /rspec:pipeline continue`.
+
+Autopilot trades your review during the run for a review at the end. It suits a second run, or a product you already know well.
 
 ## Contributing
 

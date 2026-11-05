@@ -16,7 +16,7 @@ Product: `$ARGUMENTS`
 
 1. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .`. If it reports a stage, a spec already exists: show its product and stage and ask whether to continue that spec or start over. Never overwrite silently.
 2. Track: `rspec` (default) or `modernize`, as passed by `/rspec:pipeline` or asked here. For **modernize**, collect instead of the rspec-only items below: the source repo paths or URLs (clone URLs into a sibling folder only with the user's OK), the current stack, the target stack, why modernize (drivers: cost, performance, hiring, security, end of life), the strategy (`rewrite` by default; `strangler` or `refactor` on request), and where usage data lives (analytics, logs) if any. `working_name` is the product's own name; `goal` is `production` unless the user says otherwise. Sources are the code first, then internal docs.
-3. Collect, asking only for what is missing (use AskUserQuestion, one round):
+3. Collect (under autopilot, take every answer from the autopilot rules and ask nothing), asking only for what is missing (use AskUserQuestion, one round):
    - `goal`: `learn`, `personal-use`, or `production` (the rebuild will serve real users: adds a threat model, verified NFRs and a production-readiness checklist; also ask who the users are and the expected scale, and record them in `focus`)
    - `focus`: the parts the user most wants to learn or needs (free text, may be empty)
    - `working_name`: a name for the rebuild that is not the original brand (suggest one)
