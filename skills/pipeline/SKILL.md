@@ -4,12 +4,14 @@ description: >
   This skill should be used when the user runs /rspec:pipeline or asks to run the
   whole reverse spec end to end, or to pause, stop, resume, continue or check the
   status of it, including in a new session ("do the full spec for Linear", "run all
-  rspec steps", "continue the spec", "pause the pipeline", "where is the spec at").
+  rspec steps", "continue the spec", "pause the pipeline", "where is the spec at"). Also
+  for modernizing your own product ("modernize our legacy app", "rewrite our product
+  on a new stack", "migrate our app from X to Y").
   Drives init → discover → features → stories → tech → handoff → check, then hands the build to sdlc slice by slice, from where it left off,
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
 ---
 
 # /rspec:pipeline
@@ -21,7 +23,8 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | Argument | Meaning |
 |---|---|
 | empty or `continue` | Start, or resume from the checkpoint |
-| `<product>` | Start a new spec for that product (only if `<spec>/rspec.json` does not exist) |
+| `<product>` | Start a new spec for that product (only if no spec exists); asks for the track |
+| `--track rspec\|modernize` | Choose the track up front |
 | `pause` | Pause: save the checkpoint, keep the run's settings, end the turn |
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
@@ -49,7 +52,10 @@ Write it whenever status changes and after each batch of subagents returns, so a
 
 ## Start or resume
 
-1. Run `progress.py`. If there is no spec, run `rspec:init` with the product (ask for it if missing).
+1. Run `progress.py`. If there is no spec, ask which track (AskUserQuestion, skip if the request already says):
+   - **rspec**: reverse-spec someone else's product, to learn from it, use it personally or run it as a service.
+   - **modernize**: move your own product to a new stack (rewrite, strangler fig or refactor in place), with parity, data migration and cutover.
+   Then run `rspec:init` with the product and the track (ask for the product if missing).
 2. If `pipeline.status` is `running`, the last session ended without pausing. Say so, and treat files written by the last batch as suspect: recheck them (research file has Screens, Features observed and Sources; story passes `check_spec.py`) and redo only the broken ones.
 3. Tell the user in two lines: stage, what is done, what is pending, and the next step.
 4. Set `status` to `running`, `current` to the next step, then enter the loop.

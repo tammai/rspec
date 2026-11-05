@@ -5,11 +5,12 @@ description: >
   reverse-engineer an existing app or product for personal use or for learning,
   wants to document the features and technical requirements of an existing
   product, or says things like "recreate app X", "clone X to learn", "remake
-  product X", "write a reverse spec for X", "reverse spec", "rebuild Linear/Notion/Trello".
+  product X", "write a reverse spec for X", "reverse spec", "rebuild Linear/Notion/Trello", or wants to modernize
+  their own product ("modernize our legacy app", "rewrite our app on a new stack").
   It explains the rspec pipeline and routes to the right /rspec command based on
   the current state in <spec>/rspec.json.
 metadata:
-  version: "0.5.0"
+  version: "0.7.0"
 ---
 
 # Reverse spec pipeline

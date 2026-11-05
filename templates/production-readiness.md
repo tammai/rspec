@@ -37,6 +37,13 @@ Nothing ships to production until every item is checked. Put the evidence after 
 ## Accessibility
 - [ ] WCAG 2.2 AA audit of the main flows, issues fixed
 
+## Cutover (modernize track only; delete this section for rspec)
+- [ ] Characterization tests for every MVP feature pass against the old and the new system
+- [ ] Data migration rehearsed on a production-size copy; every mapping's validation passes
+- [ ] Rollback rehearsed end to end
+- [ ] Cutover plan reviewed; go / no-go owner named
+- [ ] Old system decommission date set, backups kept until then
+
 ## Legal
 - [ ] Own product name and brand; no confusion with the original product
 - [ ] Third-party and OSS licences reviewed, attributions in place

@@ -2,6 +2,7 @@
 """Create the spec skeleton from templates. Never overwrites existing files.
 
 Usage: init_spec.py [project-root] [--layout auto|single|monorepo] [--name <working name>]
+                    [--track rspec|modernize] [--strategy rewrite|strangler|refactor]
 
 single:   the spec in docs/, contracts beside it, ADRs in docs/decisions/, CHANGELOG.md at the root.
 monorepo: sdlc's layout: the spec in docs/specs/<name>/, contracts in packages/api-contract/v1/,
@@ -39,7 +40,7 @@ def slug(name):
 
 def main():
     positional = [a for i, a in enumerate(sys.argv[1:], 1)
-                  if not a.startswith("--") and sys.argv[i - 1] not in ("--layout", "--name")]
+                  if not a.startswith("--") and sys.argv[i - 1] not in ("--layout", "--name", "--track", "--strategy")]
     root = Path(positional[0] if positional else ".")
     layout = option("--layout", "auto")
     if layout == "auto":
@@ -75,6 +76,10 @@ def main():
     else:
         cfg = json.loads((TEMPLATES / "rspec.json").read_text(encoding="utf-8"))
         cfg["paths"] = paths
+        cfg["track"] = option("--track", "rspec")
+        if cfg["track"] == "modernize":
+            cfg["strategy"] = option("--strategy", "rewrite")
+            cfg["goal"] = "production"
         cfg_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
         created.append(cfg_path.relative_to(root).as_posix())
 

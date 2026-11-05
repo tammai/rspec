@@ -6,12 +6,12 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
 ---
 
 # /rspec:handoff
 
-Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists (`adr-approval`, `build-engine`, `build-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
+Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
 
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.
@@ -35,17 +35,24 @@ Write `<spec>/build-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/build-plan.md
 - For each feature list its story file, the `operationId`s and schemas whose `x-features` include it, and the NFRs that name it or `all`.
 - State the "done when" rule for each slice: every acceptance criterion of its stories has a passing test.
 
-## 4. Production readiness (only when `goal` is `production`)
+## 4. Cutover plan (modernize track only)
+Write `<spec>/cutover-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/cutover-plan.md` for the chosen `strategy`:
+- rewrite: one cutover after the last slice; the build plan's slices build the new system to parity.
+- strangler: one cutover step per slice; order slices so each can be routed to the new system on its own.
+- refactor: one step per slice inside the existing codebase, each behind a flag.
+The Rollback section is required: trigger, steps, and the point of no return. Data steps follow `<spec>/data-migration.md`.
+
+## 5. Production readiness (when `goal` is `production`, which the modernize track defaults to)
 Write `<spec>/production-readiness.md` from `${CLAUDE_PLUGIN_ROOT}/templates/production-readiness.md`:
-- Keep every category. Tailor items to this product: name the real SLO targets from the NFRs, the regulations that apply to its users, the roles and tenant boundaries to test.
+- Keep every category; keep the Cutover category only in the modernize track (delete it for rspec). Tailor items to this product: name the real SLO targets from the NFRs, the regulations that apply to its users, the roles and tenant boundaries to test.
 - Mark an item that cannot apply as checked with `(n/a: <reason>)`, e.g. no personal data stored. Never mark anything else done here; the build proves the rest.
 - Tell the user the pipeline will hand the open items to the build after the last slice.
 
-## 5. CLAUDE.md section
+## 6. CLAUDE.md section
 - Fill `${CLAUDE_PLUGIN_ROOT}/templates/claude-md-sdlc.md` when the engine is sdlc, else `${CLAUDE_PLUGIN_ROOT}/templates/claude-md.md` (working name, the absolute plugin root path, and `<spec>`, `<contracts>`, `<decisions>`, `<changelog>` from `paths` in the progress output) and add it to `CLAUDE.md` at the project root. Create the file if missing.
 - If a `<!-- rspec:handoff -->` … `<!-- /rspec:handoff -->` block already exists, replace only that block. Never change anything else in CLAUDE.md.
 
-## 6. Finish
+## 7. Finish
 - Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .` with stage set to `handoff`; fix errors.
 - Set `stage` to `handoff`, add a line to `<changelog>`.
 - Reply with: the slices (name and feature count), the accepted decisions, and how to start: with sdlc, "`/rspec:pipeline continue` hands slice 1 to sdlc"; with claude-code, "ask Claude to build slice 1 from <spec>/build-plan.md".

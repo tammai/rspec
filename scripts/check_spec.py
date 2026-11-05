@@ -35,6 +35,11 @@ def main():
     if not cfg.get("product"): E("rspec.json: 'product' is empty")
     if cfg.get("goal") not in GOALS: E("rspec.json: goal must be 'learn', 'personal-use' or 'production'")
     production = cfg.get("goal") == "production"
+    track = cfg.get("track", "rspec")
+    if track not in ("rspec", "modernize"): E(f"rspec.json: track '{track}' must be 'rspec' or 'modernize'")
+    modernize = track == "modernize"
+    if modernize and cfg.get("strategy") not in ("rewrite", "strangler", "refactor"):
+        E("rspec.json: a modernize spec needs strategy 'rewrite', 'strangler' or 'refactor'")
 
     # modules and research
     codes = {}
@@ -123,6 +128,16 @@ def main():
         for ref in feature_refs(doc):
             if feats and ref not in feats: E(f"{rel}: x-features references unknown {ref}")
             referenced.add(ref)
+    if si >= 4 and modernize:
+        dm = docs / "data-migration.md"
+        if not dm.exists():
+            E("data-migration.md missing; a modernize spec needs one, re-run /rspec:tech")
+        else:
+            mapping = md_table(dm.read_text(encoding="utf-8"), "M-")
+            if not mapping: E("data-migration.md: no mapping rows (M-01, ...)")
+            for row in mapping:
+                if not row.get("Validation"):
+                    E(f"data-migration.md: {row.get('ID')} has no Validation (how you prove the data moved intact)")
     if si >= 4 and production:
         nfr = (docs / "nfr.md").read_text(encoding="utf-8") if (docs / "nfr.md").exists() else ""
         rows = md_table(nfr, "NFR-")
@@ -163,6 +178,12 @@ def main():
                 total = sum(criteria_count(story_map[i][1]) for i in ids if i in story_map)
                 if total > 10:
                     W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
+        if modernize:
+            cp = docs / "cutover-plan.md"
+            if not cp.exists():
+                E("cutover-plan.md missing; run /rspec:handoff")
+            elif not re.search(r"^##\s*Rollback", cp.read_text(encoding="utf-8"), re.M | re.I):
+                E("cutover-plan.md has no '## Rollback' section")
         if production:
             ready = docs / "production-readiness.md"
             if not ready.exists():

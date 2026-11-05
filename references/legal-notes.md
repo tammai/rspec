@@ -1,5 +1,9 @@
 # Legal and ethical guardrails
 
+**Modernize track (your own product):** the rules about copying, branding and terms of service below do not apply; you may reuse your own code, text and brand. Still: check the licences of third-party code and libraries before carrying them over, never copy production data (users' records, messages, secrets) into the spec, and describe fields generically.
+
+**rspec track (someone else's product):**
+
 Not legal advice. Apply these by default and surface them to the user in `<spec>/README.md`.
 
 - **Ideas and features are generally not protected; expression is.** Describe behaviour in your own words. Never paste the vendor's docs text, UI copy, code, icons, images, illustrations or fonts into the spec.

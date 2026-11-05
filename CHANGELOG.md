@@ -4,6 +4,12 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-05
+### Added
+- Modernize track for your own products: `/rspec:pipeline` asks for the track (rspec or modernize) when it starts a spec. Modernize collects source repos, current and target stack, drivers and strategy (rewrite by default, strangler fig or refactor in place), and defaults to goal `production`.
+- Discovery from code (`[code]` tags with `path:line`), parity-based priorities, stories as characterization of current behaviour.
+- `data-migration.md` (mapping with a validation per row) from `/rspec:tech`; `cutover-plan.md` (rollback required) and a Cutover readiness category from `/rspec:handoff`; `/rspec:check` enforces them.
+
 ## [0.6.0] - 2026-11-05
 ### Added
 - `goal: production` for rebuilds that will serve real users: prioritization keeps account security, permissions, audit trail, data export and deletion in the MVP.

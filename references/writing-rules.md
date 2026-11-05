@@ -2,7 +2,7 @@
 
 - Write in the language set in `<spec>/rspec.json` (`lang`). Keep IDs, file names, template section headings (e.g. `## Acceptance criteria`) and template keywords (MVP, Later, Drop) in English; `/rspec:check` looks for those headings.
 - Keep story frontmatter keys, the Given / When / Then keywords and JSON contract keys in English too.
-- Own words only; see legal-notes.md.
+- Own words only for the rspec track; see legal-notes.md. In the modernize track describe behaviour in plain words, but quoting your own code, messages and docs is fine.
 - One fact per line, tagged with a confidence tag from discovery-checklist.md.
 - Prefer concrete, testable statements ("Issue IDs increment per team: ENG-1, ENG-2") over vague ones ("issues have nice IDs").
 - Feature IDs: `F-<MODULE CODE>-<NN>`, two-digit sequence, never reused. Module codes are 2–4 uppercase letters, defined in `<spec>/rspec.json`.

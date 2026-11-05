@@ -18,7 +18,8 @@ Requires stage `discovered` or later. Read `${CLAUDE_PLUGIN_ROOT}/references/pri
    - Merge duplicates found across modules into the module that owns the behaviour.
    - One-line behaviour in own words. Priority MVP / Later / Drop with a reason where required.
    - Order rows by module, then by dependency (foundations first).
-3. Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.
+3. Modernize track: MVP means parity at cutover, Drop means retire (see prioritization.md); list every retired feature that still has users in the approval message as a decision for the user. Otherwise:
+   Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.
 4. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .` and fix errors.
 5. **Approval gate.** Present to the user: count per module and priority, the full MVP list (ID + name), and the 3–5 most debatable calls. Ask them to approve or adjust. Do not proceed and do not change the stage until they explicitly approve.
 6. After approval, apply any adjustments, set `stage` to `features-approved`, update `<spec>/README.md` scope section, add a line to `<changelog>`, and point to `/rspec:stories`.

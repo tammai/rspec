@@ -14,6 +14,7 @@ metadata:
 Requires `<spec>/rspec.json` with stage `init` or later. Read `${CLAUDE_PLUGIN_ROOT}/references/discovery-checklist.md` first.
 
 ## 1. Build the module map (main session)
+- Modernize track: build the map from the code (top-level packages, route groups, domain folders, database schemas) and the product's own docs, then the rest of this step as written. Give each subagent `track: modernize` and the source repo paths.
 - Use the docs navigation, the features page, the pricing page and the last 12 months of changelog to split the product into 5–10 modules (e.g. Auth & Workspace, Teams, Issues, Views, Planning, Notifications, Integrations, Settings).
 - Give each module a 2–4 letter uppercase `code` (WS, TEAM, ISS, VIEW, PLAN, NOTI, INT, SET).
 - Write them to `<spec>/rspec.json` → `modules: [{"code","name","scope","sources":[urls]}]`.

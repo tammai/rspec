@@ -58,6 +58,8 @@ def main():
             pending.append("data-model")
         if unchanged(docs / "nfr.md", "nfr.md"):
             pending.append("nfr")
+        if cfg.get("track") == "modernize" and not (docs / "data-migration.md").exists():
+            pending.append("data-migration")
         if not pending and not adr_statuses(layout.decisions):
             pending = ["adrs"]
     elif nxt == "handoff":
@@ -67,6 +69,8 @@ def main():
             pending.append("build-engine")
         if not (docs / "build-plan.md").exists():
             pending.append("build-plan")
+        if cfg.get("track") == "modernize" and not (docs / "cutover-plan.md").exists():
+            pending.append("cutover-plan")
         claude = root / "CLAUDE.md"
         if not claude.exists() or CLAUDE_MARKER not in claude.read_text(encoding="utf-8"):
             pending.append("claude-md")
