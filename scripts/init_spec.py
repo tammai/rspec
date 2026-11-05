@@ -76,6 +76,7 @@ def main():
     else:
         cfg = json.loads((TEMPLATES / "rspec.json").read_text(encoding="utf-8"))
         cfg["paths"] = paths
+        cfg["working_name"] = option("--name", "")
         cfg["track"] = option("--track", "rspec")
         if cfg["track"] == "modernize":
             cfg["strategy"] = option("--strategy", "rewrite")

@@ -7,7 +7,7 @@ Exit code 1 if any ERROR is found. WARN lines do not fail.
 import json, re, sys
 from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
-                       stories, dependencies, find_cycle, feature_refs, contract_files, adr_statuses,
+                       stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, criteria_count, GOALS, md_table, readiness_open, parked_decisions)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
@@ -105,8 +105,8 @@ def main():
             if loose: W(f"{p.name}: {len(loose)} criteria not in 'Given …, when …, then …' form")
         left = sorted(ph for ph in PLACEHOLDERS if ph in text)
         if left: E(f"{p.name}: template placeholders left in file: {', '.join(left)}")
-    cycle = find_cycle(dependencies(story_map))
-    if cycle: E(f"dependency cycle: {' -> '.join(cycle)}")
+    for cycle in find_cycles(dependencies(story_map)):
+        E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
         for fid in mvp:
             if fid not in story_map: E(f"MVP {fid} has no story file in features/")

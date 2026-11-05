@@ -24,6 +24,11 @@ class Progress(unittest.TestCase):
         self.assertEqual(p["order"], ["F-ISS-02", "F-ISS-01"])
         self.assertEqual(p["build"], {"todo": 1, "in-progress": 0, "done": 1})
 
+    def test_finished_pipeline_reports_done_not_check_again(self):
+        root = project(stage="handoff", config={"build": {"engine": "none"}, "pipeline": {"status": "done"}})
+        p = progress(root)
+        self.assertEqual((p["next"], p["pending"]), ("done", []))
+
     def test_sdlc_build_resumes_at_first_slice_sdlc_has_not_finished(self):
         plan = "# Build plan\n\n## Slice 1: Issues\n| 1 | F-ISS-01 |\n\n## Slice 2: Lists\n| 2 | F-ISS-02 |\n"
         root = project(stage="handoff", features=(("F-ISS-01", "MVP"), ("F-ISS-02", "MVP")),

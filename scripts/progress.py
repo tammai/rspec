@@ -13,6 +13,7 @@ from rspec_lib import (TEMPLATES, open_layout, priorities, stories, dependencies
 
 NEXT = {"init": "discover", "discovered": "features", "features-approved": "stories",
         "stories": "tech", "tech": "handoff", "handoff": "check"}
+# next is "done" once the pipeline checkpoint says the final check passed.
 CLAUDE_MARKER = "<!-- rspec:handoff -->"
 
 
@@ -90,6 +91,8 @@ def main():
                 nxt, pending = "check", ["check"]
     elif nxt == "check":
         pending = ["check"]
+    if nxt == "check" and cfg.get("pipeline", {}).get("status") == "done":
+        nxt, pending = "done", []
 
     status = {"todo": 0, "in-progress": 0, "done": 0}
     for fid in mvp:

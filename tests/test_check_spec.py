@@ -30,6 +30,15 @@ class CheckSpec(unittest.TestCase):
         self.assertEqual(r.returncode, 1, r.stdout)
         self.assertIn("dependency cycle", r.stdout)
 
+    def test_every_dependency_cycle_is_reported_in_one_run(self):
+        ids = ("F-ISS-01", "F-ISS-02", "F-ISS-03", "F-ISS-04")
+        r = run("check_spec.py", project(features=tuple((i, "MVP") for i in ids), stories={
+            "F-ISS-01-a.md": story("F-ISS-01", depends=["F-ISS-02"]),
+            "F-ISS-02-b.md": story("F-ISS-02", depends=["F-ISS-01"]),
+            "F-ISS-03-c.md": story("F-ISS-03", depends=["F-ISS-04"]),
+            "F-ISS-04-d.md": story("F-ISS-04", depends=["F-ISS-03"])}))
+        self.assertEqual(r.stdout.count("dependency cycle"), 2, r.stdout)
+
     def test_mvp_depending_on_later_fails(self):
         r = run("check_spec.py", project(features=(("F-ISS-01", "MVP"), ("F-ISS-02", "Later")), stories={
             "F-ISS-01-a.md": story("F-ISS-01", depends=["F-ISS-02"])}))
