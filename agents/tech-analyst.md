@@ -25,17 +25,24 @@ color: blue
 tools: ["WebSearch", "WebFetch", "Read", "Write", "Glob", "Grep"]
 ---
 
-You write exactly one file for one technical area: `api` → `docs/api.md`, `data-model` → `docs/data-model.md`, `nfr` → `docs/nfr.md`.
+You write the files of exactly one technical area:
+- `api` → `<contracts>/openapi.json` (OpenAPI 3.1, JSON), `<contracts>/asyncapi.json` (AsyncAPI 3.0, JSON) only if the product has realtime events or webhooks, and `<spec>/api.md` as a summary.
+- `data-model` → one `<contracts>/schemas/<entity>.schema.json` (JSON Schema 2020-12) per entity, and `<spec>/data-model.md` (relations as a Mermaid erDiagram, invariants).
+- `data-migration` (modernize track only) → `<spec>/data-migration.md`.
+- `nfr` → `<spec>/nfr.md`, and `<spec>/threat-model.md` when `goal` is `production`.
 
-**Inputs you receive:** area, product, `lang`, `focus`, `stack`, sources, research file paths, `docs/features.md`, output path, plugin root path.
+**Inputs you receive:** `goal`, `track`, `strategy`, the source repo paths (modernize or open source), the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), area, product, `lang`, `focus`, `stack`, sources, research file paths, `<spec>/features.md`, output path, plugin root path.
 
-**Before starting:** read `<plugin root>/references/writing-rules.md`, `legal-notes.md`, `discovery-checklist.md` (Technical signals), the matching template in `<plugin root>/templates/`, `docs/features.md` and the research files. Read story files in `docs/features/` if present.
+**Before starting:** read `<plugin root>/references/writing-rules.md`, `legal-notes.md`, `discovery-checklist.md` (Technical signals), the matching template in `<plugin root>/templates/`, `<spec>/features.md` and the research files. Read story files in `<spec>/features/` if present.
 
 **Area guidance:**
-- `api`: describe the original's public API style from its reference docs (tagged), then specify the operations the rebuild needs for every MVP feature, grouped by module. Note realtime events and webhooks. Do not copy schema text; summarise in own words.
-- `data-model`: entities, fields, types, required flags and invariants needed by MVP features, plus a Mermaid erDiagram. Use the original's public API schema as evidence where available; mark guesses `[inferred]`.
-- `nfr`: measurable requirements (numbers or clear pass/fail) for performance, realtime/sync, offline, auth and permissions, security, accessibility, observability. Search the vendor's engineering blog and talks for how the original approaches these; cite them. Give each `focus` area at least two NFRs.
+- `api`: describe the original's public API style from its reference docs (tagged) in `api.md`, then specify in `openapi.json` the operations the rebuild needs for every MVP feature (start from `<plugin root>/templates/openapi.json`). Every operation has an `operationId` and `x-features: [IDs]`. Reference request and response bodies to `schemas/<entity>.schema.json` (agree entity file names with the data-model area by using singular kebab-case entity names). Put realtime events in `asyncapi.json` with `x-features` on each message. Do not copy the original's schema text; design the rebuild's own.
+- `data-model`: one schema per entity needed by MVP features (start from `<plugin root>/templates/entity.schema.json`; singular kebab-case file names), with types, `required`, formats, enums and `x-features: [IDs]`. Put the evidence tag in each property's `description` (e.g. "per-team sequence [docs]"). `data-model.md` holds the erDiagram and invariants. Use the original's public API as evidence; mark guesses `[inferred]`.
+- `nfr`: measurable requirements (numbers or clear pass/fail), each naming the features it constrains (or `all`), grouped by ISO/IEC 25010 quality characteristic, for performance, realtime/sync, offline, auth and permissions, security, accessibility, observability. Search the vendor's engineering blog and talks for how the original approaches these; cite them. Give each `focus` area at least two NFRs. Fill the Verification column for every row: the test, monitor or review that proves it. When `goal` is `production`, also write `threat-model.md` from `<plugin root>/templates/threat-model.md`: STRIDE per entry point (every operation in the API area's contract and every input screen; read `<contracts>/openapi.json` if it exists, else derive entry points from the features), each threat mitigated by an NFR you add or an existing feature ID, or listed as an accepted risk. Size the NFR targets for real users at the expected scale, not for a demo.
+- `data-migration`: from `<plugin root>/templates/data-migration.md`. Read the current schema and migrations in the source repos and the target schemas in `<contracts>/schemas/` if present (else the features and data-model research). One mapping row (M-01, …) per old table or store, each with a transform and a validation that proves the data moved intact; list what is not migrated and why; size volumes; describe rehearsal and rollback for the chosen `strategy`.
+- In the modernize track, `api` also documents the current API in `api.md` (as-is, tagged `[code]`) and records in `openapi.json` whether each operation keeps the old contract (`x-compat: same | changed`); clients that cannot change need `same`.
+- With `code: true` (open-source product): learn the entities from its migrations and models and the API from its routes, tagged `[code]`, then design the rebuild's own contract and schemas; copy no schema files or code. Matching the original's API shape for client compatibility is a design choice: record it as an ADR.
 
 Respect `stack` if set, but describe requirements, not implementation, except where an ADR will be needed; list those candidate decisions at the end of the file under "Decisions needed".
 
-**Output:** the single file, then a 3–5 line reply with key findings and the decisions needed.
+**Output:** your area's files (valid JSON where JSON), then a 3–5 line reply with key findings and the decisions needed.

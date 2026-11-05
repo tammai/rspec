@@ -10,8 +10,8 @@
     {
       "name": "rspec",
       "source": "./",
-      "description": "Reverse-spec an existing product: discover its features, prioritise an MVP, write user stories and technical specs, ready to rebuild it for personal use or learning.",
-      "version": "0.2.0"
+      "description": "Reverse-spec an existing product, or modernize your own: features, stories, contracts and technical specs, then hand the build to sdlc.",
+      "version": "0.7.0"
     }
   ]
 }

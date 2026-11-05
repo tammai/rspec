@@ -1,0 +1,15 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "<working name> API", "version": "0.1.0" },
+  "paths": {
+    "/<resource>": {
+      "post": {
+        "operationId": "<verbResource>",
+        "summary": "<one line>",
+        "x-features": ["F-<CODE>-<NN>"],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "schemas/<entity>.schema.json" } } } },
+        "responses": { "201": { "description": "<created>" } }
+      }
+    }
+  }
+}

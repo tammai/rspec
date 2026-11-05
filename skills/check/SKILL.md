@@ -2,7 +2,7 @@
 name: check
 description: >
   This skill should be used when the user runs /rspec:check or asks to validate,
-  lint or review the completeness of a reverse spec in docs/.
+  lint or review the completeness of a reverse spec.
 metadata:
   version: "0.1.0"
 ---

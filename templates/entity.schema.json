@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "<entity>.schema.json",
+  "title": "<Entity>",
+  "type": "object",
+  "x-features": ["F-<CODE>-<NN>"],
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "description": "<meaning, format>" }
+  }
+}
