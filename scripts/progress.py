@@ -9,7 +9,8 @@ order. Used by /rspec:pipeline to resume in a new session and by /rspec:handoff.
 import json, sys
 from pathlib import Path
 from rspec_lib import (TEMPLATES, open_layout, priorities, stories, dependencies, build_order, adr_statuses,
-                       build_slices, sdlc_status, readiness_open, parked_decisions)
+                       build_slices, sdlc_status, readiness_open, parked_decisions,
+                       slice_criteria, SDLC_MAX_CRITERIA)
 
 NEXT = {"init": "discover", "discovered": "features", "features-approved": "stories",
         "stories": "tech", "tech": "handoff", "handoff": "check"}
@@ -83,7 +84,11 @@ def main():
             state = sdlc_status(root, feature) if feature else ""
             slices.append({"slice": num, "name": name, "features": ids, "sdlc_feature": feature, "sdlc_status": state})
         pending = [s["slice"] for s in slices if s["sdlc_status"] != "done"]
-        if not pending:
+        unstarted = [s for s in slices if not s["sdlc_feature"]]
+        if any(slice_criteria(story_map, s["features"]) > SDLC_MAX_CRITERIA for s in unstarted):
+            # e.g. the engine became sdlc after the plan was cut: re-cut the slices not started yet
+            nxt, pending = "handoff", ["build-plan"]
+        elif not pending:
             open_items = readiness_open(docs / "production-readiness.md") if cfg.get("goal") == "production" else {}
             if open_items:
                 nxt, pending = "readiness", list(open_items)

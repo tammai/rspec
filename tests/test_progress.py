@@ -38,5 +38,13 @@ class Progress(unittest.TestCase):
         p = progress(root)
         self.assertEqual((p["next"], p["pending"]), ("build", ["2"]))
 
+    def test_sdlc_build_with_unstarted_oversized_slice_recuts_the_plan(self):
+        many = "\n".join(f"- [ ] Given state {i}, when I act, then I see {i}." for i in range(11))
+        root = project(stage="handoff", config={"build": {"engine": "sdlc", "slices": {}}},
+                       stories={"F-ISS-01-x.md": story("F-ISS-01", criteria=many)},
+                       files={"build-plan.md": "# Build plan\n\n## Slice 1: Issues\n| 1 | F-ISS-01 |\n"})
+        p = progress(root)
+        self.assertEqual((p["next"], p["pending"]), ("handoff", ["build-plan"]))
+
 if __name__ == "__main__":
     unittest.main()

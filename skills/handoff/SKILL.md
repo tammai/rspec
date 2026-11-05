@@ -6,12 +6,12 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.8.1"
+  version: "0.8.2"
 ---
 
 # /rspec:handoff
 
-Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
+Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists; `build-plan` pending at this point while a plan exists means the engine is sdlc and a slice not yet started has more than 10 criteria (e.g. the engine changed after the plan was cut): keep the slices already mapped in `build.slices` as they are, re-cut the rest after them, and number on (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
 
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.
@@ -31,7 +31,7 @@ If sdlc is not available but the user wants it, say how to install it and record
 ## 3. Build plan
 Write `<spec>/build-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/build-plan.md`:
 - Take `order` from the progress output: every MVP feature, dependencies first. Keep that order.
-- Group consecutive features into 3–8 vertical slices (with sdlc: at most about 10 acceptance criteria per slice, since sdlc takes about 10 per change; split a bigger slice), each ending in something a user can try (e.g. "sign in and create a workspace", "create and list issues"). The first slice is the thinnest end-to-end path.
+- Group consecutive features into vertical slices: 3–8 slices without sdlc; with sdlc, as many as needed so that no slice has more than 10 acceptance criteria (sdlc takes about 10 per change), and a story with more than 10 is a slice of its own, each ending in something a user can try (e.g. "sign in and create a workspace", "create and list issues"). The first slice is the thinnest end-to-end path.
 - For each feature list its story file, the `operationId`s and schemas whose `x-features` include it, and the NFRs that name it or `all`.
 - State the "done when" rule for each slice: every acceptance criterion of its stories has a passing test.
 
