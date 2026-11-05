@@ -4,6 +4,21 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-06
+Fixes from an end-to-end autopilot run on Linear.
+### Fixed
+- `progress.py` reports `next: done` once the pipeline has finished, instead of asking for the check again.
+- `/rspec:check` reports every dependency cycle in one run, not one per run.
+- Story writers no longer create cycles between modules: modules are put in dependency order and a feature may depend only on its own or earlier modules.
+- The api and data-model agents share one entity list, so `$ref`s match the schema files.
+- `init_spec.py --name` sets `working_name`.
+- Handoff with build engine `none` still writes the CLAUDE.md section, matching `progress.py`.
+### Changed
+- `/rspec:check` does not ask under autopilot: it fixes errors once and parks the rest.
+- The explorer, story-writer and tech-analyst agents can use Edit.
+- Feature behaviour lines are capped at about 20 words.
+- Reported counts come from the files, never from a subagent's own report (an agent miscounted its NFRs).
+
 ## [0.8.0] - 2026-11-05
 ### Added
 - Autopilot: `/rspec:pipeline --autopilot [rules.json]` runs unattended. It asks everything once (or reads `rspec-autopilot.json`), applies your rules at every gate (features, ADRs, build engine, risks), logs each decision in `autopilot-log.md` and parks what no rule covers. The build runs sdlc with `--autopilot`. Production deploys are never automatic.

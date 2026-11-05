@@ -14,6 +14,12 @@ class InitSpec(unittest.TestCase):
         self.assertTrue((root / "packages/api-contract/v1/schemas").is_dir())
         self.assertTrue((root / "docs/specs/acme-tracker/CHANGELOG.md").exists())
 
+    def test_name_sets_working_name(self):
+        root = Path(tempfile.mkdtemp())
+        run("init_spec.py", root, "--name", "Acme Tracker")
+        cfg = json.loads((root / "docs/rspec.json").read_text(encoding="utf-8"))
+        self.assertEqual(cfg["working_name"], "Acme Tracker")
+
     def test_single_repo_keeps_docs(self):
         root = Path(tempfile.mkdtemp())
         r = run("init_spec.py", root)

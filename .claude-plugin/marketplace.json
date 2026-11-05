@@ -11,7 +11,7 @@
       "name": "rspec",
       "source": "./",
       "description": "Reverse-spec an existing product, or modernize your own: features, stories, contracts and technical specs, then hand the build to sdlc.",
-      "version": "0.8.0"
+      "version": "0.8.1"
     }
   ]
 }

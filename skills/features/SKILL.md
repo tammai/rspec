@@ -5,7 +5,7 @@ description: >
   feature list, feature inventory or MVP scope of the product being reverse-specced.
   Compiles <spec>/features.md with IDs and MVP/Later/Drop priorities and stops for user approval.
 metadata:
-  version: "0.6.0"
+  version: "0.8.1"
 ---
 
 # /rspec:features
@@ -16,7 +16,7 @@ Requires stage `discovered` or later. Read `${CLAUDE_PLUGIN_ROOT}/references/pri
 2. Build the table in `<spec>/features.md` (template: `${CLAUDE_PLUGIN_ROOT}/templates/features.md`):
    - Keep the proposed IDs from research files (`F-<CODE>-NN`); renumber only to remove gaps or duplicates inside a module.
    - Merge duplicates found across modules into the module that owns the behaviour.
-   - One-line behaviour in own words. Priority MVP / Later / Drop with a reason where required.
+   - One-line behaviour in own words, at most about 20 words; details belong in the story. Priority MVP / Later / Drop with a reason where required.
    - Order rows by module, then by dependency (foundations first).
 3. Modernize track: MVP means parity at cutover, Drop means retire (see prioritization.md); list every retired feature that still has users in the approval message as a decision for the user. Otherwise:
    Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.

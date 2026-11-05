@@ -22,7 +22,7 @@ description: |
   </example>
 model: sonnet
 color: cyan
-tools: ["WebSearch", "WebFetch", "Read", "Write", "Glob", "Grep",
+tools: ["WebSearch", "WebFetch", "Read", "Write", "Edit", "Glob", "Grep",
   "mcp__playwright__browser_navigate", "mcp__playwright__browser_navigate_back", "mcp__playwright__browser_snapshot",
   "mcp__playwright__browser_take_screenshot", "mcp__playwright__browser_click", "mcp__playwright__browser_wait_for", "mcp__playwright__browser_tabs",
   "mcp__plugin_playwright_playwright__browser_navigate", "mcp__plugin_playwright_playwright__browser_navigate_back", "mcp__plugin_playwright_playwright__browser_snapshot",

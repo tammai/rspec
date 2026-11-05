@@ -6,7 +6,7 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.8.0"
+  version: "0.8.1"
 ---
 
 # /rspec:handoff
@@ -22,7 +22,7 @@ Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . 
 Ask once (AskUserQuestion; under autopilot use `autopilot.rules.build_engine`) how the rebuild will be built, and record it in `<spec>/rspec.json` as `"build": {"engine": "<sdlc|claude-code|none>", "slices": {}}`:
 - **sdlc** (offer first, as recommended, when the `sdlc:start` command or `sdlc:orchestrator` skill is available in this session): sdlc defines, builds, reviews and ships each slice; `/rspec:pipeline` drives it slice by slice.
 - **claude-code**: build directly from the plan, tracking `status` in the story files.
-- **none**: stop after the plan.
+- **none**: no build is started; still write the plan and the CLAUDE.md section, so whoever builds later has them.
 
 If the choice is sdlc and `.sdlc/config.json` is missing, run `/sdlc:setup` now with the Skill tool (`sdlc:setup`). Tell it that the repo holds a reverse-engineered SRS in `<spec>/` (not code), that the PRD should be drafted from `<spec>/README.md` (goals, scope), `<spec>/features.md` (MVP capabilities, Drop rows as non-goals) and `<spec>/nfr.md` (constraints), and that the API contract is `<contracts>/openapi.json` (in a monorepo: `packages/api-contract/v1/openapi.json`, so the contract check's spec file is `openapi.json`). Follow setup through its own questions, then continue here.
 

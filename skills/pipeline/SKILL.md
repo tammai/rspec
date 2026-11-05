@@ -12,7 +12,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.8.0"
+  version: "0.8.1"
 ---
 
 # /rspec:pipeline
@@ -59,7 +59,7 @@ Write it whenever status changes and after each batch of subagents returns, so a
    - **modernize**: move your own product to a new stack (rewrite, strangler fig or refactor in place), with parity, data migration and cutover.
    Then run `rspec:init` with the product and the track (ask for the product if missing).
 2. If `pipeline.status` is `running`, the last session ended without pausing. Say so, and treat files written by the last batch as suspect: recheck them (research file has Screens, Features observed and Sources; story passes `check_spec.py`) and redo only the broken ones.
-3. Tell the user in two lines: stage, what is done, what is pending, and the next step.
+3. If `next` is `done`, the pipeline has finished: say so, report the parked count if any, and stop. Otherwise tell the user in two lines: stage, what is done, what is pending, and the next step.
 4. Set `status` to `running`, `current` to the next step, then enter the loop.
 
 ## Loop
@@ -136,7 +136,7 @@ If the user interrupts mid-turn and says nothing else, treat it as pause.
 ## Finish
 
 After `rspec:check` at stage `handoff` (and, with sdlc, after the last slice), set `status` to `done` and reply with:
-- counts: modules, features (MVP / Later / Drop), stories, operations and schemas, ADRs;
+- counts: modules, features (MVP / Later / Drop), stories, operations and schemas, ADRs. Take every count from the files (the `check_spec.py` summary line, or by counting rows and files yourself), never from a subagent's reply;
 - the build slices from `<spec>/build-plan.md` and, with sdlc, which shipped; otherwise how to start building slice 1;
 - with goal `production`: the readiness checklist status (all checked, with evidence) or the open items;
 - check result (zero errors; list warnings);

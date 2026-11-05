@@ -116,30 +116,28 @@ def dependencies(story_map):
     return {fid: list((fm or {}).get("depends_on") or []) for fid, (_, _, fm) in story_map.items()}
 
 
-def find_cycle(deps):
-    """Return one dependency cycle as a list of IDs, or None."""
-    state, stack = {}, []
+def find_cycles(deps):
+    """Return every distinct dependency cycle found, each as a list of IDs ending where it starts."""
+    state, stack, cycles, seen = {}, [], [], set()
 
     def visit(n):
         state[n] = 1
         stack.append(n)
         for d in deps.get(n, []):
             if state.get(d) == 1:
-                return stack[stack.index(d):] + [d]
-            if d in deps and not state.get(d):
-                found = visit(d)
-                if found:
-                    return found
+                cycle = stack[stack.index(d):]
+                if frozenset(cycle) not in seen:
+                    seen.add(frozenset(cycle))
+                    cycles.append(cycle + [d])
+            elif d in deps and not state.get(d):
+                visit(d)
         stack.pop()
         state[n] = 2
-        return None
 
     for n in deps:
         if not state.get(n):
-            found = visit(n)
-            if found:
-                return found
-    return None
+            visit(n)
+    return cycles
 
 
 def build_order(ids, deps):
