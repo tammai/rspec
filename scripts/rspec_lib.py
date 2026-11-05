@@ -14,6 +14,58 @@ def load_config(docs):
     return json.loads((docs / "rspec.json").read_text(encoding="utf-8"))
 
 
+SINGLE_PATHS = {"spec": "docs", "contracts": "docs", "decisions": "docs/decisions", "changelog": "CHANGELOG.md"}
+
+
+def monorepo_paths(slug):
+    """sdlc's monorepo layout: the SRS in docs/specs/<slug>/, the contract in packages/api-contract/v1/."""
+    return {"spec": f"docs/specs/{slug}", "contracts": "packages/api-contract/v1",
+            "decisions": "docs/adr", "changelog": f"docs/specs/{slug}/CHANGELOG.md"}
+
+
+def find_spec(root):
+    """The spec folder holding rspec.json: docs/, else the one docs/specs/<name>/. None if absent.
+    Raises ValueError when several specs exist under docs/specs/."""
+    root = Path(root)
+    if (root / "docs" / "rspec.json").exists():
+        return root / "docs"
+    hits = sorted((root / "docs" / "specs").glob("*/rspec.json"))
+    if len(hits) > 1:
+        raise ValueError("several specs found: " + ", ".join(h.parent.relative_to(root).as_posix() for h in hits)
+                         + "; pass the spec folder instead of the project root")
+    return hits[0].parent if hits else None
+
+
+class Layout:
+    """Where each part of a spec lives. `paths` in rspec.json is relative to the project root."""
+
+    def __init__(self, root, spec, cfg):
+        self.root = Path(root)
+        self.spec = Path(spec)
+        default = dict(SINGLE_PATHS, spec=self.spec.relative_to(self.root).as_posix())
+        if default["spec"] != "docs":
+            default.update(contracts=default["spec"], decisions=default["spec"] + "/decisions")
+        self.paths = {k: (cfg.get("paths") or {}).get(k) or v for k, v in default.items()}
+        self.contracts = self.root / self.paths["contracts"]
+        self.decisions = self.root / self.paths["decisions"]
+        self.changelog = self.root / self.paths["changelog"]
+
+
+def open_layout(arg):
+    """Resolve a command-line path (project root or spec folder) to (Layout, cfg). Exits with a message on failure."""
+    import sys
+    p = Path(arg)
+    try:
+        spec = p if (p / "rspec.json").exists() else find_spec(p)
+    except ValueError as e:
+        print(f"ERROR {e}"); sys.exit(1)
+    if spec is None:
+        return None, None
+    root = spec.parents[2] if spec.parent.name == "specs" and spec.parent.parent.name == "docs" else spec.parent
+    cfg = load_config(spec)
+    return Layout(root, spec, cfg), cfg
+
+
 def feature_rows(docs):
     """Yield (line number, cells) for every feature row in features.md."""
     f = docs / "features.md"
@@ -123,14 +175,16 @@ def feature_refs(obj):
     return found
 
 
-def contract_files(docs):
-    files = [docs / "openapi.json", docs / "asyncapi.json"] + sorted((docs / "schemas").glob("*.json"))
+def contract_files(contracts):
+    files = [contracts / "openapi.json", contracts / "asyncapi.json"] + sorted((contracts / "schemas").glob("*.json"))
     return [f for f in files if f.exists()]
 
 
-def adr_statuses(docs):
+def adr_statuses(decisions):
     out = {}
-    for p in sorted((docs / "decisions").glob("*.md")):
+    for p in sorted(Path(decisions).glob("*.md")):
+        if p.name.lower() == "readme.md":
+            continue
         m = re.search(r"^-?\s*Status:\s*(\w+)", p.read_text(encoding="utf-8"), re.M | re.I)
         out[p.name] = m.group(1) if m else ""
     return out

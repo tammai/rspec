@@ -4,6 +4,13 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-05
+### Added
+- sdlc monorepo layout: the SRS goes to `docs/specs/<name>/`, contracts to `packages/api-contract/v1/`, ADRs to `docs/adr/`, the spec changelog into the spec folder. Detected from `.sdlc/config.json` packages, `apps/` or `packages/api-contract/`; stored as `paths` in `rspec.json`.
+- `scripts/init_spec.py` (cross-platform) replaces `init_spec.sh`; the check and progress scripts find the spec in `docs/` or `docs/specs/<name>/`.
+### Changed
+- Skills, agents and the CLAUDE.md sections use the layout paths instead of fixed `docs/` paths. Specs made before 0.5 keep working: no `paths` means the single-repo layout.
+
 ## [0.4.0] - 2026-11-05
 ### Added
 - Build with sdlc: `/rspec:handoff` asks for the build engine (sdlc, Claude Code or none), runs `/sdlc:setup` when needed, keeps slices to about 10 acceptance criteria and writes an sdlc-specific `CLAUDE.md` section.

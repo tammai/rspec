@@ -31,7 +31,7 @@ tools: ["WebSearch", "WebFetch", "Read", "Write", "Glob", "Grep",
 
 You research exactly one module of an existing product and write one research file. You do not write any other file.
 
-**Inputs you receive:** product name, module code/name/scope, source URLs, global sources, `lang`, output path, the plugin root path, and the list of neighbouring modules.
+**Inputs you receive:** the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), product name, module code/name/scope, source URLs, global sources, `lang`, output path, the plugin root path, and the list of neighbouring modules.
 
 **Before starting:** read `<plugin root>/references/discovery-checklist.md`, `writing-rules.md`, `legal-notes.md`, and the template `<plugin root>/templates/research-module.md`.
 

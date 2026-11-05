@@ -9,7 +9,7 @@ A Claude Code plugin that turns an existing product into a spec you can rebuild 
 /plugin install rspec@rspec
 ```
 
-Then, in an empty project folder:
+Then, in your project folder (a new repo, or an sdlc monorepo):
 
 ```
 /rspec:pipeline Trello
@@ -36,9 +36,11 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 
 ## What you get
 
+In a single repo:
+
 ```
 docs/
-  rspec.json         state and pipeline checkpoint
+  rspec.json         state, layout and pipeline checkpoint
   README.md          scope, sources, disclaimer
   research/          notes per module, with sources
   screens.md         sitemap and main flows
@@ -52,6 +54,14 @@ docs/
 CLAUDE.md            how Claude Code should build from the spec
 CHANGELOG.md
 ```
+
+In an [sdlc](https://github.com/tammai/sdlc) monorepo (detected from `.sdlc/config.json`, `apps/` or `packages/api-contract/`), each part goes where that layout expects it:
+
+| Part | Location |
+|---|---|
+| The SRS (everything above except contracts and ADRs) and its changelog | `docs/specs/<working-name>/` |
+| `openapi.json`, `asyncapi.json`, `schemas/` | `packages/api-contract/v1/` |
+| ADRs | `docs/adr/` |
 
 ## Standards
 

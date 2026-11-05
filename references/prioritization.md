@@ -1,6 +1,6 @@
 # Prioritisation: MVP / Later / Drop
 
-Decide against `goal` and `focus` in `docs/rspec.json`, not against the original product's importance.
+Decide against `goal` and `focus` in `<spec>/rspec.json`, not against the original product's importance.
 
 ## MVP
 A feature is MVP if **any** of these hold:

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Report where an rspec pipeline stands, from the files on disk.
 
-Usage: progress.py [project-root] [--build-order]
+Usage: progress.py [project-root | spec-folder] [--build-order]
 Prints JSON: stage, next step, pending units for that step, the saved pipeline
 checkpoint, and build status. --build-order adds the MVP features in dependency
 order. Used by /rspec:pipeline to resume in a new session and by /rspec:handoff.
 """
 import json, sys
 from pathlib import Path
-from rspec_lib import (TEMPLATES, load_config, priorities, stories, dependencies, build_order, adr_statuses,
+from rspec_lib import (TEMPLATES, open_layout, priorities, stories, dependencies, build_order, adr_statuses,
                        build_slices, sdlc_status)
 
 NEXT = {"init": "discover", "discovered": "features", "features-approved": "stories",
@@ -25,12 +25,11 @@ def unchanged(path, template):
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    root = Path(args[0] if args else ".")
-    docs = root / "docs"
-    if not (docs / "rspec.json").exists():
+    layout, cfg = open_layout(args[0] if args else ".")
+    if layout is None:
         print(json.dumps({"stage": None, "next": "init", "pending": [], "pipeline": {}}))
         return
-    cfg = load_config(docs)
+    root, docs, contracts = layout.root, layout.spec, layout.contracts
     stage = cfg.get("stage", "init")
     nxt = NEXT.get(stage, "init")
     build_cfg = cfg.get("build") or {}
@@ -53,16 +52,16 @@ def main():
     elif nxt == "stories":
         pending = [i for i in mvp if i not in story_map]
     elif nxt == "tech":
-        if not (docs / "openapi.json").exists() or unchanged(docs / "api.md", "api.md"):
+        if not (contracts / "openapi.json").exists() or unchanged(docs / "api.md", "api.md"):
             pending.append("api")
-        if not list((docs / "schemas").glob("*.json")) or unchanged(docs / "data-model.md", "data-model.md"):
+        if not list((contracts / "schemas").glob("*.json")) or unchanged(docs / "data-model.md", "data-model.md"):
             pending.append("data-model")
         if unchanged(docs / "nfr.md", "nfr.md"):
             pending.append("nfr")
-        if not pending and not list((docs / "decisions").glob("*.md")):
+        if not pending and not adr_statuses(layout.decisions):
             pending = ["adrs"]
     elif nxt == "handoff":
-        if any(s.lower() == "proposed" for s in adr_statuses(docs).values()):
+        if any(s.lower() == "proposed" for s in adr_statuses(layout.decisions).values()):
             pending.append("adr-approval")
         if not build_cfg.get("engine"):
             pending.append("build-engine")
@@ -90,7 +89,8 @@ def main():
         s = fm.get("status", "todo")
         status[s if s in status else "todo"] += 1
 
-    out = {"stage": stage, "next": nxt, "pending": pending, "pipeline": cfg.get("pipeline", {}), "build": status}
+    out = {"stage": stage, "next": nxt, "pending": pending, "pipeline": cfg.get("pipeline", {}), "build": status,
+           "paths": layout.paths}
     if build_cfg.get("engine") == "sdlc" and stage == "handoff":
         out["slices"] = locals().get("slices", [])
     if "--build-order" in sys.argv:

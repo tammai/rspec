@@ -60,5 +60,12 @@ class CheckSpec(unittest.TestCase):
                                          stories={"F-ISS-01-x.md": story("F-ISS-01", criteria=many)}))
         self.assertIn("Slice 1 has 11 acceptance criteria", r.stdout)
 
+    def test_monorepo_spec_is_found_and_passes(self):
+        files = tech_files()
+        files["decisions/0001-store.md"] = "# 0001. Store\n\n- Status: Accepted\n"
+        r = run("check_spec.py", project(stage="tech", layout="monorepo", files=files))
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("adrs=1", r.stdout)
+
 if __name__ == "__main__":
     unittest.main()

@@ -7,9 +7,9 @@ description: >
   product, or says things like "recreate app X", "clone X to learn", "remake
   product X", "write a reverse spec for X", "reverse spec", "rebuild Linear/Notion/Trello".
   It explains the rspec pipeline and routes to the right /rspec command based on
-  the current state in docs/rspec.json.
+  the current state in <spec>/rspec.json.
 metadata:
-  version: "0.3.0"
+  version: "0.5.0"
 ---
 
 # Reverse spec pipeline
@@ -18,25 +18,27 @@ Produce an original specification of an existing product, written in the project
 
 ## Stages
 
-| Stage in `docs/rspec.json` | Done by | Next command |
+| Stage in `<spec>/rspec.json` | Done by | Next command |
 |---|---|---|
-| (no docs/rspec.json) | | `/rspec:init <product>` |
+| (no <spec>/rspec.json) | | `/rspec:init <product>` |
 | `init` | init | `/rspec:discover` |
 | `discovered` | discover | `/rspec:features` |
 | `features-approved` | features, after user approval | `/rspec:stories` |
 | `stories` | stories | `/rspec:tech` |
 | `tech` | tech | `/rspec:handoff` |
-| `handoff` | handoff, after ADR approval | build from `docs/build-plan.md`; re-run `/rspec:check` after spec edits |
+| `handoff` | handoff, after ADR approval | build from `<spec>/build-plan.md`; re-run `/rspec:check` after spec edits |
 
 ## Routing
 
 1. If the user wants the whole spec done in one go, hand over to `/rspec:pipeline`.
-2. Look for `docs/rspec.json` in the current project.
+2. Look for `<spec>/rspec.json` in the current project.
 3. If absent, propose `/rspec:init <product>`; if the user already named the product and goal, start the init workflow directly.
 4. If present, report product, stage and counts (run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`), then propose the next command from the table.
 5. Never skip the approval gates: features before stories, ADRs before handoff.
 
 ## Rules that apply at every stage
+
+- Paths: `<spec>`, `<contracts>`, `<decisions>` and `<changelog>` are the folders in `paths` of `rspec.json`, printed by `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .`. Single repo: `docs/`, `docs/`, `docs/decisions/`, `CHANGELOG.md`. sdlc monorepo: `docs/specs/<name>/`, `packages/api-contract/v1/`, `docs/adr/`, `docs/specs/<name>/CHANGELOG.md`. Pass these paths to every subagent.
 
 - The plugin's scripts are run with `python3`; if that command is not found (common on Windows), use `python` instead.
 
@@ -44,4 +46,4 @@ Produce an original specification of an existing product, written in the project
 - Prefer current sources over prior knowledge; products change.
 - Parallel work happens only in `discover`, `stories` and `tech`, through the plugin's subagents. Launch all subagents of one batch in a **single message** so they run concurrently. Subagents cannot launch further subagents.
 - Each subagent owns exactly one module or area and writes only its own files. The main session merges.
-- Update `stage` and `updated` in `docs/rspec.json` at the end of each command, and add a line to `CHANGELOG.md` under `[Unreleased]`.
+- Update `stage` and `updated` in `<spec>/rspec.json` at the end of each command, and add a line to `<changelog>` under `[Unreleased]`.

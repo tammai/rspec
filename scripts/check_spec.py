@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Validate an rspec docs/ folder.
+"""Validate an rspec spec folder.
 
-Usage: check_spec.py [project-root]
+Usage: check_spec.py [project-root | spec-folder]
 Exit code 1 if any ERROR is found. WARN lines do not fail.
 """
 import json, re, sys
 from pathlib import Path
-from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, load_config, feature_rows,
+from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycle, feature_refs, contract_files, adr_statuses,
                        build_slices, criteria_count)
 
@@ -17,17 +17,17 @@ GHERKIN = re.compile(r"\bgiven\b.*\bwhen\b.*\bthen\b", re.I)
 
 
 def main():
-    root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
-    docs = root / "docs"
+    arg = sys.argv[1] if len(sys.argv) > 1 else "."
     errors, warns = [], []
     E, W = errors.append, warns.append
 
-    if not (docs / "rspec.json").exists():
-        print(f"ERROR {docs / 'rspec.json'} not found. Run /rspec:init first."); sys.exit(1)
     try:
-        cfg = load_config(docs)
+        layout, cfg = open_layout(arg)
     except json.JSONDecodeError as e:
         print(f"ERROR rspec.json is not valid JSON: {e}"); sys.exit(1)
+    if layout is None:
+        print(f"ERROR no rspec.json under {arg}/docs or {arg}/docs/specs/*. Run /rspec:init first."); sys.exit(1)
+    docs, contracts = layout.spec, layout.contracts
 
     stage = cfg.get("stage", "init")
     if stage not in STAGES: E(f"rspec.json: unknown stage '{stage}'")
@@ -47,7 +47,7 @@ def main():
     if si >= 1:
         for c in codes:
             if not any(p.name.lower().startswith(c.lower() + "-") for p in research):
-                W(f"no research file for module {c} in docs/research/")
+                W(f"no research file for module {c} in research/")
     for p in research:
         if EMAIL.search(p.read_text(encoding="utf-8")):
             W(f"research/{p.name}: contains an email address; remove personal data before committing")
@@ -99,18 +99,18 @@ def main():
     if cycle: E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
         for fid in mvp:
-            if fid not in story_map: E(f"MVP {fid} has no story file in docs/features/")
+            if fid not in story_map: E(f"MVP {fid} has no story file in features/")
 
     # contracts (OpenAPI, AsyncAPI, JSON Schema)
     referenced = set()
     if si >= 4:
-        if not (docs / "openapi.json").exists(): E("openapi.json missing; re-run /rspec:tech")
-        if not list((docs / "schemas").glob("*.json")): E("schemas/ has no JSON Schema files; re-run /rspec:tech")
+        if not (contracts / "openapi.json").exists(): E("openapi.json missing; re-run /rspec:tech")
+        if not list((contracts / "schemas").glob("*.json")): E("schemas/ has no JSON Schema files; re-run /rspec:tech")
         for f in ("api.md", "data-model.md", "nfr.md"):
             t = (docs / f).read_text(encoding="utf-8") if (docs / f).exists() else ""
             if len(t.strip().splitlines()) < 8: W(f"{f} looks mostly empty")
-    for f in contract_files(docs):
-        rel = f.relative_to(docs).as_posix()
+    for f in contract_files(contracts):
+        rel = f.relative_to(contracts).as_posix()
         try:
             doc = json.loads(f.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
@@ -127,7 +127,7 @@ def main():
             if fid not in referenced: W(f"MVP {fid} is not served by any operation or schema (x-features)")
 
     # ADRs and handoff
-    adrs = adr_statuses(docs)
+    adrs = adr_statuses(layout.decisions)
     nums = []
     for name in adrs:
         m = re.match(r"(\d{4})-", name)
@@ -150,7 +150,7 @@ def main():
             if status.lower() == "proposed": E(f"decisions/{name} is still Proposed; accept or reject it before building")
 
     print(f"product={cfg.get('product')} stage={stage} modules={len(codes)} features={len(feats)} "
-          f"mvp={len(mvp)} stories={len(story_map)} contracts={len(contract_files(docs))} adrs={len(adrs)}")
+          f"mvp={len(mvp)} stories={len(story_map)} contracts={len(contract_files(contracts))} adrs={len(adrs)}")
     for w in warns: print("WARN ", w)
     for e in errors: print("ERROR", e)
     print("OK" if not errors else f"{len(errors)} error(s)")

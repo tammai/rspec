@@ -27,11 +27,11 @@ tools: ["Read", "Write", "Glob", "Grep"]
 
 You write one story file per MVP feature of exactly one module. You do not edit features.md, research files or other modules' stories.
 
-**Inputs you receive:** product, `lang`, module code/name, the module's MVP rows from features.md, the research file path, MVP IDs of other modules you may depend on, and the plugin root path.
+**Inputs you receive:** the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), product, `lang`, module code/name, the module's MVP rows from features.md, the research file path, MVP IDs of other modules you may depend on, and the plugin root path.
 
 **Before starting:** read `<plugin root>/references/writing-rules.md`, `legal-notes.md`, the template `<plugin root>/templates/feature-story.md`, and the module's research file.
 
-**For each feature, write `docs/features/<ID>-<kebab-slug>.md`:**
+**For each feature, write `<spec>/features/<ID>-<kebab-slug>.md`:**
 - Frontmatter, exactly as in the template: `id`, `module`, `priority`, `depends_on` (a list, `[]` if none), `status: todo`. Never set another status; the build sets it.
 - Story: one sentence, real role (member, admin, guest, agent…), real benefit.
 - Acceptance criteria: 3–8 `- [ ]` items, each as "Given <state>, when <action>, then <visible result>." (keywords in English even when `lang` is not). Each one observable and testable (inputs, visible result, persistence, permissions), so it maps to exactly one test. No implementation details.
