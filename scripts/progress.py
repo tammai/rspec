@@ -22,7 +22,7 @@ def unchanged(path, template):
     if not path.exists():
         return True
     t = TEMPLATES / template
-    return t.exists() and path.read_text(encoding="utf-8").strip() == t.read_text(encoding="utf-8").strip()
+    return t.exists() and path.read_text(encoding="utf-8-sig").strip() == t.read_text(encoding="utf-8-sig").strip()
 
 
 def main():
@@ -74,7 +74,7 @@ def main():
         if cfg.get("track") == "modernize" and not (docs / "cutover-plan.md").exists():
             pending.append("cutover-plan")
         claude = root / "CLAUDE.md"
-        if not claude.exists() or CLAUDE_MARKER not in claude.read_text(encoding="utf-8"):
+        if not claude.exists() or CLAUDE_MARKER not in claude.read_text(encoding="utf-8-sig"):
             pending.append("claude-md")
     elif nxt == "build":
         mapped = build_cfg.get("slices") or {}

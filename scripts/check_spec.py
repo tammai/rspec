@@ -12,7 +12,7 @@ from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATE
                        slice_criteria, SDLC_MAX_CRITERIA)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
-PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8"))) if STORY_TPL.exists() else set()
+PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8-sig"))) if STORY_TPL.exists() else set()
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 GHERKIN = re.compile(r"\bgiven\b.*\bwhen\b.*\bthen\b", re.I)
 
@@ -60,7 +60,7 @@ def main():
             if not any(p.name.lower().startswith(c.lower() + "-") for p in research):
                 W(f"no research file for module {c} in research/")
     for p in research:
-        if EMAIL.search(p.read_text(encoding="utf-8")):
+        if EMAIL.search(p.read_text(encoding="utf-8-sig")):
             W(f"research/{p.name}: contains an email address; remove personal data before committing")
 
     # features.md
@@ -118,12 +118,12 @@ def main():
         if not (contracts / "openapi.json").exists(): E("openapi.json missing; re-run /rspec:tech")
         if not list((contracts / "schemas").glob("*.json")): E("schemas/ has no JSON Schema files; re-run /rspec:tech")
         for f in ("api.md", "data-model.md", "nfr.md"):
-            t = (docs / f).read_text(encoding="utf-8") if (docs / f).exists() else ""
+            t = (docs / f).read_text(encoding="utf-8-sig") if (docs / f).exists() else ""
             if len(t.strip().splitlines()) < 8: W(f"{f} looks mostly empty")
     for f in contract_files(contracts):
         rel = f.relative_to(contracts).as_posix()
         try:
-            doc = json.loads(f.read_text(encoding="utf-8"))
+            doc = json.loads(f.read_text(encoding="utf-8-sig"))
         except json.JSONDecodeError as e:
             E(f"{rel}: not valid JSON: {e}"); continue
         if f.name == "openapi.json" and not str(doc.get("openapi", "")).startswith("3.1"):
@@ -138,13 +138,13 @@ def main():
         if not dm.exists():
             E("data-migration.md missing; a modernize spec needs one, re-run /rspec:tech")
         else:
-            mapping = md_table(dm.read_text(encoding="utf-8"), "M-")
+            mapping = md_table(dm.read_text(encoding="utf-8-sig"), "M-")
             if not mapping: E("data-migration.md: no mapping rows (M-01, ...)")
             for row in mapping:
                 if not row.get("Validation"):
                     E(f"data-migration.md: {row.get('ID')} has no Validation (how you prove the data moved intact)")
     if si >= 4 and production:
-        nfr = (docs / "nfr.md").read_text(encoding="utf-8") if (docs / "nfr.md").exists() else ""
+        nfr = (docs / "nfr.md").read_text(encoding="utf-8-sig") if (docs / "nfr.md").exists() else ""
         rows = md_table(nfr, "NFR-")
         if not rows: E("nfr.md: production needs NFR rows (NFR-01, ...)")
         for row in rows:
@@ -154,7 +154,7 @@ def main():
         if not tm.exists():
             E("threat-model.md missing; production needs one, re-run /rspec:tech (nfr area)")
         else:
-            threats = md_table(tm.read_text(encoding="utf-8"), "T-")
+            threats = md_table(tm.read_text(encoding="utf-8-sig"), "T-")
             if not threats: E("threat-model.md: no threats listed (T-01, ...)")
             for row in threats:
                 if not row.get("Mitigation"):
@@ -174,7 +174,7 @@ def main():
         W(f"ADR numbers not contiguous from 0001: {sorted(nums)}")
     if si >= 5:
         plan = docs / "build-plan.md"
-        text = plan.read_text(encoding="utf-8") if plan.exists() else ""
+        text = plan.read_text(encoding="utf-8-sig") if plan.exists() else ""
         if not text: E("build-plan.md missing; run /rspec:handoff")
         for fid in mvp:
             if text and fid not in text: E(f"build-plan.md does not include MVP {fid}")
@@ -187,7 +187,7 @@ def main():
             cp = docs / "cutover-plan.md"
             if not cp.exists():
                 E("cutover-plan.md missing; run /rspec:handoff")
-            elif not re.search(r"^##\s*Rollback", cp.read_text(encoding="utf-8"), re.M | re.I):
+            elif not re.search(r"^##\s*Rollback", cp.read_text(encoding="utf-8-sig"), re.M | re.I):
                 E("cutover-plan.md has no '## Rollback' section")
         if production:
             ready = docs / "production-readiness.md"
