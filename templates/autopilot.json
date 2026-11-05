@@ -1,0 +1,26 @@
+{
+  "product": "",
+  "track": "rspec",
+  "goal": "learn",
+  "focus": [],
+  "working_name": "",
+  "lang": "en",
+  "stack": "",
+  "layout": "auto",
+  "modernize": {
+    "repos": [],
+    "current_stack": "",
+    "drivers": [],
+    "strategy": "rewrite"
+  },
+  "rules": {
+    "read_oss_code": true,
+    "features": "approve-as-proposed",
+    "mvp_max": 25,
+    "retire_used_features": false,
+    "adrs": "accept-recommended",
+    "build_engine": "sdlc",
+    "accept_risks": false
+  },
+  "stop_after": null
+}

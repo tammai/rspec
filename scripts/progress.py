@@ -9,7 +9,7 @@ order. Used by /rspec:pipeline to resume in a new session and by /rspec:handoff.
 import json, sys
 from pathlib import Path
 from rspec_lib import (TEMPLATES, open_layout, priorities, stories, dependencies, build_order, adr_statuses,
-                       build_slices, sdlc_status, readiness_open)
+                       build_slices, sdlc_status, readiness_open, parked_decisions)
 
 NEXT = {"init": "discover", "discovered": "features", "features-approved": "stories",
         "stories": "tech", "tech": "handoff", "handoff": "check"}
@@ -98,7 +98,8 @@ def main():
         status[s if s in status else "todo"] += 1
 
     out = {"stage": stage, "next": nxt, "pending": pending, "pipeline": cfg.get("pipeline", {}), "build": status,
-           "paths": layout.paths}
+           "paths": layout.paths, "autopilot": bool((cfg.get("autopilot") or {}).get("enabled")),
+           "parked": len(parked_decisions(docs))}
     if build_cfg.get("engine") == "sdlc" and stage == "handoff":
         out["slices"] = locals().get("slices", [])
     if "--build-order" in sys.argv:

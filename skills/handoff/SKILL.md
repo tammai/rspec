@@ -6,7 +6,7 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.7.0"
+  version: "0.8.0"
 ---
 
 # /rspec:handoff
@@ -16,10 +16,10 @@ Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . 
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.
 - Ask the user to accept, change or reject each (one AskUserQuestion round, up to 4 per round). Update each ADR's `Status` to `Accepted` or `Rejected`, and its Decision section if they changed it.
-- Do not continue while any ADR is `Proposed`. Never accept one on the user's behalf.
+- Do not continue while any ADR is `Proposed`. Never accept one on the user's behalf. If `autopilot.enabled` is true in `rspec.json`, do not ask: apply the user's rule in `autopilot.rules` (see the Autopilot section of the pipeline skill), record the decision in `<spec>/autopilot-log.md`, and park anything the rule does not cover. With rule `park`, stop here.
 
 ## 2. Build engine
-Ask once (AskUserQuestion) how the rebuild will be built, and record it in `<spec>/rspec.json` as `"build": {"engine": "<sdlc|claude-code|none>", "slices": {}}`:
+Ask once (AskUserQuestion; under autopilot use `autopilot.rules.build_engine`) how the rebuild will be built, and record it in `<spec>/rspec.json` as `"build": {"engine": "<sdlc|claude-code|none>", "slices": {}}`:
 - **sdlc** (offer first, as recommended, when the `sdlc:start` command or `sdlc:orchestrator` skill is available in this session): sdlc defines, builds, reviews and ships each slice; `/rspec:pipeline` drives it slice by slice.
 - **claude-code**: build directly from the plan, tracking `status` in the story files.
 - **none**: stop after the plan.

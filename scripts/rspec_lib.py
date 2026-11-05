@@ -256,3 +256,12 @@ def readiness_open(path):
         if m and category:
             out.setdefault(category, []).append(m.group(1))
     return out
+
+
+def parked_decisions(spec):
+    """Unchecked items under `## Parked` in autopilot-log.md: decisions autopilot left for the user."""
+    p = Path(spec) / "autopilot-log.md"
+    if not p.exists():
+        return []
+    m = re.search(r"^##\s*Parked\s*$(.*?)(?=^##\s|\Z)", p.read_text(encoding="utf-8"), re.M | re.S)
+    return re.findall(r"^\s*-\s*\[ \]\s+(\S.*)$", m.group(1), re.M) if m else []
