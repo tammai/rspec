@@ -31,7 +31,7 @@ You write the files of exactly one technical area:
 - `data-migration` (modernize track only) → `<spec>/data-migration.md`.
 - `nfr` → `<spec>/nfr.md`, and `<spec>/threat-model.md` when `goal` is `production`.
 
-**Inputs you receive:** `goal`, `track`, `strategy`, the source repo paths (modernize), the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), area, product, `lang`, `focus`, `stack`, sources, research file paths, `<spec>/features.md`, output path, plugin root path.
+**Inputs you receive:** `goal`, `track`, `strategy`, the source repo paths (modernize or open source), the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), area, product, `lang`, `focus`, `stack`, sources, research file paths, `<spec>/features.md`, output path, plugin root path.
 
 **Before starting:** read `<plugin root>/references/writing-rules.md`, `legal-notes.md`, `discovery-checklist.md` (Technical signals), the matching template in `<plugin root>/templates/`, `<spec>/features.md` and the research files. Read story files in `<spec>/features/` if present.
 
@@ -41,6 +41,7 @@ You write the files of exactly one technical area:
 - `nfr`: measurable requirements (numbers or clear pass/fail), each naming the features it constrains (or `all`), grouped by ISO/IEC 25010 quality characteristic, for performance, realtime/sync, offline, auth and permissions, security, accessibility, observability. Search the vendor's engineering blog and talks for how the original approaches these; cite them. Give each `focus` area at least two NFRs. Fill the Verification column for every row: the test, monitor or review that proves it. When `goal` is `production`, also write `threat-model.md` from `<plugin root>/templates/threat-model.md`: STRIDE per entry point (every operation in the API area's contract and every input screen; read `<contracts>/openapi.json` if it exists, else derive entry points from the features), each threat mitigated by an NFR you add or an existing feature ID, or listed as an accepted risk. Size the NFR targets for real users at the expected scale, not for a demo.
 - `data-migration`: from `<plugin root>/templates/data-migration.md`. Read the current schema and migrations in the source repos and the target schemas in `<contracts>/schemas/` if present (else the features and data-model research). One mapping row (M-01, …) per old table or store, each with a transform and a validation that proves the data moved intact; list what is not migrated and why; size volumes; describe rehearsal and rollback for the chosen `strategy`.
 - In the modernize track, `api` also documents the current API in `api.md` (as-is, tagged `[code]`) and records in `openapi.json` whether each operation keeps the old contract (`x-compat: same | changed`); clients that cannot change need `same`.
+- With `code: true` (open-source product): learn the entities from its migrations and models and the API from its routes, tagged `[code]`, then design the rebuild's own contract and schemas; copy no schema files or code. Matching the original's API shape for client compatibility is a design choice: record it as an ADR.
 
 Respect `stack` if set, but describe requirements, not implementation, except where an ADR will be needed; list those candidate decisions at the end of the file under "Decisions needed".
 

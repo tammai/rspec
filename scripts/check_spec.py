@@ -38,6 +38,10 @@ def main():
     track = cfg.get("track", "rspec")
     if track not in ("rspec", "modernize"): E(f"rspec.json: track '{track}' must be 'rspec' or 'modernize'")
     modernize = track == "modernize"
+    if not modernize and cfg.get("code"):
+        src = cfg.get("sources") or {}
+        if not src.get("repo"): E("rspec.json: code is true but sources.repo is empty")
+        if not src.get("commit"): E("rspec.json: reading the product's code: pin the commit in sources.commit")
     if modernize and cfg.get("strategy") not in ("rewrite", "strangler", "refactor"):
         E("rspec.json: a modernize spec needs strategy 'rewrite', 'strangler' or 'refactor'")
 

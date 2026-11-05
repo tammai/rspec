@@ -2,7 +2,7 @@
 
 A Claude Code plugin that turns an existing product into a spec you can build from. Two tracks:
 
-- **rspec**: reverse-spec someone else's product, to learn from it, use it yourself or run it as a service.
+- **rspec**: reverse-spec someone else's product, to learn from it, use it yourself or run it as a service. If it is open source, it also learns from the code; it never copies it.
 - **modernize**: move your own product to a new stack, with parity, data migration and a cutover plan.
 
 rspec writes the spec, not the code. When the spec is done it can hand the build to the [sdlc](https://github.com/tammai/sdlc) plugin, slice by slice. It researches the product, picks an MVP with you, and writes feature stories and technical docs into your repo, in your own words.
@@ -96,6 +96,12 @@ Content rules: write in your own words, cite a source for every claim, never cop
 
 - **With the [sdlc](https://github.com/tammai/sdlc) plugin** (recommended when installed): `/rspec:pipeline continue` hands each slice of `docs/build-plan.md` to `/sdlc:start`, which defines, builds, reviews and ships it. Its acceptance criteria cite the rspec stories, and the pipeline marks stories done as slices ship, across sessions. If the repo isn't set up for sdlc yet, handoff runs `/sdlc:setup` first.
 - **With Claude Code directly**: ask it to "build slice 1 from docs/build-plan.md". The `CLAUDE.md` section tells it to write one test per acceptance criterion, follow the contracts and accepted ADRs, and update each story's `status`.
+
+## Open-source products
+
+When the product has a public repo, `/rspec:init` offers to read its code as well (cloned outside your project, pinned to a commit). Discovery then learns from routes, models and migrations, like the modernize track, and every fact cites `repo@commit path:line`.
+
+The code is a source to learn from, never to copy, whatever its licence: the spec describes behaviour in its own words and the rebuild writes its own code. `/rspec:check` requires the repo and the pinned commit to be recorded.
 
 ## Modernize track
 

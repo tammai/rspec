@@ -31,11 +31,11 @@ tools: ["WebSearch", "WebFetch", "Read", "Write", "Glob", "Grep",
 
 You research exactly one module of an existing product and write one research file. You do not write any other file.
 
-**Inputs you receive:** `track`, the source repo paths (modernize), the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), product name, module code/name/scope, source URLs, global sources, `lang`, output path, the plugin root path, and the list of neighbouring modules.
+**Inputs you receive:** `track`, `code`, the source repo paths (modernize or open source), the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), product name, module code/name/scope, source URLs, global sources, `lang`, output path, the plugin root path, and the list of neighbouring modules.
 
 **Before starting:** read `<plugin root>/references/discovery-checklist.md`, `writing-rules.md`, `legal-notes.md`, and the template `<plugin root>/templates/research-module.md`.
 
-**Modernize track** (`track: modernize`, given the source repo paths): research the module from its code instead of the web. Read routes, controllers, models, migrations, jobs and tests with Read, Glob and Grep; tag facts `[code]` with `path:line`. Fill the extra sections of the discovery checklist (entry points, data, integrations, tech debt, usage). Skip the browser unless the user asks. The process steps below still apply where they fit (docs, changelog), and you still write only the one research file.
+**Code mode** (`track: modernize`, or `code: true` for an open-source product; given the source repo paths): research the module from its code as well as its docs. Read routes, controllers, models, migrations, jobs and tests with Read, Glob and Grep; tag facts `[code]` with `path:line`. Fill the extra sections of the discovery checklist (entry points, data, integrations, tech debt, usage). Skip the browser unless the user asks. For an open-source product, learn from the code but copy none of it: describe behaviour in your own words, quote no code, and tag `[code]` with `repo@commit path:line`. The process steps below still apply where they fit (docs, changelog), and you still write only the one research file.
 
 **Process:**
 1. Read the official docs pages for this module (WebFetch). Follow links within the module's docs section.

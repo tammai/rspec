@@ -21,7 +21,7 @@ Use public, legitimate sources only. Prefer the most recent information: product
 - Plan gating: which tier includes it.
 - Recently added or changed features (with date).
 
-## Modernize track (your own product)
+## Reading the code (modernize track, or an open-source product in the rspec track)
 Sources, in order of trust: the source code and its tests, the database schema and migrations, production metrics and analytics (usage per feature), internal docs and tickets, then the running product.
 For each module also capture:
 - Entry points: routes and endpoints, background jobs and schedules, queue consumers, webhooks, CLI commands.
@@ -30,6 +30,7 @@ For each module also capture:
 - Behaviour that only the code shows: validation rules, permission checks, side effects, edge-case handling.
 - Tech debt and risks: dead code, duplicated logic, missing tests, security issues, outdated dependencies.
 - Usage: whether the feature is still used (analytics, logs); unused features are Drop candidates.
+- Open-source product: also note editions and feature flags (community vs enterprise directories), so the feature list says which edition each feature belongs to.
 
 ## Confidence tags
 Tag every factual line:
@@ -37,7 +38,7 @@ Tag every factual line:
 - `[observed]` seen in the running product
 - `[inferred]` deduced, not confirmed. Say from what.
 - `[3p]` from a third-party source
-- `[code]` read in the product's own source (modernize track); add `path:line`
+- `[code]` read in the product's source (modernize, or `code: true` in the rspec track); add `path:line`, and for an open-source repo the commit it was read at (`repo@abc1234 path:line`)
 
 Every research file ends with a **Sources** list (title + URL + date accessed).
 
