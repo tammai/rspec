@@ -31,7 +31,7 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 | `/rspec:features` | Feature list with MVP / Later / Drop, **waits for your approval** |
 | `/rspec:stories` | A story and acceptance criteria for each MVP feature |
 | `/rspec:tech` | OpenAPI and JSON Schema contracts, non-functional requirements, proposed ADRs |
-| `/rspec:handoff` | **Asks you to accept the ADRs**, writes the build plan and a `CLAUDE.md` section |
+| `/rspec:handoff` | **Asks you to accept the ADRs** and how to build (sdlc or Claude Code), writes the build plan and a `CLAUDE.md` section |
 | `/rspec:check` | Validates the spec |
 
 ## What you get
@@ -71,7 +71,10 @@ The spec is a reverse-engineered software requirements specification. It uses th
 
 ## Building from the spec
 
-After `/rspec:handoff`, open Claude Code in the rebuild repo and ask it to "build slice 1 from docs/build-plan.md". The `CLAUDE.md` section tells it to write one test per acceptance criterion, follow the contracts and accepted ADRs, and update each story's `status`, so the build can also span sessions.
+`/rspec:handoff` asks how you want to build:
+
+- **With the [sdlc](https://github.com/tammai/sdlc) plugin** (recommended when installed): `/rspec:pipeline continue` hands each slice of `docs/build-plan.md` to `/sdlc:start`, which defines, builds, reviews and ships it. Its acceptance criteria cite the rspec stories, and the pipeline marks stories done as slices ship, across sessions. If the repo isn't set up for sdlc yet, handoff runs `/sdlc:setup` first.
+- **With Claude Code directly**: ask it to "build slice 1 from docs/build-plan.md". The `CLAUDE.md` section tells it to write one test per acceptance criterion, follow the contracts and accepted ADRs, and update each story's `status`.
 
 Content rules: write in your own words, cite a source for every claim, never copy the original's code, text or images, give the rebuild its own name and logo, and keep other people's personal data out. See [legal notes](references/legal-notes.md) (not legal advice).
 

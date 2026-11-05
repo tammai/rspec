@@ -52,5 +52,13 @@ class CheckSpec(unittest.TestCase):
         self.assertIn("build-plan.md does not include MVP F-ISS-01", r.stdout)
         self.assertIn("still Proposed", r.stdout)
 
+    def test_sdlc_slice_over_ten_criteria_warns(self):
+        many = "\n".join(f"- [ ] Given state {i}, when I act, then I see {i}." for i in range(11))
+        files = tech_files()
+        files["build-plan.md"] = "# Build plan\n\n## Slice 1: Issues\n| 1 | F-ISS-01 |\n"
+        r = run("check_spec.py", project(stage="handoff", files=files, config={"build": {"engine": "sdlc"}},
+                                         stories={"F-ISS-01-x.md": story("F-ISS-01", criteria=many)}))
+        self.assertIn("Slice 1 has 11 acceptance criteria", r.stdout)
+
 if __name__ == "__main__":
     unittest.main()

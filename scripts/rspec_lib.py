@@ -134,3 +134,36 @@ def adr_statuses(docs):
         m = re.search(r"^-?\s*Status:\s*(\w+)", p.read_text(encoding="utf-8"), re.M | re.I)
         out[p.name] = m.group(1) if m else ""
     return out
+
+
+SLICE_RE = re.compile(r"^##\s*Slice\s+(\d+)\s*:?\s*(.*)$", re.M)
+CRITERION_RE = re.compile(r"^\s*-\s*\[[ xX]\]\s+\S", re.M)
+
+
+def build_slices(docs):
+    """[(number as str, name, [feature IDs])] from the `## Slice N: name` sections of build-plan.md."""
+    plan = docs / "build-plan.md"
+    if not plan.exists():
+        return []
+    text = plan.read_text(encoding="utf-8")
+    heads = list(SLICE_RE.finditer(text))
+    out = []
+    for i, h in enumerate(heads):
+        body = text[h.end(): heads[i + 1].start() if i + 1 < len(heads) else len(text)]
+        ids = list(dict.fromkeys(re.findall(r"\bF-[A-Z]{2,4}-\d{2,3}\b", body)))
+        out.append((h.group(1), h.group(2).strip(), ids))
+    return out
+
+
+def criteria_count(text):
+    m = re.search(r"^##\s*(Acceptance criteria|Tiêu chí[^\n]*)\s*$(.*?)(?=^##\s|\Z)", text, re.M | re.S | re.I)
+    return len(CRITERION_RE.findall(m.group(2))) if m else 0
+
+
+def sdlc_status(root, feature):
+    """The `Status:` of an sdlc feature's state file (.sdlc/state/<feature>.md), or '' if absent."""
+    p = Path(root) / ".sdlc" / "state" / f"{feature}.md"
+    if not p.exists():
+        return ""
+    m = re.search(r"^\**Status:?\**\s*:?\s*([\w-]+)", p.read_text(encoding="utf-8"), re.M)
+    return m.group(1).lower() if m else ""

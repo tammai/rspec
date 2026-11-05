@@ -5,11 +5,11 @@ description: >
   whole reverse spec end to end, or to pause, stop, resume, continue or check the
   status of it, including in a new session ("do the full spec for Linear", "run all
   rspec steps", "continue the spec", "pause the pipeline", "where is the spec at").
-  Drives init → discover → features → stories → tech → handoff → check from where it left off,
+  Drives init → discover → features → stories → tech → handoff → check, then hands the build to sdlc slice by slice, from where it left off,
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # /rspec:pipeline
@@ -25,13 +25,13 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | `pause` | Pause: save the checkpoint, keep the run's settings, end the turn |
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
-| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`) |
+| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`, `build`) |
 
 Plain words count too: "pause", "stop here", "carry on", "resume" in the user's language mean the same as the arguments.
 
 ## Where things stand
 
-The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `adr-approval`, `build-plan`, `claude-md`, `check`) and the saved `pipeline` checkpoint.
+The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `adr-approval`, `build-plan`, `claude-md`, slice numbers for `build`, `check`) and, while building with sdlc, `slices` (each slice's features, its sdlc feature and that feature's sdlc status) and the saved `pipeline` checkpoint.
 
 The checkpoint lives in `docs/rspec.json`:
 
@@ -69,6 +69,16 @@ Write it whenever status changes and after each batch of subagents returns, so a
 
 `rspec:handoff` starts by asking the user to accept, change or reject each proposed ADR. Set `status` to `awaiting-approval` while waiting and end the turn; the same rules as the features gate apply. Resume when every ADR is Accepted or Rejected.
 
+## Build with sdlc
+
+When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`), take the first pending slice:
+1. **Not started** (no `sdlc_feature`): run `sdlc:start` with the Skill tool and this request: "Build slice <N> (<name>) of docs/build-plan.md: features <IDs>, stories in docs/features/. Follow the rspec section of CLAUDE.md: one backlog part per feature, each AC citing `docs/features/<file>.md §<ID>`." Once sdlc has created its feature, record its name in `docs/rspec.json` → `build.slices.<N>` (the newest `.sdlc/state/*.md` with `Status: active`).
+2. **Started, not done**: run `sdlc:start` with no new request so sdlc resumes its active feature.
+3. sdlc runs its own phases, approvals and stops. When it stops for the user, end the turn with `status` `running`; `/rspec:pipeline continue` brings it back here.
+4. **Done** (sdlc status `done`): set `status: done` in the frontmatter of each story in that slice, add a CHANGELOG line, and go to the next pending slice.
+
+When every slice is done, `next` becomes `check`; finish as below. With engine `claude-code` or `none`, the pipeline finishes after the handoff check and the user builds from the plan.
+
 ## Pause and stop
 
 Running subagents cannot be cancelled; let the current batch finish, save its results, then:
@@ -79,9 +89,9 @@ If the user interrupts mid-turn and says nothing else, treat it as pause.
 
 ## Finish
 
-After `rspec:check` at stage `handoff`, set `status` to `done` and reply with:
+After `rspec:check` at stage `handoff` (and, with sdlc, after the last slice), set `status` to `done` and reply with:
 - counts: modules, features (MVP / Later / Drop), stories, operations and schemas, ADRs;
-- the build slices from `docs/build-plan.md`, and how to start building slice 1;
+- the build slices from `docs/build-plan.md` and, with sdlc, which shipped; otherwise how to start building slice 1;
 - check result (zero errors; list warnings);
 - open questions still marked `unknown`.
 

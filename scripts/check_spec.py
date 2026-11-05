@@ -7,7 +7,8 @@ Exit code 1 if any ERROR is found. WARN lines do not fail.
 import json, re, sys
 from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, load_config, feature_rows,
-                       stories, dependencies, find_cycle, feature_refs, contract_files, adr_statuses)
+                       stories, dependencies, find_cycle, feature_refs, contract_files, adr_statuses,
+                       build_slices, criteria_count)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8"))) if STORY_TPL.exists() else set()
@@ -140,6 +141,11 @@ def main():
         if not text: E("build-plan.md missing; run /rspec:handoff")
         for fid in mvp:
             if text and fid not in text: E(f"build-plan.md does not include MVP {fid}")
+        if (cfg.get("build") or {}).get("engine") == "sdlc":
+            for num, name, ids in build_slices(docs):
+                total = sum(criteria_count(story_map[i][1]) for i in ids if i in story_map)
+                if total > 10:
+                    W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
         for name, status in adrs.items():
             if status.lower() == "proposed": E(f"decisions/{name} is still Proposed; accept or reject it before building")
 

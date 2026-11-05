@@ -32,14 +32,15 @@ As a member, I want to do it so that work is tracked.
 """
 
 def project(stage="stories", modules=("ISS",), features=(("F-ISS-01", "MVP"),), stories=None,
-            research=None, files=None):
+            research=None, files=None, config=None, root_files=None):
     """features: (id, priority); stories: {filename: text}; files: {relpath under docs: text}."""
     root = Path(tempfile.mkdtemp())
     docs = root / "docs"
     for d in ("research", "features", "decisions", "schemas"):
         (docs / d).mkdir(parents=True)
-    (docs / "rspec.json").write_text(json.dumps({"product": "X", "goal": "learn", "stage": stage,
-        "modules": [{"code": c, "name": c} for c in modules]}), encoding="utf-8")
+    cfg = {"product": "X", "goal": "learn", "stage": stage, "modules": [{"code": c, "name": c} for c in modules]}
+    cfg.update(config or {})
+    (docs / "rspec.json").write_text(json.dumps(cfg), encoding="utf-8")
     for name, text in (research if research is not None else {"iss-issues.md": "# ISS"}).items():
         (docs / "research" / name).write_text(text, encoding="utf-8")
     rows = "".join(f"| {i} | {i.split('-')[1]} | Feature | Does it | {p} | {'r' if p == 'Drop' else ''} |\n" for i, p in features)
@@ -50,6 +51,10 @@ def project(stage="stories", modules=("ISS",), features=(("F-ISS-01", "MVP"),), 
         (docs / "features" / name).write_text(text, encoding="utf-8")
     for rel, text in (files or {}).items():
         p = docs / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+    for rel, text in (root_files or {}).items():
+        p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(text, encoding="utf-8")
     return root

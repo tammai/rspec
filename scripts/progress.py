@@ -8,7 +8,8 @@ order. Used by /rspec:pipeline to resume in a new session and by /rspec:handoff.
 """
 import json, sys
 from pathlib import Path
-from rspec_lib import TEMPLATES, load_config, priorities, stories, dependencies, build_order, adr_statuses
+from rspec_lib import (TEMPLATES, load_config, priorities, stories, dependencies, build_order, adr_statuses,
+                       build_slices, sdlc_status)
 
 NEXT = {"init": "discover", "discovered": "features", "features-approved": "stories",
         "stories": "tech", "tech": "handoff", "handoff": "check"}
@@ -32,6 +33,9 @@ def main():
     cfg = load_config(docs)
     stage = cfg.get("stage", "init")
     nxt = NEXT.get(stage, "init")
+    build_cfg = cfg.get("build") or {}
+    if stage == "handoff" and build_cfg.get("engine") == "sdlc":
+        nxt = "build"
     prio = priorities(docs)
     mvp = [i for i, p in prio.items() if p == "MVP"]
     story_map = stories(docs)
@@ -60,11 +64,23 @@ def main():
     elif nxt == "handoff":
         if any(s.lower() == "proposed" for s in adr_statuses(docs).values()):
             pending.append("adr-approval")
+        if not build_cfg.get("engine"):
+            pending.append("build-engine")
         if not (docs / "build-plan.md").exists():
             pending.append("build-plan")
         claude = root / "CLAUDE.md"
         if not claude.exists() or CLAUDE_MARKER not in claude.read_text(encoding="utf-8"):
             pending.append("claude-md")
+    elif nxt == "build":
+        mapped = build_cfg.get("slices") or {}
+        slices = []
+        for num, name, ids in build_slices(docs):
+            feature = mapped.get(num, "")
+            state = sdlc_status(root, feature) if feature else ""
+            slices.append({"slice": num, "name": name, "features": ids, "sdlc_feature": feature, "sdlc_status": state})
+        pending = [s["slice"] for s in slices if s["sdlc_status"] != "done"]
+        if not pending:
+            nxt, pending = "check", ["check"]
     elif nxt == "check":
         pending = ["check"]
 
@@ -75,6 +91,8 @@ def main():
         status[s if s in status else "todo"] += 1
 
     out = {"stage": stage, "next": nxt, "pending": pending, "pipeline": cfg.get("pipeline", {}), "build": status}
+    if build_cfg.get("engine") == "sdlc" and stage == "handoff":
+        out["slices"] = locals().get("slices", [])
     if "--build-order" in sys.argv:
         out["order"] = build_order(mvp, dependencies(story_map))
     print(json.dumps(out, indent=2))
