@@ -27,7 +27,7 @@ def is_monorepo(root):
     cfg = root / ".sdlc" / "config.json"
     if cfg.exists():
         try:
-            if json.loads(cfg.read_text(encoding="utf-8")).get("packages"):
+            if json.loads(cfg.read_text(encoding="utf-8-sig")).get("packages"):
                 return True
         except json.JSONDecodeError:
             pass
@@ -74,7 +74,7 @@ def main():
     if cfg_path.exists():
         kept.append(cfg_path.relative_to(root).as_posix())
     else:
-        cfg = json.loads((TEMPLATES / "rspec.json").read_text(encoding="utf-8"))
+        cfg = json.loads((TEMPLATES / "rspec.json").read_text(encoding="utf-8-sig"))
         cfg["paths"] = paths
         cfg["working_name"] = option("--name", "")
         cfg["track"] = option("--track", "rspec")

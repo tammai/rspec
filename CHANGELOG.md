@@ -4,6 +4,14 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-11-06
+Fixes for four bugs found by bug-hunter, each reproduced by a separate verifier.
+### Fixed
+- `check_spec.py` and `progress.py` run from inside the spec folder (`.` or no argument) now find the contracts and ADRs; before, they looked in `docs/docs/` and could pass an invalid contract as OK.
+- `depends_on: F-X-01` written as a single value counts as a one-item list, instead of being split into characters.
+- Files saved with a UTF-8 BOM (Windows PowerShell 5, some editors) are read correctly; before, a story lost its frontmatter and rspec.json failed to parse.
+- An escaped pipe (`\|`) in a Markdown table cell no longer shifts the columns of features.md, nfr.md, threat-model.md or data-migration.md.
+
 ## [0.8.2] - 2026-11-06
 Fixes for building with sdlc, found by the Linear end-to-end run.
 ### Fixed

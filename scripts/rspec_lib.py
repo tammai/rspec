@@ -11,7 +11,7 @@ TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 
 
 def load_config(docs):
-    return json.loads((docs / "rspec.json").read_text(encoding="utf-8"))
+    return json.loads((docs / "rspec.json").read_text(encoding="utf-8-sig"))
 
 
 SINGLE_PATHS = {"spec": "docs", "contracts": "docs", "decisions": "docs/decisions", "changelog": "CHANGELOG.md"}
@@ -54,7 +54,7 @@ class Layout:
 def open_layout(arg):
     """Resolve a command-line path (project root or spec folder) to (Layout, cfg). Exits with a message on failure."""
     import sys
-    p = Path(arg)
+    p = Path(arg).resolve()  # so "." inside the spec folder still has a real parent
     try:
         spec = p if (p / "rspec.json").exists() else find_spec(p)
     except ValueError as e:
@@ -66,15 +66,20 @@ def open_layout(arg):
     return Layout(root, spec, cfg), cfg
 
 
+def table_cells(line):
+    """Cells of a Markdown table row; an escaped `\\|` stays inside its cell."""
+    return [c.strip() for c in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+
+
 def feature_rows(docs):
     """Yield (line number, cells) for every feature row in features.md."""
     f = docs / "features.md"
     if not f.exists():
         return
-    for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+    for n, line in enumerate(f.read_text(encoding="utf-8-sig").splitlines(), 1):
         if not line.startswith("|"):
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        cells = table_cells(line)
         if cells and cells[0].startswith("F-"):
             yield n, cells
 
@@ -98,6 +103,8 @@ def frontmatter(text):
             out[key] = [v.strip().strip("'\"") for v in value[1:-1].split(",") if v.strip()]
         else:
             out[key] = value.strip("'\"")
+    if isinstance(out.get("depends_on"), str):  # `depends_on: F-X-01` is a one-item list
+        out["depends_on"] = [out["depends_on"]] if out["depends_on"] else []
     return out
 
 
@@ -107,7 +114,7 @@ def stories(docs):
     for p in sorted((docs / "features").glob("F-*.md")):
         m = FILE_ID_RE.match(p.name)
         if m:
-            text = p.read_text(encoding="utf-8")
+            text = p.read_text(encoding="utf-8-sig")
             out[m.group(1)] = (p, text, frontmatter(text))
     return out
 
@@ -183,7 +190,7 @@ def adr_statuses(decisions):
     for p in sorted(Path(decisions).glob("*.md")):
         if p.name.lower() == "readme.md":
             continue
-        m = re.search(r"^-?\s*Status:\s*(\w+)", p.read_text(encoding="utf-8"), re.M | re.I)
+        m = re.search(r"^-?\s*Status:\s*(\w+)", p.read_text(encoding="utf-8-sig"), re.M | re.I)
         out[p.name] = m.group(1) if m else ""
     return out
 
@@ -197,7 +204,7 @@ def build_slices(docs):
     plan = docs / "build-plan.md"
     if not plan.exists():
         return []
-    text = plan.read_text(encoding="utf-8")
+    text = plan.read_text(encoding="utf-8-sig")
     heads = list(SLICE_RE.finditer(text))
     out = []
     for i, h in enumerate(heads):
@@ -225,7 +232,7 @@ def sdlc_status(root, feature):
     p = Path(root) / ".sdlc" / "state" / f"{feature}.md"
     if not p.exists():
         return ""
-    m = re.search(r"^\**Status:?\**\s*:?\s*([\w-]+)", p.read_text(encoding="utf-8"), re.M)
+    m = re.search(r"^\**Status:?\**\s*:?\s*([\w-]+)", p.read_text(encoding="utf-8-sig"), re.M)
     return m.group(1).lower() if m else ""
 
 
@@ -239,7 +246,7 @@ def md_table(text, first_col_prefix):
         if not line.lstrip().startswith("|"):
             header = None if not rows else header
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        cells = table_cells(line)
         if header is None:
             header = cells
         elif cells and cells[0].startswith(first_col_prefix):
@@ -253,7 +260,7 @@ def readiness_open(path):
     if not Path(path).exists():
         return out
     category = None
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for line in Path(path).read_text(encoding="utf-8-sig").splitlines():
         h = re.match(r"^##\s+(.+?)\s*$", line)
         if h:
             category = h.group(1)
@@ -269,5 +276,5 @@ def parked_decisions(spec):
     p = Path(spec) / "autopilot-log.md"
     if not p.exists():
         return []
-    m = re.search(r"^##\s*Parked\s*$(.*?)(?=^##\s|\Z)", p.read_text(encoding="utf-8"), re.M | re.S)
+    m = re.search(r"^##\s*Parked\s*$(.*?)(?=^##\s|\Z)", p.read_text(encoding="utf-8-sig"), re.M | re.S)
     return re.findall(r"^\s*-\s*\[ \]\s+(\S.*)$", m.group(1), re.M) if m else []
