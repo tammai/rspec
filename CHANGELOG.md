@@ -4,6 +4,13 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-05
+### Added
+- `goal: production` for rebuilds that will serve real users: prioritization keeps account security, permissions, audit trail, data export and deletion in the MVP.
+- NFRs have a Verification column (test, monitor or review); required for every NFR in production specs.
+- `threat-model.md` (STRIDE per entry point, each threat mitigated by an NFR or feature) from `/rspec:tech` in production specs.
+- `production-readiness.md` from `/rspec:handoff`: security, performance, reliability, observability, operations, privacy, accessibility and legal items. After the last slice the pipeline hands each open category to sdlc and finishes only when every item is checked with evidence.
+
 ## [0.5.0] - 2026-11-05
 ### Added
 - sdlc monorepo layout: the SRS goes to `docs/specs/<name>/`, contracts to `packages/api-contract/v1/`, ADRs to `docs/adr/`, the spec changelog into the spec folder. Detected from `.sdlc/config.json` packages, `apps/` or `packages/api-contract/`; stored as `paths` in `rspec.json`.

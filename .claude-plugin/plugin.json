@@ -1,6 +1,6 @@
 {
   "name": "rspec",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Reverse-spec an existing product: discover its features (parallel per module), prioritise an MVP, write user stories and technical specs, ready to rebuild it for personal use or learning.",
   "author": {
     "name": "Tam Mai"

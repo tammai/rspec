@@ -8,7 +8,7 @@ import json, re, sys
 from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycle, feature_refs, contract_files, adr_statuses,
-                       build_slices, criteria_count)
+                       build_slices, criteria_count, GOALS, md_table, readiness_open)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8"))) if STORY_TPL.exists() else set()
@@ -33,7 +33,8 @@ def main():
     if stage not in STAGES: E(f"rspec.json: unknown stage '{stage}'")
     si = STAGES.index(stage) if stage in STAGES else 0
     if not cfg.get("product"): E("rspec.json: 'product' is empty")
-    if cfg.get("goal") not in ("learn", "personal-use"): E("rspec.json: goal must be 'learn' or 'personal-use'")
+    if cfg.get("goal") not in GOALS: E("rspec.json: goal must be 'learn', 'personal-use' or 'production'")
+    production = cfg.get("goal") == "production"
 
     # modules and research
     codes = {}
@@ -122,6 +123,22 @@ def main():
         for ref in feature_refs(doc):
             if feats and ref not in feats: E(f"{rel}: x-features references unknown {ref}")
             referenced.add(ref)
+    if si >= 4 and production:
+        nfr = (docs / "nfr.md").read_text(encoding="utf-8") if (docs / "nfr.md").exists() else ""
+        rows = md_table(nfr, "NFR-")
+        if not rows: E("nfr.md: production needs NFR rows (NFR-01, ...)")
+        for row in rows:
+            if not row.get("Verification"):
+                E(f"nfr.md: {row.get('ID')} has no Verification (the test, monitor or review that proves it)")
+        tm = docs / "threat-model.md"
+        if not tm.exists():
+            E("threat-model.md missing; production needs one, re-run /rspec:tech (nfr area)")
+        else:
+            threats = md_table(tm.read_text(encoding="utf-8"), "T-")
+            if not threats: E("threat-model.md: no threats listed (T-01, ...)")
+            for row in threats:
+                if not row.get("Mitigation"):
+                    E(f"threat-model.md: {row.get('ID')} has no Mitigation")
     if si >= 4:
         for fid in mvp:
             if fid not in referenced: W(f"MVP {fid} is not served by any operation or schema (x-features)")
@@ -146,6 +163,13 @@ def main():
                 total = sum(criteria_count(story_map[i][1]) for i in ids if i in story_map)
                 if total > 10:
                     W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
+        if production:
+            ready = docs / "production-readiness.md"
+            if not ready.exists():
+                E("production-readiness.md missing; run /rspec:handoff")
+            else:
+                left = sum(len(v) for v in readiness_open(ready).values())
+                if left: W(f"production-readiness.md: {left} item(s) still open; the pipeline is not done until they are")
         for name, status in adrs.items():
             if status.lower() == "proposed": E(f"decisions/{name} is still Proposed; accept or reject it before building")
 

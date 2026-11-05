@@ -221,3 +221,38 @@ def sdlc_status(root, feature):
         return ""
     m = re.search(r"^\**Status:?\**\s*:?\s*([\w-]+)", p.read_text(encoding="utf-8"), re.M)
     return m.group(1).lower() if m else ""
+
+
+GOALS = ("learn", "personal-use", "production")
+
+
+def md_table(text, first_col_prefix):
+    """Rows of the first Markdown table whose rows start with `first_col_prefix`, as dicts keyed by header."""
+    header, rows = None, []
+    for line in text.splitlines():
+        if not line.lstrip().startswith("|"):
+            header = None if not rows else header
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if header is None:
+            header = cells
+        elif cells and cells[0].startswith(first_col_prefix):
+            rows.append(dict(zip(header, cells + [""] * (len(header) - len(cells)))))
+    return rows
+
+
+def readiness_open(path):
+    """{category: [unchecked items]} from production-readiness.md (`## Category` + `- [ ] item`)."""
+    out = {}
+    if not Path(path).exists():
+        return out
+    category = None
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        h = re.match(r"^##\s+(.+?)\s*$", line)
+        if h:
+            category = h.group(1)
+            continue
+        m = re.match(r"^\s*-\s*\[ \]\s+(\S.*)$", line)
+        if m and category:
+            out.setdefault(category, []).append(m.group(1))
+    return out

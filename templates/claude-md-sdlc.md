@@ -8,6 +8,7 @@ The reverse-engineered SRS in `<spec>/` (contracts in `<contracts>/`, ADRs in `<
 - API work follows `<contracts>/openapi.json` (and `<contracts>/asyncapi.json`); data types follow `<contracts>/schemas/`. Change the contract first, then the code.
 - ADRs in `<decisions>/` marked Accepted are binding decisions; record a change as a new ADR that supersedes one.
 - sdlc tracks progress. Do not edit `status` in the story files; `/rspec:pipeline` sets it when a slice's sdlc feature is done.
+- If `<spec>/production-readiness.md` exists, nothing ships to production until every item in it is checked, with its evidence after the item.
 - Do not use the original product's name, logo, text or images.
 - After changing anything in `<spec>/`, `<contracts>/` or `<decisions>/`, run `python3 <plugin root>/scripts/check_spec.py .`.
 <!-- /rspec:handoff -->

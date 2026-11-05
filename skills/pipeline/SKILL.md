@@ -9,7 +9,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
 ---
 
 # /rspec:pipeline
@@ -25,13 +25,13 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | `pause` | Pause: save the checkpoint, keep the run's settings, end the turn |
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
-| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`, `build`) |
+| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`, `build`, `readiness`) |
 
 Plain words count too: "pause", "stop here", "carry on", "resume" in the user's language mean the same as the arguments.
 
 ## Where things stand
 
-The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `adr-approval`, `build-plan`, `claude-md`, slice numbers for `build`, `check`) and, while building with sdlc, `slices` (each slice's features, its sdlc feature and that feature's sdlc status) and the saved `pipeline` checkpoint.
+The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `adr-approval`, `build-plan`, `claude-md`, slice numbers for `build`, readiness categories for `readiness`, `check`) and, while building with sdlc, `slices` (each slice's features, its sdlc feature and that feature's sdlc status) and the saved `pipeline` checkpoint.
 
 The checkpoint lives in `<spec>/rspec.json`:
 
@@ -56,7 +56,7 @@ Write it whenever status changes and after each batch of subagents returns, so a
 
 ## Loop
 
-1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:handoff` or `rspec:check`. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
+1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:handoff` or `rspec:check`. `build` and `readiness` are not skills; they are handled in the sections below. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
 2. After each batch of subagents: update `last` and `updated`.
 3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn.
 4. If the user has asked to pause or stop, or the finished stage equals `stop_after`, apply Pause/Stop below. Otherwise continue with the next step.
@@ -77,7 +77,16 @@ When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`), take the firs
 3. sdlc runs its own phases, approvals and stops. When it stops for the user, end the turn with `status` `running`; `/rspec:pipeline continue` brings it back here.
 4. **Done** (sdlc status `done`): set `status: done` in the frontmatter of each story in that slice, add a line to `<changelog>`, and go to the next pending slice.
 
-When every slice is done, `next` becomes `check`; finish as below. With engine `claude-code` or `none`, the pipeline finishes after the handoff check and the user builds from the plan.
+When every slice is done, `next` becomes `readiness` (goal `production` with open checklist items) or `check`; continue below.
+
+## Production readiness (goal `production`)
+
+When `next` is `readiness`, `pending` lists the categories of `<spec>/production-readiness.md` that still have unchecked items. Take them in order:
+1. With sdlc: run `sdlc:start` with "Production readiness: <category> for <working name>: <the unchecked items, verbatim>. Each item needs evidence (a test, CI job, alert, runbook or document)." Record the sdlc feature name in `rspec.json` → `build.readiness.<category>`; resume it as for slices. Without sdlc: list the open items to the user and stop; they are done by hand.
+2. When the change is done, check each item it proved and add its evidence after the item (`- [x] Restore drill: docs/runbooks/restore.md, 2026-11-05`). Leave unproved items unchecked and say why.
+3. Never check an item without evidence. Only the user may accept a risk instead; record that as `(accepted risk: <reason>, by <user>)`.
+
+The pipeline finishes only when no item is open. With engine `claude-code` or `none`, the pipeline finishes after the handoff check and the user builds from the plan.
 
 ## Pause and stop
 
@@ -92,6 +101,7 @@ If the user interrupts mid-turn and says nothing else, treat it as pause.
 After `rspec:check` at stage `handoff` (and, with sdlc, after the last slice), set `status` to `done` and reply with:
 - counts: modules, features (MVP / Later / Drop), stories, operations and schemas, ADRs;
 - the build slices from `<spec>/build-plan.md` and, with sdlc, which shipped; otherwise how to start building slice 1;
+- with goal `production`: the readiness checklist status (all checked, with evidence) or the open items;
 - check result (zero errors; list warnings);
 - open questions still marked `unknown`.
 

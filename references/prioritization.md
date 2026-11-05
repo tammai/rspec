@@ -21,6 +21,7 @@ Useful, fits the product, but the core loop works without it. Typical: advanced 
 - Anything that would require copying protected content (brand assets, proprietary datasets).
 
 ## Goal adjustments
+- `goal = production`: the rebuild will serve real users. MVP also includes what they need to trust it: account security (password reset, lockout, sessions), roles and permissions, an audit trail for sensitive actions, data export and account deletion, and notifications the core loop relies on. SSO/SAML, SCIM and data residency stay Later unless the target customers need them or they are in `focus`. Drop features only for scope, never to skip security or privacy.
 - `goal = personal-use`: favour features the user will actually use daily; drop collaboration features if they will use it alone.
 - `goal = learn`: favour features that exercise the `focus` areas, even if they are not the most used ones.
 

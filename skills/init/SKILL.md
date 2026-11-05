@@ -7,7 +7,7 @@ description: >
   and creates the spec skeleton (single repo or sdlc monorepo layout).
 argument-hint: <product name>
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
 ---
 
 # /rspec:init
@@ -16,7 +16,7 @@ Product: `$ARGUMENTS`
 
 1. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .`. If it reports a stage, a spec already exists: show its product and stage and ask whether to continue that spec or start over. Never overwrite silently.
 2. Collect, asking only for what is missing (use AskUserQuestion, one round):
-   - `goal`: `learn` or `personal-use`
+   - `goal`: `learn`, `personal-use`, or `production` (the rebuild will serve real users: adds a threat model, verified NFRs and a production-readiness checklist; also ask who the users are and the expected scale, and record them in `focus`)
    - `focus`: the parts the user most wants to learn or needs (free text, may be empty)
    - `working_name`: a name for the rebuild that is not the original brand (suggest one)
    - `lang`: language of the docs (default: the language the user is writing in)

@@ -1,6 +1,6 @@
 # rspec
 
-A Claude Code plugin that turns an existing product into a spec you can rebuild from, for learning or personal use. It researches the product, picks an MVP with you, and writes feature stories and technical docs into your repo, in your own words.
+A Claude Code plugin that turns an existing product into a spec you can rebuild from: for learning, for personal use, or as a production service. It researches the product, picks an MVP with you, and writes feature stories and technical docs into your repo, in your own words.
 
 ## Quick start
 
@@ -73,11 +73,15 @@ The spec is a reverse-engineered software requirements specification. It uses th
 | Acceptance criteria | Gherkin-style "Given …, when …, then …", one test each |
 | API | [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.0); realtime events in [AsyncAPI 3.0](https://www.asyncapi.com/docs/reference/specification/v3.0.0) |
 | Data model | [JSON Schema 2020-12](https://json-schema.org/draft/2020-12) per entity, relations as a Mermaid `erDiagram` |
-| Non-functional requirements | Measurable targets grouped by ISO/IEC 25010 quality characteristic |
+| Non-functional requirements | Measurable targets grouped by ISO/IEC 25010 quality characteristic, each with the test, monitor or review that verifies it |
+| Security (goal `production`) | STRIDE threat model per entry point; every threat mitigated by an NFR or a feature |
+| Production readiness (goal `production`) | Checklist across security, performance, reliability, observability, operations, privacy, accessibility (WCAG 2.2 AA) and legal; each item checked only with evidence |
 | Architecture decisions | ADRs based on Michael Nygard's format, plus date and alternatives considered |
 | Traceability | Every operation, schema and NFR names the feature IDs (`F-ISS-01`) it serves; `/rspec:check` verifies the links |
 | Evidence | Every fact tagged `[docs]`, `[observed]`, `[inferred]` or `[3p]`; research and story files list their sources |
 | Changelog | [Keep a Changelog](https://keepachangelog.com/) |
+
+Content rules: write in your own words, cite a source for every claim, never copy the original's code, text or images, give the rebuild its own name and logo, and keep other people's personal data out. See [legal notes](references/legal-notes.md) (not legal advice).
 
 ## Building from the spec
 
@@ -86,7 +90,15 @@ The spec is a reverse-engineered software requirements specification. It uses th
 - **With the [sdlc](https://github.com/tammai/sdlc) plugin** (recommended when installed): `/rspec:pipeline continue` hands each slice of `docs/build-plan.md` to `/sdlc:start`, which defines, builds, reviews and ships it. Its acceptance criteria cite the rspec stories, and the pipeline marks stories done as slices ship, across sessions. If the repo isn't set up for sdlc yet, handoff runs `/sdlc:setup` first.
 - **With Claude Code directly**: ask it to "build slice 1 from docs/build-plan.md". The `CLAUDE.md` section tells it to write one test per acceptance criterion, follow the contracts and accepted ADRs, and update each story's `status`.
 
-Content rules: write in your own words, cite a source for every claim, never copy the original's code, text or images, give the rebuild its own name and logo, and keep other people's personal data out. See [legal notes](references/legal-notes.md) (not legal advice).
+### Goal `production`
+
+`/rspec:init` asks for the goal. `learn` and `personal-use` scope the MVP down. `production` is for a rebuild that will serve real users:
+
+- the MVP keeps account security, roles and permissions, an audit trail, data export and deletion;
+- `/rspec:tech` adds a threat model, and every NFR must say how it is verified;
+- `/rspec:handoff` writes `production-readiness.md`, and after the last build slice the pipeline hands each open category to sdlc. It is done only when every item is checked with evidence.
+
+The plugin makes production work explicit and checked; it does not replace a security review, load testing on your infrastructure or legal advice.
 
 ## Contributing
 

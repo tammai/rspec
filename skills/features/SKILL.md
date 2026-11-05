@@ -5,7 +5,7 @@ description: >
   feature list, feature inventory or MVP scope of the product being reverse-specced.
   Compiles <spec>/features.md with IDs and MVP/Later/Drop priorities and stops for user approval.
 metadata:
-  version: "0.1.0"
+  version: "0.6.0"
 ---
 
 # /rspec:features
