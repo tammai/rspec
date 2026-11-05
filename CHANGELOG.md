@@ -17,6 +17,7 @@ Fixes from an end-to-end autopilot run on Linear.
 - `/rspec:check` does not ask under autopilot: it fixes errors once and parks the rest.
 - The explorer, story-writer and tech-analyst agents can use Edit.
 - Feature behaviour lines are capped at about 20 words.
+- Reported counts come from the files, never from a subagent's own report (an agent miscounted its NFRs).
 
 ## [0.8.0] - 2026-11-05
 ### Added

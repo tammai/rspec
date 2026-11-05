@@ -136,7 +136,7 @@ If the user interrupts mid-turn and says nothing else, treat it as pause.
 ## Finish
 
 After `rspec:check` at stage `handoff` (and, with sdlc, after the last slice), set `status` to `done` and reply with:
-- counts: modules, features (MVP / Later / Drop), stories, operations and schemas, ADRs;
+- counts: modules, features (MVP / Later / Drop), stories, operations and schemas, ADRs. Take every count from the files (the `check_spec.py` summary line, or by counting rows and files yourself), never from a subagent's reply;
 - the build slices from `<spec>/build-plan.md` and, with sdlc, which shipped; otherwise how to start building slice 1;
 - with goal `production`: the readiness checklist status (all checked, with evidence) or the open items;
 - check result (zero errors; list warnings);
