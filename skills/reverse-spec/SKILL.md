@@ -9,7 +9,7 @@ description: >
   It explains the rspec pipeline and routes to the right /rspec command based on
   the current state in docs/rspec.json.
 metadata:
-  version: "0.1.0"
+  version: "0.3.0"
 ---
 
 # Reverse spec pipeline
@@ -25,7 +25,8 @@ Produce an original specification of an existing product, written in the project
 | `discovered` | discover | `/rspec:features` |
 | `features-approved` | features, after user approval | `/rspec:stories` |
 | `stories` | stories | `/rspec:tech` |
-| `tech` | tech | build; re-run `/rspec:check` after spec edits |
+| `tech` | tech | `/rspec:handoff` |
+| `handoff` | handoff, after ADR approval | build from `docs/build-plan.md`; re-run `/rspec:check` after spec edits |
 
 ## Routing
 
@@ -33,7 +34,7 @@ Produce an original specification of an existing product, written in the project
 2. Look for `docs/rspec.json` in the current project.
 3. If absent, propose `/rspec:init <product>`; if the user already named the product and goal, start the init workflow directly.
 4. If present, report product, stage and counts (run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`), then propose the next command from the table.
-5. Never skip the approval gate between features and stories.
+5. Never skip the approval gates: features before stories, ADRs before handoff.
 
 ## Rules that apply at every stage
 

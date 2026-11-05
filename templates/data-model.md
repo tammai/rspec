@@ -1,9 +1,10 @@
 # Data model
 
+Source of truth: one JSON Schema (2020-12) per entity in `schemas/`. This page shows the relations and invariants.
+
 ## Entities
-### <Entity>
-| Field | Type | Required | Notes | Tag |
-|---|---|---|---|---|
+| Entity | Schema | Features | Tag |
+|---|---|---|---|
 
 ## Relations
 ```mermaid

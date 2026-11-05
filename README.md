@@ -15,7 +15,7 @@ Then, in an empty project folder:
 /rspec:pipeline Trello
 ```
 
-It runs every step and stops for your approval of the feature list, or if a check fails. Stop any time and continue later, even in a new session, with `/rspec:pipeline continue`. You can also just say "clone Linear to learn": the `reverse-spec` skill picks it up and suggests the next step.
+It runs every step and stops for your approval twice (the feature list, then the architecture decisions), or if a check fails. Stop any time and continue later, even in a new session, with `/rspec:pipeline continue`. You can also just say "clone Linear to learn": the `reverse-spec` skill picks it up and suggests the next step.
 
 Needs Python 3 (`python3` or `python`). The [Playwright](https://github.com/microsoft/playwright-mcp) MCP is optional; it lets the plugin look at the real UI, read-only.
 
@@ -30,7 +30,8 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 | `/rspec:discover` | Researches each module in parallel, maps the screens |
 | `/rspec:features` | Feature list with MVP / Later / Drop, **waits for your approval** |
 | `/rspec:stories` | A story and acceptance criteria for each MVP feature |
-| `/rspec:tech` | API, data model, non-functional requirements, proposed ADRs |
+| `/rspec:tech` | OpenAPI and JSON Schema contracts, non-functional requirements, proposed ADRs |
+| `/rspec:handoff` | **Asks you to accept the ADRs**, writes the build plan and a `CLAUDE.md` section |
 | `/rspec:check` | Validates the spec |
 
 ## What you get
@@ -43,24 +44,34 @@ docs/
   screens.md         sitemap and main flows
   features.md        feature list and priorities
   features/          one story file per MVP feature
-  api.md  data-model.md  nfr.md
+  openapi.json       API contract (+ asyncapi.json for realtime events)
+  schemas/           one JSON Schema per entity
+  api.md  data-model.md  nfr.md   readable summaries
   decisions/         ADRs
+  build-plan.md      MVP in dependency order, in vertical slices
+CLAUDE.md            how Claude Code should build from the spec
 CHANGELOG.md
 ```
 
 ## Standards
 
-The spec it writes follows these formats:
+The spec is a reverse-engineered software requirements specification. It uses these formats:
 
 | Part | Standard |
 |---|---|
-| User stories | "As a <role>, I want <capability> so that <benefit>", with testable `- [ ]` acceptance criteria |
-| Architecture decisions | ADRs based on Michael Nygard's format (status, context, decision, consequences), plus date and alternatives considered |
-| Data model | Mermaid `erDiagram` |
-| Non-functional requirements | Measurable targets (a number or a clear pass/fail), one ID each (`NFR-01`) |
-| Changelog | [Keep a Changelog](https://keepachangelog.com/) |
-| Feature IDs | `F-<MODULE>-<NN>`, e.g. `F-ISS-01`, never reused |
+| User stories | "As a <role>, I want <capability> so that <benefit>", with YAML frontmatter (`id`, `priority`, `depends_on`, `status`) |
+| Acceptance criteria | Gherkin-style "Given …, when …, then …", one test each |
+| API | [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.0); realtime events in [AsyncAPI 3.0](https://www.asyncapi.com/docs/reference/specification/v3.0.0) |
+| Data model | [JSON Schema 2020-12](https://json-schema.org/draft/2020-12) per entity, relations as a Mermaid `erDiagram` |
+| Non-functional requirements | Measurable targets grouped by ISO/IEC 25010 quality characteristic |
+| Architecture decisions | ADRs based on Michael Nygard's format, plus date and alternatives considered |
+| Traceability | Every operation, schema and NFR names the feature IDs (`F-ISS-01`) it serves; `/rspec:check` verifies the links |
 | Evidence | Every fact tagged `[docs]`, `[observed]`, `[inferred]` or `[3p]`; research and story files list their sources |
+| Changelog | [Keep a Changelog](https://keepachangelog.com/) |
+
+## Building from the spec
+
+After `/rspec:handoff`, open Claude Code in the rebuild repo and ask it to "build slice 1 from docs/build-plan.md". The `CLAUDE.md` section tells it to write one test per acceptance criterion, follow the contracts and accepted ADRs, and update each story's `status`, so the build can also span sessions.
 
 Content rules: write in your own words, cite a source for every claim, never copy the original's code, text or images, give the rebuild its own name and logo, and keep other people's personal data out. See [legal notes](references/legal-notes.md) (not legal advice).
 

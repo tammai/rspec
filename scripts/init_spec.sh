@@ -6,7 +6,7 @@ ROOT="${1:-.}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TPL="$HERE/../templates"
 DOCS="$ROOT/docs"
-mkdir -p "$DOCS/research" "$DOCS/features" "$DOCS/decisions"
+mkdir -p "$DOCS/research" "$DOCS/features" "$DOCS/decisions" "$DOCS/schemas"
 copy() { # src dest
   if [ -e "$2" ]; then echo "keep   $2"; else cp "$1" "$2"; echo "create $2"; fi
 }

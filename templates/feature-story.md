@@ -1,15 +1,18 @@
+---
+id: F-<CODE>-<NN>
+module: <CODE>
+priority: MVP
+depends_on: []
+status: todo
+---
 # F-<CODE>-<NN>: <feature name>
-
-- Module: <CODE>
-- Priority: MVP
-- Depends on: <IDs or none>
 
 ## Story
 As a <role>, I want <capability> so that <benefit>.
 
 ## Acceptance criteria
-- [ ] <testable criterion>
-- [ ] <testable criterion>
+- [ ] Given <state>, when <action>, then <visible result>.
+- [ ] Given <state>, when <action>, then <visible result>.
 
 ## Edge cases
 - <case>: <expected behaviour>

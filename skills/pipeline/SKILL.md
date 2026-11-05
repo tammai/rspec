@@ -5,11 +5,11 @@ description: >
   whole reverse spec end to end, or to pause, stop, resume, continue or check the
   status of it, including in a new session ("do the full spec for Linear", "run all
   rspec steps", "continue the spec", "pause the pipeline", "where is the spec at").
-  Drives init → discover → features → stories → tech → check from where it left off,
-  pausing at the features approval gate.
+  Drives init → discover → features → stories → tech → handoff → check from where it left off,
+  pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # /rspec:pipeline
@@ -25,13 +25,13 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | `pause` | Pause: save the checkpoint, keep the run's settings, end the turn |
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
-| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`) |
+| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`) |
 
 Plain words count too: "pause", "stop here", "carry on", "resume" in the user's language mean the same as the arguments.
 
 ## Where things stand
 
-The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `check`) and the saved `pipeline` checkpoint.
+The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `adr-approval`, `build-plan`, `claude-md`, `check`) and the saved `pipeline` checkpoint.
 
 The checkpoint lives in `docs/rspec.json`:
 
@@ -56,7 +56,7 @@ Write it whenever status changes and after each batch of subagents returns, so a
 
 ## Loop
 
-1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech` or `rspec:check`. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
+1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:handoff` or `rspec:check`. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
 2. After each batch of subagents: update `last` and `updated`.
 3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn.
 4. If the user has asked to pause or stop, or the finished stage equals `stop_after`, apply Pause/Stop below. Otherwise continue with the next step.
@@ -64,6 +64,10 @@ Write it whenever status changes and after each batch of subagents returns, so a
 ## Approval gate
 
 `rspec:features` ends by asking the user to approve the feature list. Set `status` to `awaiting-approval` and end the turn. This holds across sessions: a later `continue` with status `awaiting-approval` shows the MVP list again and asks for approval. Never approve on the user's behalf, and never treat "continue", "run everything" or silence as approval of the list. When the user explicitly approves (with or without adjustments), finish step 6 of `rspec:features`, set `status` to `running` and resume at `stories`.
+
+## ADR approval gate
+
+`rspec:handoff` starts by asking the user to accept, change or reject each proposed ADR. Set `status` to `awaiting-approval` while waiting and end the turn; the same rules as the features gate apply. Resume when every ADR is Accepted or Rejected.
 
 ## Pause and stop
 
@@ -75,10 +79,10 @@ If the user interrupts mid-turn and says nothing else, treat it as pause.
 
 ## Finish
 
-After `rspec:check` at stage `tech`, set `status` to `done` and reply with:
-- counts: modules, features (MVP / Later / Drop), stories, ADRs;
+After `rspec:check` at stage `handoff`, set `status` to `done` and reply with:
+- counts: modules, features (MVP / Later / Drop), stories, operations and schemas, ADRs;
+- the build slices from `docs/build-plan.md`, and how to start building slice 1;
 - check result (zero errors; list warnings);
-- the 2–3 decisions from the ADRs the user should confirm before building;
 - open questions still marked `unknown`.
 
 ## Rules
