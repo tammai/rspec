@@ -4,6 +4,14 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-11-06
+Better evidence and fewer contradictions, from the full-scope Linear runs (43–47% of story facts were `[inferred]`).
+### Added
+- **`[api]` evidence tag.** Init looks for the product's machine-readable API schema (a public GraphQL schema, an OpenAPI file, typed SDK sources) and records it in `sources.api`. Module explorers and the data-model agent read it first for entities, fields, enums and limits, tagged `[api]`; a fact the schema settles is never `[inferred]`. `scripts/scorecard.py` already counts the tag.
+### Fixed
+- NFRs are read against the ADRs: tech fixes or flags an NFR a recommended decision cannot meet, and handoff updates NFRs after the ADRs are accepted (the Workers run had offline editing in the NFRs and no offline support in the sync ADR).
+- Story writers no longer add capabilities that no feature row describes; they note the idea as an open question for triage (the Workers run grew an "Asks" form that features.md did not have).
+
 ## [0.9.3] - 2026-11-06
 Steadier results between runs, from comparing the two full-scope Linear runs (231 vs 182 features, 55% MVP overlap by name).
 ### Changed

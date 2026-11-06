@@ -39,6 +39,7 @@ You write one story file per feature in your batch, all from exactly one module.
 - `depends_on`: only IDs in your batch or in the given list. When a feature truly needs one of a later module in scope (e.g. issue shortcuts need the shortcut registry), add it to `also_needs: [IDs]` in the frontmatter instead; the main session merges it after the last round unless it would close a cycle. Do not use `also_needs` for features that merely relate (the later feature depends on yours, not the other way round). An MVP feature depends only on MVP features; a Later feature may depend on MVP or Later ones. No cycles within your batch.
 - Differences from the original: state deliberate simplifications; write "none" otherwise. In the modernize track the criteria describe what the current system does (they become characterization tests run against both systems), and this section lists the deliberate behaviour changes in the new system.
 - Sources: the research file section and any URL used. Keep confidence tags on facts borrowed from research.
+- Write stories only for the features in your batch, and keep each to its row's behaviour. Never add a capability that no row in features.md describes; put such an idea under Edge cases as an open question (`Open: …`) and name it in your reply, so the main session can propose it through triage.
 - Leave no template placeholder text.
 
 **Output:** the story files, then a reply listing each ID with one line, and flag any feature whose criteria rest mainly on `[inferred]` facts.
