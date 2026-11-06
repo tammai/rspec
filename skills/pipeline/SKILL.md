@@ -12,7 +12,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.9.2"
+  version: "0.9.3"
 ---
 
 # /rspec:pipeline
@@ -74,7 +74,7 @@ Write it whenever status changes and after each batch of subagents returns, so a
 Unattended mode, for a product you know well or a second run. Started by `--autopilot`, or by "run it unattended / autopilot" in plain words.
 
 **Before anything runs, collect every answer in one round**, so nothing waits on the user later:
-- If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, scope, deploy target, focus, stack, layout; for modernize the repos, current stack, drivers and strategy; then the rules below.
+- If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, scope, deploy target, focus, stack, layout (a rules file may also pin `modules`, a list of module names, so repeat runs share one split); for modernize the repos, current stack, drivers and strategy; then the rules below.
 - In a headless session (`claude -p`) nothing can be asked: if the rules file is missing or lacks the product or track, stop at once and list what is missing. A missing `deploy` is recorded as "undecided" and parked: the stack ADR then says which targets its choice fits.
 - If `build_engine` is `sdlc`, do not set up sdlc before the run: sdlc setup scaffolds a stack, and the stack comes from the finished spec (the accepted stack ADR). The spec runs through handoff first; the build stage then pauses once for `/sdlc:setup` (see Build with sdlc). A `stack` in the rules is a preference the stack ADR weighs, not a decision. Never run sdlc setup unattended.
 - Save the answers in `rspec.json` as `"autopilot": {"enabled": true, "rules": {…}}` (after init has created it) and create `<spec>/autopilot-log.md` from `${CLAUDE_PLUGIN_ROOT}/templates/autopilot-log.md`.

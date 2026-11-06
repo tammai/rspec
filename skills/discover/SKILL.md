@@ -6,7 +6,7 @@ description: >
   Splits the product into modules and runs one module-explorer subagent per module in
   parallel, then merges results into <spec>/screens.md.
 metadata:
-  version: "0.1.0"
+  version: "0.9.3"
 ---
 
 # /rspec:discover
@@ -15,7 +15,9 @@ Requires `<spec>/rspec.json` with stage `init` or later. Read `${CLAUDE_PLUGIN_R
 
 ## 1. Build the module map (main session)
 - Modernize track, or `code: true` (open-source product): build the map from the code (top-level packages, route groups, domain folders, database schemas) and the product's own docs, then the rest of this step as written. Give each subagent `track`, `code` and the source repo paths.
-- Use the docs navigation, the features page, the pricing page and the last 12 months of changelog to split the product into 5–10 modules (e.g. Auth & Workspace, Teams, Issues, Views, Planning, Notifications, Integrations, Settings).
+- If `modules` is set in the autopilot rules file (or the user lists modules), use that list as is.
+- Otherwise anchor the split on the product's own top-level navigation: the sections of its main sidebar or menu and of its settings, as the help center's top-level navigation shows them. One module per top-level area; merge areas with only a few features into their nearest neighbour and split none unless it would hold more than about 30 features. Aim for 6–10 modules. Use the features page, the pricing page and the last 12 months of changelog only to place features inside that split, not to invent new modules. Two runs on the same product should get the same modules.
+- Record the evidence for each module in its `sources` (the navigation page or help-center section it maps to).
 - Give each module a 2–4 letter uppercase `code` (WS, TEAM, ISS, VIEW, PLAN, NOTI, INT, SET).
 - Write them to `<spec>/rspec.json` → `modules: [{"code","name","scope","sources":[urls]}]`.
 - Show the list to the user in a few lines and continue unless they object. Merge or split modules on request.
