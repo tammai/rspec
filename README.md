@@ -33,7 +33,7 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 | `/rspec:pipeline [product]` | Everything below, in order. Also `continue`, `pause`, `stop`, `status`, `--until <stage>`, `--autopilot` |
 | `/rspec:init <product>` | Goal, focus, official sources, `docs/` skeleton |
 | `/rspec:discover` | Researches each module in parallel, maps the screens |
-| `/rspec:features` | Feature list with MVP / Later / Drop, **waits for your approval** |
+| `/rspec:features` | Feature list with MVP / Later / Drop, **waits for your approval**; `triage F-…=Later` brings a dropped feature back later without rerunning the pipeline |
 | `/rspec:stories` | A story and acceptance criteria for every feature except Drop (MVP first); `scope: mvp` limits it to the MVP |
 | `/rspec:tech` | OpenAPI and JSON Schema contracts, non-functional requirements, proposed ADRs |
 | `/rspec:handoff` | **Asks you to accept the ADRs** and how to build (sdlc or Claude Code), writes the build plan and a `CLAUDE.md` section |

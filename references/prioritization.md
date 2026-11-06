@@ -29,3 +29,5 @@ The labels keep their names but mean: **MVP** = must work in the new system befo
 - `goal = learn`: favour features that exercise the `focus` areas, even if they are not the most used ones.
 
 Always write a one-line reason for every Drop and for any MVP that is not obviously core.
+
+Drop is a recorded decision, not a deletion: "outside the focus" is a valid reason. A dropped feature keeps its row and research, and `/rspec:features triage` brings it back as Later or MVP at any stage, writing only its story, contracts and slice, without rerunning the pipeline.

@@ -6,9 +6,9 @@ Prints JSON: stage, next step, pending units for that step, the saved pipeline
 checkpoint, and build status. --build-order adds the MVP features in dependency
 order. Used by /rspec:pipeline to resume in a new session and by /rspec:handoff.
 """
-import json, sys
+import json, re, sys
 from pathlib import Path
-from rspec_lib import (TEMPLATES, open_layout, priorities, stories, dependencies, build_order, adr_statuses,
+from rspec_lib import (STAGES, TEMPLATES, open_layout, priorities, stories, dependencies, build_order, adr_statuses,
                        build_slices, sdlc_status, readiness_open, parked_decisions, in_scope,
                        slice_criteria, SDLC_MAX_CRITERIA)
 
@@ -23,6 +23,19 @@ def unchanged(path, template):
         return True
     t = TEMPLATES / template
     return t.exists() and path.read_text(encoding="utf-8-sig").strip() == t.read_text(encoding="utf-8-sig").strip()
+
+
+def triage_pending(docs, stage, prio, scoped, story_map):
+    """Feature IDs whose priority changed after their stage: in scope without a story, or (from handoff)
+    in scope but missing from build-plan.md, or Drop but still in it."""
+    out = [i for i in scoped if i not in story_map]
+    plan = docs / "build-plan.md"
+    if stage == "handoff" and plan.exists():
+        planned = set(re.findall(r"\bF-[A-Z]{2,4}-\d{2,3}\b", plan.read_text(encoding="utf-8-sig")))
+        out += [i for i in scoped if i in story_map and i not in planned]
+        sliced = {i for _, _, ids in build_slices(docs) for i in ids}
+        out += [i for i, p in prio.items() if p == "Drop" and i in sliced]
+    return out
 
 
 def main():
@@ -96,6 +109,11 @@ def main():
                 nxt, pending = "check", ["check"]
     elif nxt == "check":
         pending = ["check"]
+    if stage in STAGES and STAGES.index(stage) >= 3:
+        # features triaged after their stage: new ones in scope need a story, contracts and a place in the plan
+        untriaged = triage_pending(docs, stage, prio, scoped, story_map)
+        if untriaged:
+            nxt, pending = "triage", untriaged
     if nxt == "check" and cfg.get("pipeline", {}).get("status") == "done":
         nxt, pending = "done", []
 

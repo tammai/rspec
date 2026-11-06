@@ -6,7 +6,7 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.9.0"
+  version: "0.9.2"
 ---
 
 # /rspec:handoff
@@ -32,8 +32,8 @@ If sdlc is not available but the user wants it, say how to install it and record
 ## 3. Build plan
 Write `<spec>/build-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/build-plan.md`:
 - Take `order` from the progress output: every feature in scope, MVP first, dependencies first. Keep that order.
-- Group into releases: `## Release 1: MVP` holds every MVP feature; the Later features follow in releases 2 and up, each a coherent increment a user would notice (e.g. "Planning: cycles and projects"), in order. A release heading and its one-line goal name no feature IDs.
-- Group consecutive features into vertical slices: 3–8 slices without sdlc; with sdlc, as many as needed so that no slice has more than 10 acceptance criteria (sdlc takes about 10 per change), and a story with more than 10 is a slice of its own, each ending in something a user can try (e.g. "sign in and create a workspace", "create and list issues"). The first slice is the thinnest end-to-end path.
+- Group into releases: `## Release 1: MVP` holds every MVP feature; the Later features follow in releases 2 and up, each a coherent increment a user would notice (e.g. "Planning: cycles and projects"). Group a release around one area or module where the dependencies allow, rather than following `order` blindly across modules; a feature still never comes before one it depends on. A release heading and its one-line goal name no feature IDs.
+- Group consecutive features into vertical slices: without sdlc, at most 8 features per slice (as many slices as that takes); with sdlc, as many as needed so that no slice has more than 10 acceptance criteria (sdlc takes about 10 per change), and a story with more than 10 is a slice of its own, each ending in something a user can try (e.g. "sign in and create a workspace", "create and list issues"). The first slice is the thinnest end-to-end path.
 - For each feature list its story file, the `operationId`s and schemas whose `x-features` include it, and the NFRs that name it or `all`.
 - State the "done when" rule for each slice: every acceptance criterion of its stories has a passing test.
 
@@ -53,6 +53,8 @@ Write `<spec>/production-readiness.md` from `${CLAUDE_PLUGIN_ROOT}/templates/pro
 ## 6. CLAUDE.md section
 - Fill `${CLAUDE_PLUGIN_ROOT}/templates/claude-md-sdlc.md` when the engine is sdlc, else `${CLAUDE_PLUGIN_ROOT}/templates/claude-md.md` (working name, the absolute plugin root path, and `<spec>`, `<contracts>`, `<decisions>`, `<changelog>` from `paths` in the progress output) and add it to `CLAUDE.md` at the project root. Create the file if missing.
 - If a `<!-- rspec:handoff -->` … `<!-- /rspec:handoff -->` block already exists, replace only that block. Never change anything else in CLAUDE.md.
+
+Features triaged into or out of scope after handoff are added to or removed from this plan by `rspec:features` Triage, not by rewriting it.
 
 ## 7. Finish
 - Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .` with stage set to `handoff`; fix errors.

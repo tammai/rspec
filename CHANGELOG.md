@@ -4,6 +4,19 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-11-06
+Fixes found by the full-scope end-to-end runs on Linear.
+### Added
+- **Triage.** `/rspec:features triage F-INT-23=Later …` moves features between Drop, Later and MVP at any stage. It writes only the new stories, adds only their contracts (tech add mode) and slots them into the build plan, without rerunning the pipeline. A priority edited by hand in features.md shows up as `next: triage` in `progress.py`, and `/rspec:pipeline` runs it. Drop is a recorded decision ("outside the focus" is a valid reason) that you can triage later.
+- Story writers put a need on a later module in `also_needs`; `scripts/merge_deps.py` moves it into `depends_on` after the last round unless it would close a cycle or make an MVP feature need a Later one.
+- `ui_only: true` in a story's frontmatter: the check no longer expects a contract for a feature with no data of its own.
+- features.md has a `Research ID` column, so story writers find a renumbered feature in its research file.
+### Fixed
+- `/rspec:check` resolves every `$ref` in the contracts and errors on one that points nowhere.
+- Without sdlc, a slice holds at most 8 features (before: 3–8 slices in all, which gave slices of 50 features at full scope); the check warns on a bigger one. Releases group around one area where the dependencies allow.
+- The api and data-model agents get one field-name casing (camelCase unless the stack says otherwise).
+- The check errors when the build plan still includes a Drop feature.
+
 ## [0.9.1] - 2026-11-06
 ### Fixed
 - Autopilot builds no longer pass `--autopilot` to `sdlc:start`. In sdlc that flag marks a headless session started by its `autopilot.py`, which runs one part and ends, so every slice needed extra resumes before review and ship. The pipeline now asks sdlc for autopilot in words, which runs every part, Review and Ship in the same session.
