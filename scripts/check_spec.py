@@ -176,6 +176,8 @@ def main():
         plan = docs / "build-plan.md"
         text = plan.read_text(encoding="utf-8-sig") if plan.exists() else ""
         if not text: E("build-plan.md missing; run /rspec:handoff")
+        if not (cfg.get("stack") or "").strip() or cfg.get("stack") == "undecided":
+            W("rspec.json 'stack' is empty; record the stack the accepted stack ADR chose")
         for fid in mvp:
             if text and fid not in text: E(f"build-plan.md does not include MVP {fid}")
         if (cfg.get("build") or {}).get("engine") == "sdlc":

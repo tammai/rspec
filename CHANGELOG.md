@@ -4,6 +4,12 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-11-06
+Fixes found by the end-to-end run building Linear with sdlc.
+### Fixed
+- The stack is decided once, by the user, for both rspec and sdlc. Before, autopilot asked for `/sdlc:setup` before the run, and setup scaffolded a stack that the spec's ADR then had to adopt. Now, with a stack given up front, setup uses it and the stack ADR records it; with the stack undecided, setup waits until the ADRs have chosen it, and the build stage pauses for it.
+- Handoff writes the accepted stack ADR's choice into `rspec.json` → `stack`; `/rspec:check` warns at handoff when it is still empty.
+
 ## [0.8.3] - 2026-11-06
 Fixes for four bugs found by bug-hunter, each reproduced by a separate verifier.
 ### Fixed
