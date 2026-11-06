@@ -32,7 +32,7 @@ You write one story file per feature in your batch, all from exactly one module.
 **Before starting:** read `<plugin root>/references/writing-rules.md`, `legal-notes.md`, the template `<plugin root>/templates/feature-story.md`, and the module's research file.
 
 **For each feature, write `<spec>/features/<ID>-<kebab-slug>.md`:**
-- Frontmatter, exactly as in the template: `id`, `module`, `priority`, `depends_on` (a list, `[]` if none), `status: todo`. Never set another status; the build sets it.
+- Frontmatter, exactly as in the template: `id`, `module`, `priority`, `depends_on` (a list, `[]` if none), `status: todo`. Never set another status; the build sets it. Add `ui_only: true` when the feature has no data or API of its own (e.g. a shortcut registry or a client-side layout), so the check does not expect a contract for it.
 - Story: one sentence, real role (member, admin, guest, agent…), real benefit.
 - Acceptance criteria: 3–8 `- [ ]` items, each as "Given <state>, when <action>, then <visible result>." (keywords in English even when `lang` is not). Each one observable and testable (inputs, visible result, persistence, permissions), so it maps to exactly one test. No implementation details.
 - Edge cases: empty input, permission denied, concurrent edit, offline or network failure where relevant, limits.

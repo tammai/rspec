@@ -17,6 +17,50 @@ EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 GHERKIN = re.compile(r"\bgiven\b.*\bwhen\b.*\bthen\b", re.I)
 
 
+def _refs(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "$ref" and isinstance(v, str):
+                yield v
+            else:
+                yield from _refs(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _refs(v)
+
+
+def _pointer(doc, frag):
+    for part in [p for p in frag.split("/") if p]:
+        part = part.replace("~1", "/").replace("~0", "~")
+        if isinstance(doc, dict) and part in doc:
+            doc = doc[part]
+        elif isinstance(doc, list) and part.isdigit() and int(part) < len(doc):
+            doc = doc[int(part)]
+        else:
+            return False
+    return True
+
+
+def broken_refs(path, doc):
+    """Local and relative-file `$ref`s in a contract file that point nowhere (http refs are skipped)."""
+    out = []
+    for ref in dict.fromkeys(_refs(doc)):
+        if re.match(r"^[a-z]+://", ref):
+            continue
+        target, _, frag = ref.partition("#")
+        if target:
+            p = (path.parent / target)
+            try:
+                tdoc = json.loads(p.read_text(encoding="utf-8-sig")) if p.exists() else None
+            except json.JSONDecodeError:
+                tdoc = None
+            if tdoc is None or not _pointer(tdoc, frag):
+                out.append(ref)
+        elif not _pointer(doc, frag):
+            out.append(ref)
+    return out
+
+
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else "."
     errors, warns = [], []
@@ -133,6 +177,8 @@ def main():
             E(f"{rel}: 'openapi' must be 3.1.x")
         if f.name == "asyncapi.json" and not str(doc.get("asyncapi", "")).startswith("3."):
             E(f"{rel}: 'asyncapi' must be 3.x")
+        for ref in broken_refs(f, doc):
+            E(f"{rel}: $ref '{ref}' does not resolve")
         for ref in feature_refs(doc):
             if feats and ref not in feats: E(f"{rel}: x-features references unknown {ref}")
             referenced.add(ref)
@@ -164,7 +210,8 @@ def main():
                     E(f"threat-model.md: {row.get('ID')} has no Mitigation")
     if si >= 4:
         for fid in scoped:
-            if fid not in referenced: W(f"{feats[fid]} {fid} is not served by any operation or schema (x-features)")
+            ui_only = str(((story_map.get(fid) or (None, None, None))[2] or {}).get("ui_only", "")).lower() == "true"
+            if fid not in referenced and not ui_only: W(f"{feats[fid]} {fid} is not served by any operation or schema (x-features)")
         if not (cfg.get("deploy") or "").strip():
             W("rspec.json 'deploy' is empty; the stack ADR needs the deployment target (e.g. Cloudflare Workers, Vercel, a VPS, local only)")
 
