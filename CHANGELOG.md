@@ -4,6 +4,16 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-11-06
+One quality bar for every spec, whatever the build engine. It combines the strengths of the two full-scope Linear runs: one tagged 93% of its criteria and kept the MVP on the focus; the other had more concrete criteria and a deployment-aware architecture.
+### Changed
+- **Acceptance criteria quality bar** (writing-rules.md, story-writer, story template): every criterion uses example data a test can use as is (`ENG-12`, priority Urgent, three selected issues) and ends with its evidence tag.
+- **Focus in the MVP:** every focus area gets a step in the core journey, and the MVP holds the features that make that area work end to end, not just one of them.
+- **Architecture as concrete without a deployment target:** with `deploy` undecided, the stack ADR recommends a target (and a runner-up) and designs for it; handoff records the accepted one. Tech always drafts a platform ADR with the target's limits and sizes the NFRs to them.
+### Added
+- `/rspec:check` warns on criteria without an evidence tag and on contracts that mix snake_case and camelCase property names.
+- `scripts/scorecard.py` reports the tagged-criteria share (target ≥ 90%).
+
 ## [0.9.4] - 2026-11-06
 Better evidence and fewer contradictions, from the full-scope Linear runs (43–47% of story facts were `[inferred]`).
 ### Added

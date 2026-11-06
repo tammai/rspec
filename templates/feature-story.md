@@ -11,8 +11,8 @@ status: todo
 As a <role>, I want <capability> so that <benefit>.
 
 ## Acceptance criteria
-- [ ] Given <state>, when <action>, then <visible result>.
-- [ ] Given <state>, when <action>, then <visible result>.
+- [ ] Given <state with example data>, when <action>, then <visible result>. `[docs]`
+- [ ] Given <state with example data>, when <action>, then <visible result>. `[inferred]`
 
 ## Edge cases
 - <case>: <expected behaviour>

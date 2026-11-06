@@ -6,7 +6,8 @@ FEATS = (("F-ISS-01", "MVP"), ("F-ISS-02", "Later"))
 
 class Scorecard(unittest.TestCase):
     def test_two_runs_with_the_same_mvp_agree(self):
-        a, b = project(features=FEATS), project(features=FEATS)
+        tagged = {"F-ISS-01-a.md": story("F-ISS-01", criteria="- [ ] Given ENG-1, when I create one, then it is ENG-2. `[docs]`")}
+        a, b = project(features=FEATS, stories=tagged), project(features=FEATS, stories=tagged)
         r = run("scorecard.py", a, str(b))
         self.assertIn("MVP overlap 100%", r.stdout)
         self.assertEqual(r.returncode, 0, r.stdout)

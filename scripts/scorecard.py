@@ -2,16 +2,15 @@
 """Score one finished spec, or compare two runs on the same product.
 
 Usage: scorecard.py <project-or-spec> [<other project-or-spec>]
-Prints per-run numbers (modules, features, criteria, inferred share, slices over budget) and,
+Prints per-run numbers (modules, features, criteria, tagged criteria, inferred share, slices over budget) and,
 for two runs, how far they agree: MVP overlap (matched by feature name) and feature-count spread.
 Exit code 1 if a target is missed. Read-only.
 """
 import re, sys
-from rspec_lib import (open_layout, feature_rows, stories, criteria_count, build_slices, slice_criteria,
+from rspec_lib import (TAG_RE, open_layout, feature_rows, stories, criteria_count, criteria_items, build_slices, slice_criteria,
                        SDLC_MAX_CRITERIA, SLICE_BUDGET)
 
-TAG_RE = re.compile(r"\[(docs|observed|inferred|3p|code|api)\]")
-TARGETS = {"inferred_max": 0.30, "mvp_overlap_min": 0.80, "count_spread_max": 0.15}
+TARGETS = {"inferred_max": 0.30, "tagged_min": 0.90, "mvp_overlap_min": 0.80, "count_spread_max": 0.15}
 STOP = {"and", "the", "a", "of", "to", "in", "on", "for", "with", "by", "field", "property", "issue", "issues"}
 
 
@@ -30,6 +29,7 @@ def score(arg):
         prio[c[4] if len(c) > 4 else "?"] = prio.get(c[4] if len(c) > 4 else "?", 0) + 1
     smap = stories(docs)
     crit = [criteria_count(t) for _, t, _ in smap.values()]
+    items = [i for _, t, _ in smap.values() for i in criteria_items(t)]
     tags = [m.group(1) for _, t, _ in smap.values() for m in TAG_RE.finditer(t)]
     sdlc = (cfg.get("build") or {}).get("engine") == "sdlc"
     budget = SDLC_MAX_CRITERIA if sdlc else SLICE_BUDGET
@@ -38,6 +38,7 @@ def score(arg):
     return {"path": arg, "modules": len(cfg.get("modules", [])), "features": len(rows), "priority": prio,
             "mvp": [c[2] for c in rows if len(c) > 4 and c[4] == "MVP"], "stories": len(smap),
             "criteria": sum(crit), "criteria_range": [min(crit), max(crit)] if crit else [0, 0],
+            "tagged": round(sum(1 for i in items if TAG_RE.search(i)) / len(items), 2) if items else 1.0,
             "inferred": round(tags.count("inferred") / len(tags), 2) if tags else 0.0,
             "slices": len(slices), "budget": budget, "over_budget": over}
 
@@ -57,7 +58,9 @@ def main():
         print(f"== {r['path']}")
         print(f"   modules {r['modules']}, features {r['features']} {r['priority']}, stories {r['stories']}, "
               f"criteria {r['criteria']} (per story {r['criteria_range'][0]}-{r['criteria_range'][1]})")
-        print(f"   inferred share {r['inferred']:.0%}, slices {r['slices']} (budget {r['budget']}), over budget {len(r['over_budget'])}")
+        print(f"   tagged criteria {r['tagged']:.0%}, inferred share {r['inferred']:.0%}, slices {r['slices']} (budget {r['budget']}), over budget {len(r['over_budget'])}")
+        if r["tagged"] < TARGETS["tagged_min"]:
+            missed.append(f"{r['path']}: tagged criteria {r['tagged']:.0%} < {TARGETS['tagged_min']:.0%}")
         if r["inferred"] > TARGETS["inferred_max"]:
             missed.append(f"{r['path']}: inferred share {r['inferred']:.0%} > {TARGETS['inferred_max']:.0%}")
         if r["over_budget"]:
