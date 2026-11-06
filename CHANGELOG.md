@@ -4,6 +4,10 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.8.5] - 2026-11-06
+### Fixed
+- sdlc is never set up before the spec is finished: the stack always comes from the spec's accepted stack ADR. 0.8.4 still set up sdlc before the run when a stack was given up front; a given stack is now only a preference the ADR weighs. Under autopilot the build pauses once after handoff for `/sdlc:setup`.
+
 ## [0.8.4] - 2026-11-06
 Fixes found by the end-to-end run building Linear with sdlc.
 ### Fixed

@@ -130,7 +130,7 @@ The plugin makes production work explicit and checked; it does not replace a sec
 - **features**: approve as proposed, capped at `mvp_max` MVP features; never retire a feature that still has users unless you allow it;
 - **ADRs**: accept the recommended decisions, or park them;
 - **build engine**: sdlc (run with its own `--autopilot`), Claude Code or none;
-- **stack**: with sdlc, give it up front and run `/sdlc:setup` with it before the run; leave it empty and the ADRs choose it, then the build pauses once for `/sdlc:setup`;
+- **stack**: chosen by the spec's ADRs (a stack you give is a preference they weigh). With sdlc, the build pauses once after handoff for you to run `/sdlc:setup` with that stack, then `/rspec:pipeline continue`;
 - **risks**: never accepted for you by default.
 
 Every automatic decision is written to `autopilot-log.md` with the rule it used. Anything a rule does not cover is **parked** there with a safe default (keep the feature, keep the risk open), and the run carries on with the rest. The run is not finished while anything is parked: `/rspec:check` and `/rspec:pipeline status` show the count. Deploying to production is never automatic.
