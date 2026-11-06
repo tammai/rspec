@@ -6,7 +6,7 @@ Exit code 1 if any ERROR is found. WARN lines do not fail.
 """
 import json, re, sys
 from pathlib import Path
-from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
+from rspec_lib import (TAG_RE, STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
                        slice_criteria, SDLC_MAX_CRITERIA, SLICE_BUDGET)
@@ -15,6 +15,22 @@ STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8-sig"))) if STORY_TPL.exists() else set()
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 GHERKIN = re.compile(r"\bgiven\b.*\bwhen\b.*\bthen\b", re.I)
+
+
+SNAKE = re.compile(r"^[a-z][a-z0-9]*(_[a-z0-9]+)+$")
+CAMEL = re.compile(r"^[a-z][a-z0-9]*([A-Z][a-z0-9]*)+$")
+
+
+def property_names(obj):
+    """Every key of every `properties` object in a JSON Schema or OpenAPI document."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "properties" and isinstance(v, dict):
+                yield from v.keys()
+            yield from property_names(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from property_names(v)
 
 
 def _refs(obj):
@@ -129,6 +145,7 @@ def main():
 
     # stories
     story_map = stories(docs)
+    untagged = []
     for p in sorted((docs / "features").glob("F-*.md")):
         if not FILE_ID_RE.match(p.name):
             E(f"{p.name}: file name must start with feature ID")
@@ -153,8 +170,14 @@ def main():
             if not items: E(f"{p.name}: acceptance criteria has no '- [ ]' items")
             loose = [i for i in items if not GHERKIN.search(i)]
             if loose: W(f"{p.name}: {len(loose)} criteria not in 'Given …, when …, then …' form")
+            bare = [i for i in items if not TAG_RE.search(i)]
+            if bare: untagged.append((p.name, len(bare), len(items)))
         left = sorted(ph for ph in PLACEHOLDERS if ph in text)
         if left: E(f"{p.name}: template placeholders left in file: {', '.join(left)}")
+    if untagged:
+        n = sum(b for _, b, _ in untagged)
+        W(f"{n} acceptance criteria in {len(untagged)} stories have no evidence tag (e.g. "
+          + ", ".join(name for name, _, _ in untagged[:3]) + "); end each with [docs], [api], [inferred]…")
     for cycle in find_cycles(dependencies(story_map)):
         E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
@@ -163,6 +186,7 @@ def main():
 
     # contracts (OpenAPI, AsyncAPI, JSON Schema)
     referenced = set()
+    casing = {"snake_case": set(), "camelCase": set()}
     if si >= 4:
         if not (contracts / "openapi.json").exists(): E("openapi.json missing; re-run /rspec:tech")
         if not list((contracts / "schemas").glob("*.json")): E("schemas/ has no JSON Schema files; re-run /rspec:tech")
@@ -184,6 +208,12 @@ def main():
         for ref in feature_refs(doc):
             if feats and ref not in feats: E(f"{rel}: x-features references unknown {ref}")
             referenced.add(ref)
+        for name in property_names(doc):
+            if SNAKE.match(name): casing["snake_case"].add(name)
+            elif CAMEL.match(name): casing["camelCase"].add(name)
+    if casing["snake_case"] and casing["camelCase"]:
+        W("contracts mix field-name casings: " + ", ".join(
+            f"{len(v)} {k} (e.g. {', '.join(sorted(v)[:3])})" for k, v in casing.items()) + "; use one")
     if si >= 4 and modernize:
         dm = docs / "data-migration.md"
         if not dm.exists():

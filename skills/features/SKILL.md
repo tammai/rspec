@@ -8,7 +8,7 @@ description: >
   "/rspec:features triage"): changes priorities and specs only what changed, without rerunning the pipeline.
 argument-hint: "[triage F-ID=MVP|Later|Drop ...]"
 metadata:
-  version: "0.9.3"
+  version: "0.9.5"
 ---
 
 # /rspec:features
@@ -24,7 +24,7 @@ Requires stage `discovered` or later. Read `${CLAUDE_PLUGIN_ROOT}/references/pri
    - Order rows by module, then by dependency (foundations first).
 3. Modernize track: MVP means parity at cutover, Drop means retire (see prioritization.md); list every retired feature that still has users in the approval message as a decision for the user. Otherwise:
    With `scope` `full` every MVP and Later feature gets a story and contracts; MVP decides only what is built first (release 1).
-   **Pick the MVP from the core journey.** First write `## Core journey` at the top of features.md: the one end-to-end path a user takes through the core loop, in about 6–10 numbered steps (e.g. 1 sign up, 2 create a workspace, 3 create a team, 4 create an issue, 5 triage it with the keyboard, 6 move it to Done), with the `focus` areas woven in. The MVP is the features those steps touch, plus their dependencies; each MVP row's reason cites its step (`J4`) or `dependency of F-…`. A feature no step touches is Later. Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.
+   **Pick the MVP from the core journey.** First write `## Core journey` at the top of features.md: the one end-to-end path a user takes through the core loop, in about 6–10 numbered steps (e.g. 1 sign up, 2 create a workspace, 3 create a team, 4 create an issue, 5 triage it with the keyboard, 6 move it to Done), with the `focus` areas woven in. The MVP is the features those steps touch, plus their dependencies; each MVP row's reason cites its step (`J4`) or `dependency of F-…`. A feature no step touches is Later. Every `focus` area gets at least one journey step, and the MVP holds the features that make that area work end to end (for a keyboard-first focus: the shortcut registry, the command menu, list focus and bulk actions, not only one of them). Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.
 4. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .` and fix errors.
 5. **Approval gate.** Present to the user: count per module and priority, the full MVP list (ID + name), and the 3–5 most debatable calls. Ask them to approve or adjust. Do not proceed and do not change the stage until they explicitly approve. If `autopilot.enabled` is true in `rspec.json`, do not ask: apply the user's rule in `autopilot.rules` (see the Autopilot section of the pipeline skill), record the decision in `<spec>/autopilot-log.md`, and park anything the rule does not cover.
 6. After approval, apply any adjustments, set `stage` to `features-approved`, update `<spec>/README.md` scope section, add a line to `<changelog>`, and point to `/rspec:stories`.

@@ -5,6 +5,7 @@ from pathlib import Path
 STAGES = ["init", "discovered", "features-approved", "stories", "tech", "handoff"]
 PRIORITIES = {"MVP", "Later", "Drop"}
 STATUSES = {"todo", "in-progress", "done"}
+TAG_RE = re.compile(r"\[(docs|api|observed|inferred|3p|code)\]")  # confidence tags
 ID_RE = re.compile(r"^F-([A-Z]{2,4})-(\d{2,3})$")
 FILE_ID_RE = re.compile(r"^(F-[A-Z]{2,4}-\d{2,3})")
 TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
@@ -223,9 +224,14 @@ def build_slices(docs):
     return out
 
 
-def criteria_count(text):
+def criteria_items(text):
+    """The text of each `- [ ]` item under a story's `## Acceptance criteria`."""
     m = re.search(r"^##\s*(Acceptance criteria|Tiêu chí[^\n]*)\s*$(.*?)(?=^##\s|\Z)", text, re.M | re.S | re.I)
-    return len(CRITERION_RE.findall(m.group(2))) if m else 0
+    return re.findall(r"^\s*-\s*\[[ xX]\]\s+(\S.*)$", m.group(2), re.M) if m else []
+
+
+def criteria_count(text):
+    return len(criteria_items(text))
 
 
 SDLC_MAX_CRITERIA = 10  # sdlc takes about 10 acceptance criteria per change
