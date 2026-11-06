@@ -4,6 +4,14 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-11-07
+Four Minor frictions the gophish → bigin-phish run surfaced (it reached handoff and met every audit target: facts 97.4%, coverage 92%, 0 contradictions).
+### Fixed
+- `/rspec:check` errors, instead of silently parsing zero slices, when build-plan.md uses `### Slice N` headings (the parser and template want `## Slice N`). A run once read 88 cut slices as "none".
+- The research PII check no longer flags format placeholders and example addresses (`local@domain.tld`, `user@example.com`); a real address is still flagged, now quoted.
+- The domain.md roles check skips a placeholder Operations cell (e.g. `_(tech fills)_`), which the features stage leaves for tech to fill.
+- The domain.md enumeration check warns when a Name cell matches no schema property of that name (a vacuous pass before), so the Name must be the exact property name.
+
 ## [0.9.8] - 2026-11-06
 Edge-input robustness, from six bugs the bug-hunter surfaced by reading the scripts (it could not run its repros on Windows; each was reproduced by hand and fixed test-first).
 ### Fixed
