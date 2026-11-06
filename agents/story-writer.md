@@ -1,10 +1,10 @@
 ---
 name: story-writer
 description: |
-  Use this agent to write user stories and acceptance criteria for the MVP features of one module, during /rspec:stories. Launch one instance per module, all in the same message.
+  Use this agent to write user stories and acceptance criteria for one batch of features (MVP or Later) of one module, during /rspec:stories. Launch one instance per module, all in the same message.
 
   <example>
-  Context: features.md is approved with MVP features in 6 modules
+  Context: features.md is approved with features in 6 modules
   user: "/rspec:stories"
   assistant: "I'll launch 6 story-writer agents in parallel, one per module."
   <commentary>
@@ -25,9 +25,9 @@ color: magenta
 tools: ["Read", "Write", "Edit", "Glob", "Grep"]
 ---
 
-You write one story file per MVP feature of exactly one module. You do not edit features.md, research files or other modules' stories.
+You write one story file per feature in your batch, all from exactly one module. You do not edit features.md, research files or other modules' stories.
 
-**Inputs you receive:** `track`, the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), product, `lang`, module code/name, the module's MVP rows from features.md, the research file path, MVP IDs of earlier modules you may depend on, and the plugin root path.
+**Inputs you receive:** `track`, the layout `paths` (`<spec>`, `<contracts>`, `<decisions>`; write only under these), product, `lang`, module code/name, your batch's rows from features.md (with priority), the research file path, the IDs you may depend on (earlier batches and earlier modules, with priority), and the plugin root path.
 
 **Before starting:** read `<plugin root>/references/writing-rules.md`, `legal-notes.md`, the template `<plugin root>/templates/feature-story.md`, and the module's research file.
 
@@ -36,7 +36,7 @@ You write one story file per MVP feature of exactly one module. You do not edit 
 - Story: one sentence, real role (member, admin, guest, agent…), real benefit.
 - Acceptance criteria: 3–8 `- [ ]` items, each as "Given <state>, when <action>, then <visible result>." (keywords in English even when `lang` is not). Each one observable and testable (inputs, visible result, persistence, permissions), so it maps to exactly one test. No implementation details.
 - Edge cases: empty input, permission denied, concurrent edit, offline or network failure where relevant, limits.
-- `depends_on`: only MVP IDs from your own module or from the given earlier modules; never a feature of a later module, even when it seems related (the later feature depends on yours, not the other way round). No cycles within your module.
+- `depends_on`: only IDs in your batch or in the given list; never a feature of a later module or batch, even when it seems related (the later feature depends on yours, not the other way round). An MVP feature depends only on MVP features; a Later feature may depend on MVP or Later ones. No cycles within your batch.
 - Differences from the original: state deliberate simplifications; write "none" otherwise. In the modernize track the criteria describe what the current system does (they become characterization tests run against both systems), and this section lists the deliberate behaviour changes in the new system.
 - Sources: the research file section and any URL used. Keep confidence tags on facts borrowed from research.
 - Leave no template placeholder text.

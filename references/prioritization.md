@@ -9,7 +9,7 @@ A feature is MVP if **any** of these hold:
 - It is explicitly in `focus` (the part the user wants to learn).
 - It is a hard dependency of another MVP feature (auth before roles, teams before team-scoped IDs).
 
-Keep the MVP small: aim for something one person can build in a few weeks. If the MVP list exceeds ~25 features, propose cuts.
+MVP decides what is built first (release 1), not what is specified: with `scope` `full` (the default) every MVP and Later feature gets a story and contracts. Keep the MVP small: aim for something one person can build in a few weeks. If the MVP list exceeds ~25 features, propose cuts.
 
 ## Later
 Useful, fits the product, but the core loop works without it. Typical: advanced filters, templates, integrations, analytics, mobile, email/push notifications.

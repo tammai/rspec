@@ -4,6 +4,14 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-06
+### Changed
+- **Full spec by default.** New `scope` setting: `full` (default) writes a story and contracts for every feature except Drop; MVP decides only what is built first. `mvp` keeps the old MVP-only spec. Specs made before 0.9.0 have no `scope` and stay MVP-only; add `"scope": "full"` to extend one.
+- Stories are written in rounds of batches of about 10 per module, MVP first, so a resume always has the MVP complete. A Later feature may depend on MVP or Later features; an MVP feature still depends only on MVP.
+- The build plan is grouped into releases: release 1 is the MVP, Later features follow in releases 2 and up. `--until release-<N>` stops the build after a release.
+### Added
+- **Deployment target.** `/rspec:init` and autopilot ask where the rebuild will run (`deploy`: Cloudflare Workers, Vercel, a VPS, local only…). The stack ADR must fit it and say which targets its choice rules out, and sdlc setup gets it. `/rspec:check` warns from the tech stage on when it is empty.
+
 ## [0.8.5] - 2026-11-06
 ### Fixed
 - sdlc is never set up before the spec is finished: the stack always comes from the spec's accepted stack ADR. 0.8.4 still set up sdlc before the run when a stack was given up front; a given stack is now only a preference the ADR weighs. Under autopilot the build pauses once after handoff for `/sdlc:setup`.

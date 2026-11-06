@@ -2,9 +2,11 @@
   "product": "",
   "working_name": "",
   "goal": "learn",
+  "scope": "full",
   "focus": [],
   "lang": "en",
   "stack": "",
+  "deploy": "",
   "sources": {
     "site": "",
     "docs": "",
@@ -15,6 +17,12 @@
   },
   "modules": [],
   "stage": "init",
-  "pipeline": { "status": "", "stop_after": null, "current": "", "last": "", "updated": "" },
+  "pipeline": {
+    "status": "",
+    "stop_after": null,
+    "current": "",
+    "last": "",
+    "updated": ""
+  },
   "updated": ""
 }

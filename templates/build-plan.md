@@ -1,6 +1,9 @@
 # Build plan
 
-MVP features in dependency order, grouped into vertical slices. Each slice is shippable and testable on its own. Status lives in each story's frontmatter.
+Every feature in scope, in dependency order, grouped into releases and vertical slices. Release 1 is the MVP; Later features follow in releases 2 and up. Each slice is shippable and testable on its own. Slices are numbered on across releases. Status lives in each story's frontmatter.
+
+## Release 1: MVP
+<one line: what a user can do after this release; no feature IDs in release headings or lines>
 
 ## Slice 1: <name>
 Goal: <what works end to end after this slice>

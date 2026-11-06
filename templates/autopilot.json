@@ -2,10 +2,12 @@
   "product": "",
   "track": "rspec",
   "goal": "learn",
+  "scope": "full",
   "focus": [],
   "working_name": "",
   "lang": "en",
   "stack": "",
+  "deploy": "",
   "layout": "auto",
   "modernize": {
     "repos": [],
