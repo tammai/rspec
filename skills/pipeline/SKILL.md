@@ -12,7 +12,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.8.2"
+  version: "0.8.4"
 ---
 
 # /rspec:pipeline
@@ -76,7 +76,9 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 **Before anything runs, collect every answer in one round**, so nothing waits on the user later:
 - If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, focus, stack, layout; for modernize the repos, current stack, drivers and strategy; then the rules below.
 - In a headless session (`claude -p`) nothing can be asked: if the rules file is missing or lacks the product or track, stop at once and list what is missing.
-- If `build_engine` is `sdlc` and `.sdlc/config.json` is missing at the project root, `/sdlc:setup` would stop the run later with its own questions. Ask the user to run `/sdlc:setup` first (it can be done now, before the run); in a headless session stop at once with that message. Never run sdlc setup unattended.
+- If `build_engine` is `sdlc` and `.sdlc/config.json` is missing at the project root: sdlc setup scaffolds a stack and stops for the user to approve it, so the stack must be decided once, by the user, for both rspec and sdlc. Never run sdlc setup unattended.
+  - **`stack` given** (in the rules or the answers): ask the user to run `/sdlc:setup` now with that stack, before the run; in a headless session stop at once with that message. The tech stage then records this stack in its stack ADR instead of choosing one.
+  - **`stack` empty or `undecided`**: do not set up sdlc now. Run the spec through handoff; the build stage then pauses for setup (see Build with sdlc).
 - Save the answers in `rspec.json` as `"autopilot": {"enabled": true, "rules": {…}}` (after init has created it) and create `<spec>/autopilot-log.md` from `${CLAUDE_PLUGIN_ROOT}/templates/autopilot-log.md`.
 
 **Rules** (`autopilot.rules`), and what each gate does with them:
@@ -109,7 +111,9 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 
 ## Build with sdlc
 
-When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`), take the first pending slice:
+When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`) and `.sdlc/config.json` is missing, set up sdlc first. Interactive: run `sdlc:setup` as in handoff, giving it the stack recorded in `rspec.json` → `stack`. Under autopilot: set `status` to `paused` and tell the user to run `/sdlc:setup` with that stack (from the accepted stack ADR), then `/rspec:pipeline continue`.
+
+Then take the first pending slice:
 1. **Not started** (no `sdlc_feature`): run `sdlc:start` with the Skill tool and this request: "Build slice <N> (<name>) of <spec>/build-plan.md: features <IDs>, stories in <spec>/features/. Follow the rspec section of CLAUDE.md: one backlog part per feature, each AC citing `<spec>/features/<file>.md §<ID>`." Once sdlc has created its feature, record its name in `<spec>/rspec.json` → `build.slices.<N>` (the newest `.sdlc/state/*.md` with `Status: active`).
 2. **Started, not done**: run `sdlc:start` with no new request so sdlc resumes its active feature.
 3. sdlc runs its own phases, approvals and stops. When it stops for the user, end the turn with `status` `running`; `/rspec:pipeline continue` brings it back here.

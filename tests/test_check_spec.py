@@ -61,6 +61,12 @@ class CheckSpec(unittest.TestCase):
         self.assertIn("build-plan.md does not include MVP F-ISS-01", r.stdout)
         self.assertIn("still Proposed", r.stdout)
 
+    def test_handoff_with_no_recorded_stack_warns(self):
+        files = tech_files()
+        files["build-plan.md"] = "# Build plan\n\n## Slice 1: Issues\n| 1 | F-ISS-01 |\n"
+        r = run("check_spec.py", project(stage="handoff", files=files, config={"stack": ""}))
+        self.assertIn("'stack' is empty", r.stdout)
+
     def test_sdlc_slice_over_ten_criteria_warns(self):
         many = "\n".join(f"- [ ] Given state {i}, when I act, then I see {i}." for i in range(11))
         files = tech_files()
