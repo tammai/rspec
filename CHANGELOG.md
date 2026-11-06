@@ -4,6 +4,10 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-06
+### Fixed
+- Autopilot builds no longer pass `--autopilot` to `sdlc:start`. In sdlc that flag marks a headless session started by its `autopilot.py`, which runs one part and ends, so every slice needed extra resumes before review and ship. The pipeline now asks sdlc for autopilot in words, which runs every part, Review and Ship in the same session.
+
 ## [0.9.0] - 2026-11-06
 ### Changed
 - **Full spec by default.** New `scope` setting: `full` (default) writes a story and contracts for every feature except Drop; MVP decides only what is built first. `mvp` keeps the old MVP-only spec. Specs made before 0.9.0 have no `scope` and stay MVP-only; add `"scope": "full"` to extend one.
