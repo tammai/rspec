@@ -12,7 +12,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.9.0"
+  version: "0.9.1"
 ---
 
 # /rspec:pipeline
@@ -91,7 +91,7 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 
 **At every gate:** apply the rule, write the decision into the spec as usual (e.g. ADR `Status: Accepted (autopilot: accept-recommended)`), and add a line under `## Decisions` in the log: date, gate, what was decided, rule. When no rule covers a decision, take the safe default (keep a feature, keep a risk open), add `- [ ] <what needs deciding>` under `## Parked`, and continue with everything that does not depend on it.
 
-**The build** runs with `--autopilot` appended to each `sdlc:start` request, so sdlc does not stop for its own approvals.
+**The build** asks sdlc for autopilot in words, never with the `--autopilot` flag: in sdlc that flag means a headless session started by its `autopilot.py`, which runs one part and ends. End each `sdlc:start` request with: "Run this on autopilot in this session: keep going without me, every remaining part then Feature close, taking your recommendations." sdlc then runs every part and Review and Ship back to back without stopping for its approvals.
 
 **Still stops:** check errors not fixed after one attempt, a test still failing after a fix attempt, anything needing credentials or a login, usage limits. Save the checkpoint with `status: paused` and report. **Never automatic:** deploying to production; sdlc's go-ahead for it stays with the user.
 

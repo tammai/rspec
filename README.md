@@ -129,7 +129,7 @@ The plugin makes production work explicit and checked; it does not replace a sec
 
 - **features**: approve as proposed, capped at `mvp_max` MVP features; never retire a feature that still has users unless you allow it;
 - **ADRs**: accept the recommended decisions, or park them;
-- **build engine**: sdlc (run with its own `--autopilot`), Claude Code or none;
+- **build engine**: sdlc (asked to run each slice on autopilot in the same session), Claude Code or none;
 - **deploy**: where it will run (Cloudflare Workers, Vercel, a VPS, local only…); the stack ADR must fit it;
 - **stack**: chosen by the spec's ADRs (a stack you give is a preference they weigh). With sdlc, the build pauses once after handoff for you to run `/sdlc:setup` with that stack, then `/rspec:pipeline continue`;
 - **risks**: never accepted for you by default.
