@@ -30,7 +30,7 @@ def score(arg):
     smap = stories(docs)
     crit = [criteria_count(t) for _, t, _ in smap.values()]
     items = [i for _, t, _ in smap.values() for i in criteria_items(t)]
-    tags = [m.group(1) for _, t, _ in smap.values() for m in TAG_RE.finditer(t)]
+    tags = [m.group(1) for i in items for m in TAG_RE.finditer(i)]  # criteria only: Differences are [inferred] by rule
     sdlc = (cfg.get("build") or {}).get("engine") == "sdlc"
     budget = SDLC_MAX_CRITERIA if sdlc else SLICE_BUDGET
     slices = build_slices(docs)
