@@ -77,6 +77,10 @@ def main():
             pending.append("data-migration")
         if not pending and not adr_statuses(layout.decisions):
             pending = ["adrs"]
+    elif nxt == "handoff" and not (docs / "audit" / "summary.md").exists():
+        # the audit runs between tech and handoff; it is done when its summary exists
+        nxt = "audit"
+        pending = [p for p in ("facts", "coverage", "consistency") if not (docs / "audit" / f"{p}.md").exists()] or ["summary"]
     elif nxt == "handoff":
         if any(s.lower() == "proposed" for s in adr_statuses(layout.decisions).values()):
             pending.append("adr-approval")

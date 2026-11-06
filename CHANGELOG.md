@@ -4,6 +4,19 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-11-06
+The audit that measured the v0.9.5 runs is now part of the pipeline.
+### Added
+- **`/rspec:audit`**, run by the pipeline after tech and before handoff. Three subagents in parallel write reports to `<spec>/audit/`:
+  - `rspec:fact-checker` checks a fixed-seed sample of 25 `[docs]` and 25 `[api]` criteria (`scripts/audit_sample.py`) against the sources they cite, judging the expected result, not the topic.
+  - `rspec:coverage-auditor` builds a reference list from the product's docs navigation and last 12 months of changelog, without reading the spec, and maps it to features.md.
+  - `rspec:consistency-auditor` finds contradictions between `domain.md`, stories, features.md, NFRs, ADRs, contracts and the build order.
+
+  The main session fixes the Important findings (retag or correct a fact, add a missing core capability through triage, make files agree with `domain.md` and the accepted ADRs), parks product decisions under autopilot, lists the Minor ones, and writes `audit/summary.md` with the scores. Targets: fact accuracy ≥ 90% with none contradicted, coverage ≥ 90%, no Important contradictions left.
+- **Coverage pass before feature approval:** `/rspec:features` runs the coverage auditor before the approval gate and adds a row (or a reasoned Drop) for each missing core or focus capability. The audit later reuses the same reference list.
+### Changed
+- `progress.py` reports `next: audit` between tech and handoff until `audit/summary.md` exists; `--until audit` stops there. Handoff requires a finished audit.
+
 ## [0.9.6] - 2026-11-06
 Fixes from auditing the two v0.9.5 Linear runs (fact-check, coverage, consistency): the specs were accurate (82–90%) and covered 85% of Linear's documented capabilities, but each had 16–18 important internal contradictions.
 ### Added

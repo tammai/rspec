@@ -8,11 +8,11 @@ description: >
   for modernizing your own product ("modernize our legacy app", "rewrite our product
   on a new stack", "migrate our app from X to Y"). Also
   runs unattended ("run the spec on autopilot", "--autopilot").
-  Drives init → discover → features → stories → tech → handoff → check, then hands the build to sdlc slice by slice, from where it left off,
+  Drives init → discover → features → stories → tech → audit → handoff → check, then hands the build to sdlc slice by slice, from where it left off,
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.9.6"
+  version: "0.9.7"
 ---
 
 # /rspec:pipeline
@@ -30,7 +30,7 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
 | `--autopilot [rules.json]` | Run unattended: ask everything once up front (or read the rules file), then apply the rules at every gate; see Autopilot |
-| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`, `build`, `readiness`), or after a build release (`release-1` is the MVP) |
+| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `audit`, `handoff`, `build`, `readiness`), or after a build release (`release-1` is the MVP) |
 
 Plain words count too: "pause", "stop here", "carry on", "resume" in the user's language mean the same as the arguments.
 
@@ -64,7 +64,7 @@ Write it whenever status changes and after each batch of subagents returns, so a
 
 ## Loop
 
-1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:handoff` or `rspec:check`. When `next` is `triage` (a priority changed after its stage), run `rspec:features` with `triage` and the `pending` IDs. `build` and `readiness` are not skills; they are handled in the sections below. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
+1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:audit`, `rspec:handoff` or `rspec:check`. When `next` is `triage` (a priority changed after its stage), run `rspec:features` with `triage` and the `pending` IDs. `build` and `readiness` are not skills; they are handled in the sections below. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
 2. After each batch of subagents: update `last` and `updated`.
 3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn.
 4. If the user has asked to pause or stop, or the finished stage equals `stop_after`, apply Pause/Stop below. Otherwise continue with the next step.
