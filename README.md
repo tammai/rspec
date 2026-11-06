@@ -5,7 +5,7 @@ A Claude Code plugin that turns an existing product into a spec you can build fr
 - **rspec**: reverse-spec someone else's product, to learn from it, use it yourself or run it as a service. If it is open source, it also learns from the code; it never copies it.
 - **modernize**: move your own product to a new stack, with parity, data migration and a cutover plan.
 
-rspec writes the spec, not the code. When the spec is done it can hand the build to the [sdlc](https://github.com/tammai/sdlc) plugin, slice by slice. It researches the product, picks an MVP with you, and writes feature stories and technical docs into your repo, in your own words.
+rspec writes the spec, not the code. When the spec is done it can hand the build to the [sdlc](https://github.com/tammai/sdlc) plugin, slice by slice. It researches the product, writes a story for every feature and the technical docs into your repo, in your own words, and picks with you the MVP that is built first.
 
 ## Quick start
 
@@ -34,7 +34,7 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 | `/rspec:init <product>` | Goal, focus, official sources, `docs/` skeleton |
 | `/rspec:discover` | Researches each module in parallel, maps the screens |
 | `/rspec:features` | Feature list with MVP / Later / Drop, **waits for your approval** |
-| `/rspec:stories` | A story and acceptance criteria for each MVP feature |
+| `/rspec:stories` | A story and acceptance criteria for every feature except Drop (MVP first); `scope: mvp` limits it to the MVP |
 | `/rspec:tech` | OpenAPI and JSON Schema contracts, non-functional requirements, proposed ADRs |
 | `/rspec:handoff` | **Asks you to accept the ADRs** and how to build (sdlc or Claude Code), writes the build plan and a `CLAUDE.md` section |
 | `/rspec:check` | Validates the spec |
@@ -50,12 +50,12 @@ docs/
   research/          notes per module, with sources
   screens.md         sitemap and main flows
   features.md        feature list and priorities
-  features/          one story file per MVP feature
+  features/          one story file per feature in scope (MVP and Later)
   openapi.json       API contract (+ asyncapi.json for realtime events)
   schemas/           one JSON Schema per entity
   api.md  data-model.md  nfr.md   readable summaries
   decisions/         ADRs
-  build-plan.md      MVP in dependency order, in vertical slices
+  build-plan.md      releases (1 = MVP) of vertical slices, in dependency order
 CLAUDE.md            how Claude Code should build from the spec
 CHANGELOG.md
 ```
@@ -130,6 +130,7 @@ The plugin makes production work explicit and checked; it does not replace a sec
 - **features**: approve as proposed, capped at `mvp_max` MVP features; never retire a feature that still has users unless you allow it;
 - **ADRs**: accept the recommended decisions, or park them;
 - **build engine**: sdlc (run with its own `--autopilot`), Claude Code or none;
+- **deploy**: where it will run (Cloudflare Workers, Vercel, a VPS, local only…); the stack ADR must fit it;
 - **stack**: chosen by the spec's ADRs (a stack you give is a preference they weigh). With sdlc, the build pauses once after handoff for you to run `/sdlc:setup` with that stack, then `/rspec:pipeline continue`;
 - **risks**: never accepted for you by default.
 

@@ -12,7 +12,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.8.5"
+  version: "0.9.0"
 ---
 
 # /rspec:pipeline
@@ -30,7 +30,7 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
 | `--autopilot [rules.json]` | Run unattended: ask everything once up front (or read the rules file), then apply the rules at every gate; see Autopilot |
-| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`, `build`, `readiness`) |
+| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `handoff`, `build`, `readiness`), or after a build release (`release-1` is the MVP) |
 
 Plain words count too: "pause", "stop here", "carry on", "resume" in the user's language mean the same as the arguments.
 
@@ -74,8 +74,8 @@ Write it whenever status changes and after each batch of subagents returns, so a
 Unattended mode, for a product you know well or a second run. Started by `--autopilot`, or by "run it unattended / autopilot" in plain words.
 
 **Before anything runs, collect every answer in one round**, so nothing waits on the user later:
-- If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, focus, stack, layout; for modernize the repos, current stack, drivers and strategy; then the rules below.
-- In a headless session (`claude -p`) nothing can be asked: if the rules file is missing or lacks the product or track, stop at once and list what is missing.
+- If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, scope, deploy target, focus, stack, layout; for modernize the repos, current stack, drivers and strategy; then the rules below.
+- In a headless session (`claude -p`) nothing can be asked: if the rules file is missing or lacks the product or track, stop at once and list what is missing. A missing `deploy` is recorded as "undecided" and parked: the stack ADR then says which targets its choice fits.
 - If `build_engine` is `sdlc`, do not set up sdlc before the run: sdlc setup scaffolds a stack, and the stack comes from the finished spec (the accepted stack ADR). The spec runs through handoff first; the build stage then pauses once for `/sdlc:setup` (see Build with sdlc). A `stack` in the rules is a preference the stack ADR weighs, not a decision. Never run sdlc setup unattended.
 - Save the answers in `rspec.json` as `"autopilot": {"enabled": true, "rules": {…}}` (after init has created it) and create `<spec>/autopilot-log.md` from `${CLAUDE_PLUGIN_ROOT}/templates/autopilot-log.md`.
 
@@ -115,7 +115,7 @@ Then take the first pending slice:
 1. **Not started** (no `sdlc_feature`): run `sdlc:start` with the Skill tool and this request: "Build slice <N> (<name>) of <spec>/build-plan.md: features <IDs>, stories in <spec>/features/. Follow the rspec section of CLAUDE.md: one backlog part per feature, each AC citing `<spec>/features/<file>.md §<ID>`." Once sdlc has created its feature, record its name in `<spec>/rspec.json` → `build.slices.<N>` (the newest `.sdlc/state/*.md` with `Status: active`).
 2. **Started, not done**: run `sdlc:start` with no new request so sdlc resumes its active feature.
 3. sdlc runs its own phases, approvals and stops. When it stops for the user, end the turn with `status` `running`; `/rspec:pipeline continue` brings it back here.
-4. **Done** (sdlc status `done`): set `status: done` in the frontmatter of each story in that slice, add a line to `<changelog>`, and go to the next pending slice.
+4. **Done** (sdlc status `done`): set `status: done` in the frontmatter of each story in that slice, add a line to `<changelog>`, and go to the next pending slice. When the slice was the last of a release (the next slice is under a new `## Release` heading, or none is left), add a release line to `<changelog>`; if `stop_after` is `release-<N>` for that release, apply Pause.
 
 When every slice is done, `next` becomes `readiness` (goal `production` with open checklist items) or `check`; continue below.
 

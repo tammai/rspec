@@ -9,7 +9,7 @@ order. Used by /rspec:pipeline to resume in a new session and by /rspec:handoff.
 import json, sys
 from pathlib import Path
 from rspec_lib import (TEMPLATES, open_layout, priorities, stories, dependencies, build_order, adr_statuses,
-                       build_slices, sdlc_status, readiness_open, parked_decisions,
+                       build_slices, sdlc_status, readiness_open, parked_decisions, in_scope,
                        slice_criteria, SDLC_MAX_CRITERIA)
 
 NEXT = {"init": "discover", "discovered": "features", "features-approved": "stories",
@@ -38,7 +38,7 @@ def main():
     if stage == "handoff" and build_cfg.get("engine") == "sdlc":
         nxt = "build"
     prio = priorities(docs)
-    mvp = [i for i, p in prio.items() if p == "MVP"]
+    scoped = in_scope(prio, cfg)  # MVP first; Later too when scope is "full"
     story_map = stories(docs)
     pending = []
 
@@ -52,7 +52,7 @@ def main():
     elif nxt == "features":
         pending = ["approval"] if cfg.get("pipeline", {}).get("status") == "awaiting-approval" else ["features"]
     elif nxt == "stories":
-        pending = [i for i in mvp if i not in story_map]
+        pending = [i for i in scoped if i not in story_map]
     elif nxt == "tech":
         if not (contracts / "openapi.json").exists() or unchanged(docs / "api.md", "api.md"):
             pending.append("api")
@@ -100,7 +100,7 @@ def main():
         nxt, pending = "done", []
 
     status = {"todo": 0, "in-progress": 0, "done": 0}
-    for fid in mvp:
+    for fid in scoped:
         fm = story_map.get(fid, (None, None, None))[2] or {}
         s = fm.get("status", "todo")
         status[s if s in status else "todo"] += 1
@@ -111,7 +111,7 @@ def main():
     if build_cfg.get("engine") == "sdlc" and stage == "handoff":
         out["slices"] = locals().get("slices", [])
     if "--build-order" in sys.argv:
-        out["order"] = build_order(mvp, dependencies(story_map))
+        out["order"] = build_order(scoped, dependencies(story_map))
     print(json.dumps(out, indent=2))
 
 

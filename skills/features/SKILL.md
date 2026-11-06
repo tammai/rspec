@@ -5,7 +5,7 @@ description: >
   feature list, feature inventory or MVP scope of the product being reverse-specced.
   Compiles <spec>/features.md with IDs and MVP/Later/Drop priorities and stops for user approval.
 metadata:
-  version: "0.8.1"
+  version: "0.9.0"
 ---
 
 # /rspec:features
@@ -19,7 +19,7 @@ Requires stage `discovered` or later. Read `${CLAUDE_PLUGIN_ROOT}/references/pri
    - One-line behaviour in own words, at most about 20 words; details belong in the story. Priority MVP / Later / Drop with a reason where required.
    - Order rows by module, then by dependency (foundations first).
 3. Modernize track: MVP means parity at cutover, Drop means retire (see prioritization.md); list every retired feature that still has users in the approval message as a decision for the user. Otherwise:
-   Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.
+   With `scope` `full` every MVP and Later feature gets a story and contracts; MVP decides only what is built first (release 1). Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.
 4. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .` and fix errors.
 5. **Approval gate.** Present to the user: count per module and priority, the full MVP list (ID + name), and the 3–5 most debatable calls. Ask them to approve or adjust. Do not proceed and do not change the stage until they explicitly approve. If `autopilot.enabled` is true in `rspec.json`, do not ask: apply the user's rule in `autopilot.rules` (see the Autopilot section of the pipeline skill), record the decision in `<spec>/autopilot-log.md`, and park anything the rule does not cover.
 6. After approval, apply any adjustments, set `stage` to `features-approved`, update `<spec>/README.md` scope section, add a line to `<changelog>`, and point to `/rspec:stories`.

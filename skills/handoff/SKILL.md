@@ -6,7 +6,7 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.8.4"
+  version: "0.9.0"
 ---
 
 # /rspec:handoff
@@ -16,7 +16,7 @@ Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . 
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.
 - Ask the user to accept, change or reject each (one AskUserQuestion round, up to 4 per round). Update each ADR's `Status` to `Accepted` or `Rejected`, and its Decision section if they changed it.
-- Once the ADRs are decided, write the stack from the accepted stack ADR into `<spec>/rspec.json` → `stack` (one line, e.g. "Next.js 15 + TypeScript, SQLite, Vitest"), so sdlc setup and the build use the same stack.
+- Once the ADRs are decided, write the stack from the accepted stack ADR into `<spec>/rspec.json` → `stack` (one line, e.g. "Next.js 15 + TypeScript, SQLite, Vitest") and keep `deploy` in step with it, so sdlc setup and the build use the same stack.
 - Do not continue while any ADR is `Proposed`. Never accept one on the user's behalf. If `autopilot.enabled` is true in `rspec.json`, do not ask: apply the user's rule in `autopilot.rules` (see the Autopilot section of the pipeline skill), record the decision in `<spec>/autopilot-log.md`, and park anything the rule does not cover. With rule `park`, stop here.
 
 ## 2. Build engine
@@ -25,13 +25,14 @@ Ask once (AskUserQuestion; under autopilot use `autopilot.rules.build_engine`) h
 - **claude-code**: build directly from the plan, tracking `status` in the story files.
 - **none**: no build is started; still write the plan and the CLAUDE.md section, so whoever builds later has them.
 
-If the choice is sdlc and `.sdlc/config.json` is missing, run `/sdlc:setup` now with the Skill tool (`sdlc:setup`); under autopilot, skip this and leave it to the build stage, which pauses for it. Tell it to use the stack in `rspec.json` → `stack` (the accepted ADR's choice), and that the repo holds a reverse-engineered SRS in `<spec>/` (not code), that the PRD should be drafted from `<spec>/README.md` (goals, scope), `<spec>/features.md` (MVP capabilities, Drop rows as non-goals) and `<spec>/nfr.md` (constraints), and that the API contract is `<contracts>/openapi.json` (in a monorepo: `packages/api-contract/v1/openapi.json`, so the contract check's spec file is `openapi.json`). Follow setup through its own questions, then continue here.
+If the choice is sdlc and `.sdlc/config.json` is missing, run `/sdlc:setup` now with the Skill tool (`sdlc:setup`); under autopilot, skip this and leave it to the build stage, which pauses for it. Tell it to use the stack in `rspec.json` → `stack` (the accepted ADR's choice) and the deployment target in `deploy` (sdlc setup asks where it deploys), and that the repo holds a reverse-engineered SRS in `<spec>/` (not code), that the PRD should be drafted from `<spec>/README.md` (goals, scope), `<spec>/features.md` (MVP capabilities, Drop rows as non-goals) and `<spec>/nfr.md` (constraints), and that the API contract is `<contracts>/openapi.json` (in a monorepo: `packages/api-contract/v1/openapi.json`, so the contract check's spec file is `openapi.json`). Follow setup through its own questions, then continue here.
 
 If sdlc is not available but the user wants it, say how to install it and record `claude-code` until they do.
 
 ## 3. Build plan
 Write `<spec>/build-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/build-plan.md`:
-- Take `order` from the progress output: every MVP feature, dependencies first. Keep that order.
+- Take `order` from the progress output: every feature in scope, MVP first, dependencies first. Keep that order.
+- Group into releases: `## Release 1: MVP` holds every MVP feature; the Later features follow in releases 2 and up, each a coherent increment a user would notice (e.g. "Planning: cycles and projects"), in order. A release heading and its one-line goal name no feature IDs.
 - Group consecutive features into vertical slices: 3–8 slices without sdlc; with sdlc, as many as needed so that no slice has more than 10 acceptance criteria (sdlc takes about 10 per change), and a story with more than 10 is a slice of its own, each ending in something a user can try (e.g. "sign in and create a workspace", "create and list issues"). The first slice is the thinnest end-to-end path.
 - For each feature list its story file, the `operationId`s and schemas whose `x-features` include it, and the NFRs that name it or `all`.
 - State the "done when" rule for each slice: every acceptance criterion of its stories has a passing test.

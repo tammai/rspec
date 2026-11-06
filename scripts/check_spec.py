@@ -8,7 +8,7 @@ import json, re, sys
 from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
-                       build_slices, GOALS, md_table, readiness_open, parked_decisions,
+                       build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
                        slice_criteria, SDLC_MAX_CRITERIA)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
@@ -79,6 +79,9 @@ def main():
     if si >= 2 and not feats: E("stage >= features-approved but features.md has no rows")
     mvp = [k for k, v in feats.items() if v == "MVP"]
     if len(mvp) > 25: W(f"{len(mvp)} MVP features; consider trimming (guideline ~25)")
+    scope = cfg.get("scope")
+    if scope not in (None, "full", "mvp"): E(f"rspec.json: scope '{scope}' must be 'full' or 'mvp'")
+    scoped = in_scope(feats, cfg)
 
     # stories
     story_map = stories(docs)
@@ -109,8 +112,8 @@ def main():
     for cycle in find_cycles(dependencies(story_map)):
         E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
-        for fid in mvp:
-            if fid not in story_map: E(f"MVP {fid} has no story file in features/")
+        for fid in scoped:
+            if fid not in story_map: E(f"{feats[fid]} {fid} has no story file in features/")
 
     # contracts (OpenAPI, AsyncAPI, JSON Schema)
     referenced = set()
@@ -160,8 +163,10 @@ def main():
                 if not row.get("Mitigation"):
                     E(f"threat-model.md: {row.get('ID')} has no Mitigation")
     if si >= 4:
-        for fid in mvp:
-            if fid not in referenced: W(f"MVP {fid} is not served by any operation or schema (x-features)")
+        for fid in scoped:
+            if fid not in referenced: W(f"{feats[fid]} {fid} is not served by any operation or schema (x-features)")
+        if not (cfg.get("deploy") or "").strip():
+            W("rspec.json 'deploy' is empty; the stack ADR needs the deployment target (e.g. Cloudflare Workers, Vercel, a VPS, local only)")
 
     # ADRs and handoff
     adrs = adr_statuses(layout.decisions)
@@ -178,8 +183,8 @@ def main():
         if not text: E("build-plan.md missing; run /rspec:handoff")
         if not (cfg.get("stack") or "").strip() or cfg.get("stack") == "undecided":
             W("rspec.json 'stack' is empty; record the stack the accepted stack ADR chose")
-        for fid in mvp:
-            if text and fid not in text: E(f"build-plan.md does not include MVP {fid}")
+        for fid in scoped:
+            if text and fid not in text: E(f"build-plan.md does not include {feats[fid]} {fid}")
         if (cfg.get("build") or {}).get("engine") == "sdlc":
             for num, name, ids in build_slices(docs):
                 total = slice_criteria(story_map, ids)

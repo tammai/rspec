@@ -89,6 +89,15 @@ def priorities(docs):
     return {cells[0]: (cells[4] if len(cells) > 4 else "") for _, cells in feature_rows(docs)}
 
 
+def in_scope(prio, cfg):
+    """Feature IDs the spec covers, MVP first: every non-Drop feature when scope is "full",
+    MVP only when it is "mvp" (and for specs made before 0.9.0, which have no scope)."""
+    mvp = [i for i, p in prio.items() if p == "MVP"]
+    if cfg.get("scope") != "full":
+        return mvp
+    return mvp + [i for i, p in prio.items() if p == "Later"]
+
+
 def frontmatter(text):
     """Parse a flat YAML frontmatter block: `key: value` and `key: [a, b]`. None if absent."""
     m = re.match(r"\A---\s*\n(.*?)\n---\s*(\n|\Z)", text, re.S)

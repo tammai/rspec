@@ -7,7 +7,7 @@ description: >
   and creates the spec skeleton (single repo or sdlc monorepo layout).
 argument-hint: <product name>
 metadata:
-  version: "0.7.0"
+  version: "0.9.0"
 ---
 
 # /rspec:init
@@ -21,10 +21,12 @@ Product: `$ARGUMENTS`
    - `focus`: the parts the user most wants to learn or needs (free text, may be empty)
    - `working_name`: a name for the rebuild that is not the original brand (suggest one)
    - `lang`: language of the docs (default: the language the user is writing in)
-   - `stack`: target stack if already decided (optional)
+   - `scope`: `full` (default: a story and contracts for every feature except Drop; MVP only decides what is built first) or `mvp` (MVP features only, for a quick spec)
+   - `deploy`: where the rebuild will run (e.g. Cloudflare Workers, Vercel, Netlify, AWS, a VPS or Docker host, mobile app stores, desktop, local only). Ask it even when the stack is undecided: the target constrains the stack (a Workers runtime has no Node filesystem or long-lived processes and favours frameworks with a Workers adapter; a static host needs a separate API). Record the answer and any limits the user names (budget, region, existing account).
+   - `stack`: target stack if already decided (optional; a preference the stack ADR weighs against `deploy`)
    - layout: if the repo is an sdlc monorepo (`.sdlc/config.json` lists packages, or `packages/api-contract/` or `apps/` exists), say the spec will go to `docs/specs/<working-name>/`, the API contract to `packages/api-contract/v1/` and ADRs to `docs/adr/`, and confirm. Otherwise the spec goes in `docs/`.
 4. rspec track: find official sources with WebSearch: product site, docs/help center, changelog, public API reference, and any official open-source repo. Record URLs, not content. If the product is open source, recommend reading its code too (the most precise source for behaviour, data model and API): with the user's OK, clone it into a sibling folder outside this project and pin the commit. Set `code: true`, `sources.repo`, `sources.commit` and `sources.license` (for reference). The code is read to learn from, never copied (see legal-notes.md).
 5. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/init_spec.py . --name "<working_name>"` (add `--layout single` or `--layout monorepo` to override detection; modernize: add `--track modernize --strategy <strategy>`). It prints the `paths` it used; from now on `<spec>`, `<contracts>`, `<decisions>` and `<changelog>` mean those paths.
-6. Fill `<spec>/rspec.json` (product, track, strategy and source repos for modernize, working_name, goal, focus, lang, stack, sources, `modules: []`, `stage: "init"`, `updated`: today) and `<spec>/README.md` (replace placeholders; keep the disclaimer).
+6. Fill `<spec>/rspec.json` (product, track, scope, deploy, strategy and source repos for modernize, working_name, goal, focus, lang, stack, sources, `modules: []`, `stage: "init"`, `updated`: today) and `<spec>/README.md` (replace placeholders; keep the disclaimer).
 7. Add `- Started reverse spec of <product>` to `<changelog>`.
 8. Reply with a short summary and the next step: `/rspec:discover`.
