@@ -4,6 +4,14 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-11-06
+Edge-input robustness, from six bugs the bug-hunter surfaced by reading the scripts (it could not run its repros on Windows; each was reproduced by hand and fixed test-first).
+### Fixed
+- `scripts/scorecard.py` no longer crashes on a feature row with an empty name (`ZeroDivisionError` in the MVP-name match).
+- `scripts/scorecard.py` tokenises names in any script, not just ASCII: a non-English name like "Đăng ký" now yields real words (`{đăng, ký}`) instead of fragments (`{k, ng}`) that let unrelated names collide. English scoring is unchanged (the two v0.9.5 runs still score 90% overlap).
+- `/rspec:check` matches build-plan feature coverage by whole ID, so `F-ISS-10` is no longer counted as present when only `F-ISS-100` is in the plan.
+- `/rspec:check` reports a clean error instead of a traceback for a contract file whose top level is not a JSON object, for `rspec.json` with `"modules": null`, and for a request body whose `x-entity` schema file is itself invalid JSON.
+
 ## [0.9.7] - 2026-11-06
 The audit that measured the v0.9.5 runs is now part of the pipeline.
 ### Added

@@ -18,13 +18,15 @@ STOP = {"and", "the", "a", "of", "to", "in", "on", "for", "with", "by", "up", "o
 def words(name):
     """Content words of a feature name, plural s dropped: "Teams and team keys" -> {team, key}."""
     ws = {w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w
-          for w in re.findall(r"[a-z]+", name.lower()) if w not in STOP}
-    return ws or set(name.lower().split())
+          for w in re.findall(r"[^\W\d_]+", name.casefold()) if w not in STOP}  # letters in any script
+    return ws or set(name.casefold().split())
 
 
 def similar(x, y):
     """Names match when half the words of the shorter one appear in the other."""
     a, b = words(x), words(y)
+    if not a or not b:
+        return False
     return len(a & b) / min(len(a), len(b)) >= 0.5
 
 
