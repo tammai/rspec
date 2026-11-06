@@ -12,7 +12,7 @@ description: >
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.8.4"
+  version: "0.8.5"
 ---
 
 # /rspec:pipeline
@@ -76,9 +76,7 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 **Before anything runs, collect every answer in one round**, so nothing waits on the user later:
 - If a rules file is given (default `rspec-autopilot.json` at the project root, template `${CLAUDE_PLUGIN_ROOT}/templates/autopilot.json`), read it. Otherwise ask with AskUserQuestion, up to 4 questions per call, in as few calls as possible: track, product, goal, focus, stack, layout; for modernize the repos, current stack, drivers and strategy; then the rules below.
 - In a headless session (`claude -p`) nothing can be asked: if the rules file is missing or lacks the product or track, stop at once and list what is missing.
-- If `build_engine` is `sdlc` and `.sdlc/config.json` is missing at the project root: sdlc setup scaffolds a stack and stops for the user to approve it, so the stack must be decided once, by the user, for both rspec and sdlc. Never run sdlc setup unattended.
-  - **`stack` given** (in the rules or the answers): ask the user to run `/sdlc:setup` now with that stack, before the run; in a headless session stop at once with that message. The tech stage then records this stack in its stack ADR instead of choosing one.
-  - **`stack` empty or `undecided`**: do not set up sdlc now. Run the spec through handoff; the build stage then pauses for setup (see Build with sdlc).
+- If `build_engine` is `sdlc`, do not set up sdlc before the run: sdlc setup scaffolds a stack, and the stack comes from the finished spec (the accepted stack ADR). The spec runs through handoff first; the build stage then pauses once for `/sdlc:setup` (see Build with sdlc). A `stack` in the rules is a preference the stack ADR weighs, not a decision. Never run sdlc setup unattended.
 - Save the answers in `rspec.json` as `"autopilot": {"enabled": true, "rules": {…}}` (after init has created it) and create `<spec>/autopilot-log.md` from `${CLAUDE_PLUGIN_ROOT}/templates/autopilot-log.md`.
 
 **Rules** (`autopilot.rules`), and what each gate does with them:
