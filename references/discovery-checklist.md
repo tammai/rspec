@@ -34,7 +34,8 @@ For each module also capture:
 
 ## Confidence tags
 Tag every factual line:
-- `[docs]` stated in official docs, changelog or API reference
+- `[docs]` stated in official docs or changelog
+- `[api]` stated in the product's public API schema or API reference (a GraphQL schema, an OpenAPI file, an SDK's types): entities, fields, enums, required-ness and documented limits. Prefer it over `[inferred]` for any data fact
 - `[observed]` seen in the running product
 - `[inferred]` deduced, not confirmed. Say from what.
 - `[3p]` from a third-party source

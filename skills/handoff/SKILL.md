@@ -6,7 +6,7 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.9.3"
+  version: "0.9.4"
 ---
 
 # /rspec:handoff
@@ -16,6 +16,7 @@ Requires stage `tech`. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . 
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.
 - Ask the user to accept, change or reject each (one AskUserQuestion round, up to 4 per round). Update each ADR's `Status` to `Accepted` or `Rejected`, and its Decision section if they changed it.
+- Once the ADRs are decided, re-read `<spec>/nfr.md` against the accepted ones and update any NFR an accepted decision rules out (say from which release it applies, or drop it with a reason); under autopilot, log each change.
 - Once the ADRs are decided, write the stack from the accepted stack ADR into `<spec>/rspec.json` → `stack` (one line, e.g. "Next.js 15 + TypeScript, SQLite, Vitest") and keep `deploy` in step with it, so sdlc setup and the build use the same stack.
 - Do not continue while any ADR is `Proposed`. Never accept one on the user's behalf. If `autopilot.enabled` is true in `rspec.json`, do not ask: apply the user's rule in `autopilot.rules` (see the Autopilot section of the pipeline skill), record the decision in `<spec>/autopilot-log.md`, and park anything the rule does not cover. With rule `park`, stop here.
 
