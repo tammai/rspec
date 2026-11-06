@@ -37,6 +37,7 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 | `/rspec:stories` | A story and acceptance criteria for every feature except Drop (MVP first); `scope: mvp` limits it to the MVP |
 | `/rspec:tech` | OpenAPI and JSON Schema contracts, non-functional requirements, proposed ADRs |
 | `/rspec:handoff` | **Asks you to accept the ADRs** and how to build (sdlc or Claude Code), writes the build plan and a `CLAUDE.md` section |
+| `/rspec:audit` | Fact-checks a sample of criteria against the sources, checks coverage against the product's docs and changelog, and finds contradictions; fixes the important findings (runs before handoff) |
 | `/rspec:check` | Validates the spec; `python3 scripts/scorecard.py <run> [<other run>]` scores it or compares two runs |
 
 ## What you get

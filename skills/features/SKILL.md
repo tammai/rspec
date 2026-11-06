@@ -8,7 +8,7 @@ description: >
   "/rspec:features triage"): changes priorities and specs only what changed, without rerunning the pipeline.
 argument-hint: "[triage F-ID=MVP|Later|Drop ...]"
 metadata:
-  version: "0.9.6"
+  version: "0.9.7"
 ---
 
 # /rspec:features
@@ -25,7 +25,7 @@ Requires stage `discovered` or later. Read `${CLAUDE_PLUGIN_ROOT}/references/pri
 3. Modernize track: MVP means parity at cutover, Drop means retire (see prioritization.md); list every retired feature that still has users in the approval message as a decision for the user. Otherwise:
    With `scope` `full` every MVP and Later feature gets a story and contracts; MVP decides only what is built first (release 1).
    **Pick the MVP from the core journey.** First write `## Core journey` at the top of features.md: the one end-to-end path a user takes through the core loop, in about 6–10 numbered steps (e.g. 1 sign up, 2 create a workspace, 3 create a team, 4 create an issue, 5 triage it with the keyboard, 6 move it to Done), with the `focus` areas woven in. The MVP is the features those steps touch, plus their dependencies; each MVP row's reason cites its step (`J4`) or `dependency of F-…`. A feature no step touches is Later. Every `focus` area gets at least one journey step, and the MVP holds the features that make that area work end to end (for a keyboard-first focus: the shortcut registry, the command menu, list focus and bulk actions, not only one of them). Sanity-check the MVP: the core loop works end to end, every MVP dependency is also MVP, focus areas are covered, size is roughly ≤ 25 features.
-4. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .` and fix errors.
+4. **Coverage pass.** Launch `rspec:coverage-auditor` with mode `features`, product, `<spec>`, `sources`, `focus` and the plugin root. It builds `<spec>/audit/reference.md` from the docs navigation and the last 12 months of changelog without reading your list, then maps it. Add a row for each Important missing capability (or a Drop row with a reason) and list the Minor ones in the approval message. Then run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .` and fix errors.
 5. **Approval gate.** Present to the user: count per module and priority, the full MVP list (ID + name), and the 3–5 most debatable calls. Ask them to approve or adjust. Do not proceed and do not change the stage until they explicitly approve. If `autopilot.enabled` is true in `rspec.json`, do not ask: apply the user's rule in `autopilot.rules` (see the Autopilot section of the pipeline skill), record the decision in `<spec>/autopilot-log.md`, and park anything the rule does not cover.
 6. After approval, apply any adjustments, then write `<spec>/domain.md` from `${CLAUDE_PLUGIN_ROOT}/templates/domain.md` using the research: the roles and a permissions row for every action not all roles may take (leave `Operations` blank; tech fills it), every value set used in more than one place (statuses, roles, scopes, visibility…), limits and defaults with their evidence tags, and identifier formats. It is the one source for those rules from here on. Set `stage` to `features-approved`, update `<spec>/README.md` scope section, add a line to `<changelog>`, and point to `/rspec:stories`.
 

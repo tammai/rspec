@@ -10,7 +10,7 @@ description: >
   It explains the rspec pipeline and routes to the right /rspec command based on
   the current state in <spec>/rspec.json.
 metadata:
-  version: "0.7.0"
+  version: "0.9.7"
 ---
 
 # Reverse spec pipeline
@@ -26,7 +26,7 @@ Produce an original specification of an existing product, written in the project
 | `discovered` | discover | `/rspec:features` |
 | `features-approved` | features, after user approval | `/rspec:stories` |
 | `stories` | stories | `/rspec:tech` |
-| `tech` | tech | `/rspec:handoff` |
+| `tech` | tech | `/rspec:audit`, then `/rspec:handoff` |
 | `handoff` | handoff, after ADR approval | build from `<spec>/build-plan.md`; re-run `/rspec:check` after spec edits |
 
 ## Routing
