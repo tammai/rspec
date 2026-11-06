@@ -92,7 +92,11 @@ def check_bodies(openapi, schemas_dir):
         if not f.exists():
             errors.append(f"openapi.json: {name} has x-entity '{entity}' but schemas/{entity}.schema.json is missing")
             continue
-        known = set((json.loads(f.read_text(encoding="utf-8-sig")).get("properties") or {}))
+        try:
+            schema = json.loads(f.read_text(encoding="utf-8-sig"))
+        except (json.JSONDecodeError, OSError):
+            continue  # the main check already reports an unreadable or invalid schema file
+        known = set((schema.get("properties") or {}) if isinstance(schema, dict) else ())
         unknown = sorted(set(comp.get("properties") or {}) - known)
         if unknown:
             errors.append(f"openapi.json: {name} uses {', '.join(unknown)}, not in schemas/{entity}.schema.json")

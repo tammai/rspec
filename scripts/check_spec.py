@@ -109,7 +109,7 @@ def main():
 
     # modules and research
     codes = {}
-    for m in cfg.get("modules", []):
+    for m in cfg.get("modules") or []:
         c = m.get("code", "")
         if not re.fullmatch(r"[A-Z]{2,4}", c): E(f"module '{m.get('name')}': code '{c}' must be 2-4 uppercase letters")
         if c in codes: E(f"duplicate module code {c}")
@@ -201,6 +201,8 @@ def main():
             doc = json.loads(f.read_text(encoding="utf-8-sig"))
         except json.JSONDecodeError as e:
             E(f"{rel}: not valid JSON: {e}"); continue
+        if not isinstance(doc, dict):
+            E(f"{rel}: top level must be a JSON object"); continue
         parsed[rel] = doc
         if f.name == "openapi.json" and not str(doc.get("openapi", "")).startswith("3.1"):
             E(f"{rel}: 'openapi' must be 3.1.x")
@@ -276,8 +278,9 @@ def main():
         if not text: E("build-plan.md missing; run /rspec:handoff")
         if not (cfg.get("stack") or "").strip() or cfg.get("stack") == "undecided":
             W("rspec.json 'stack' is empty; record the stack the accepted stack ADR chose")
+        plan_ids = set(re.findall(r"\bF-[A-Z]{2,4}-\d{2,3}\b", text))  # whole IDs: F-X-10 is not F-X-100
         for fid in scoped:
-            if text and fid not in text: E(f"build-plan.md does not include {feats[fid]} {fid}")
+            if text and fid not in plan_ids: E(f"build-plan.md does not include {feats[fid]} {fid}")
         sliced = {i for _, _, ids in build_slices(docs) for i in ids}
         for fid in sorted(i for i, p in feats.items() if p == "Drop" and i in sliced):
             E(f"build-plan.md still includes Drop {fid}; run /rspec:features triage")
