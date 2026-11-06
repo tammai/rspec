@@ -6,6 +6,7 @@ Exit code 1 if any ERROR is found. WARN lines do not fail.
 """
 import json, re, sys
 from pathlib import Path
+from contract_checks import check_domain, check_bodies, server_set_not_readonly
 from rspec_lib import (TAG_RE, STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
@@ -187,6 +188,7 @@ def main():
     # contracts (OpenAPI, AsyncAPI, JSON Schema)
     referenced = set()
     casing = {"snake_case": set(), "camelCase": set()}
+    parsed = {}
     if si >= 4:
         if not (contracts / "openapi.json").exists(): E("openapi.json missing; re-run /rspec:tech")
         if not list((contracts / "schemas").glob("*.json")): E("schemas/ has no JSON Schema files; re-run /rspec:tech")
@@ -199,6 +201,7 @@ def main():
             doc = json.loads(f.read_text(encoding="utf-8-sig"))
         except json.JSONDecodeError as e:
             E(f"{rel}: not valid JSON: {e}"); continue
+        parsed[rel] = doc
         if f.name == "openapi.json" and not str(doc.get("openapi", "")).startswith("3.1"):
             E(f"{rel}: 'openapi' must be 3.1.x")
         if f.name == "asyncapi.json" and not str(doc.get("asyncapi", "")).startswith("3."):
@@ -214,6 +217,17 @@ def main():
     if casing["snake_case"] and casing["camelCase"]:
         W("contracts mix field-name casings: " + ", ".join(
             f"{len(v)} {k} (e.g. {', '.join(sorted(v)[:3])})" for k, v in casing.items()) + "; use one")
+    loose_ids = [f"{rel} {p}" for rel, d in parsed.items() if rel.startswith("schemas/") for p in server_set_not_readonly(d)]
+    if loose_ids:
+        W(f"{len(loose_ids)} required server-set fields are not readOnly, so create bodies cannot validate "
+          f"(e.g. {', '.join(loose_ids[:3])})")
+    for e in check_bodies(parsed.get("openapi.json"), contracts / "schemas"): E(e)
+    domain = docs / "domain.md"
+    if domain.exists():
+        de, dw = check_domain(domain.read_text(encoding="utf-8-sig"), parsed.get("openapi.json"), parsed)
+        errors.extend(de); warns.extend(dw)
+    elif si >= 3:
+        W("domain.md missing: roles, permissions, enumerations and limits are restated per story; run /rspec:features to write it")
     if si >= 4 and modernize:
         dm = docs / "data-migration.md"
         if not dm.exists():

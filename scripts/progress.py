@@ -116,6 +116,9 @@ def main():
             nxt, pending = "triage", untriaged
     if nxt == "check" and cfg.get("pipeline", {}).get("status") == "done":
         nxt, pending = "done", []
+    parked = parked_decisions(docs)
+    if nxt == "done" and parked:
+        nxt, pending = "parked", parked  # finished, but not done until the user decides these
 
     status = {"todo": 0, "in-progress": 0, "done": 0}
     for fid in scoped:

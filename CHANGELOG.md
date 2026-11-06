@@ -4,6 +4,20 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-11-06
+Fixes from auditing the two v0.9.5 Linear runs (fact-check, coverage, consistency): the specs were accurate (82–90%) and covered 85% of Linear's documented capabilities, but each had 16–18 important internal contradictions.
+### Added
+- **`domain.md`: one source for shared rules.** Written after the feature list is approved: a roles × actions permission table, every enumeration used in more than one place, limits and defaults, identifier formats. Stories, NFRs and contracts use and cite it instead of restating rules. `/rspec:check` errors when an operation's `x-roles` or a schema `enum` differs from it. Most contradictions in the audit were restated rules that drifted (who may create API keys, team key length, an owner role that stories ruled out).
+- `/rspec:check` errors when a request body marked `x-entity` uses a field its entity schema lacks, and warns on required server-set fields (`id`, timestamps) that are not `readOnly`.
+### Changed
+- **Data model first, then the API on top of it.** The tech stage runs data-model and nfr together, then api against the written schemas, so the two no longer drift on field names and owners.
+- A cross-module need that `merge_deps.py` cannot add (it would close a cycle) is never dropped silently: split or move a feature, or park it. After the stories, the main session reconciles every story with `domain.md` and the others.
+- **The evidence tag is for the expected result**, not the topic: `[docs]` or `[api]` only when the source states that result; otherwise split the criterion or tag it `[inferred]`.
+- `progress.py` reports `next: parked`, not `done`, while autopilot decisions are still open; conflicts and still-needed ADRs are parked too.
+- Tech agents can run Bash to validate their JSON.
+### Fixed
+- `scripts/scorecard.py` counts the inferred share over acceptance criteria only (Differences are `[inferred]` by rule), and matches MVP names by shared content words, which agrees with a reading by meaning (90% for the two v0.9.5 runs).
+
 ## [0.9.5] - 2026-11-06
 One quality bar for every spec, whatever the build engine. It combines the strengths of the two full-scope Linear runs: one tagged 93% of its criteria and kept the MVP on the focus; the other had more concrete criteria and a deployment-aware architecture.
 ### Changed
