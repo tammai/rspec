@@ -9,7 +9,7 @@ from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
-                       slice_criteria, SDLC_MAX_CRITERIA)
+                       slice_criteria, SDLC_MAX_CRITERIA, MAX_SLICE_FEATURES)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8-sig"))) if STORY_TPL.exists() else set()
@@ -139,6 +139,8 @@ def main():
         else:
             if fm.get("id") != fid: E(f"{p.name}: frontmatter id '{fm.get('id')}' does not match file name")
             if fm.get("status", "") not in STATUSES: E(f"{p.name}: status '{fm.get('status', '')}' must be todo/in-progress/done")
+            if "also_needs" in fm:
+                W(f"{p.name}: also_needs not merged yet; run scripts/merge_deps.py")
             for d in fm.get("depends_on") or []:
                 if feats and d not in feats: E(f"{p.name}: depends on unknown {d}")
                 elif feats.get(fid) == "MVP" and feats.get(d) and feats[d] != "MVP":
@@ -232,11 +234,16 @@ def main():
             W("rspec.json 'stack' is empty; record the stack the accepted stack ADR chose")
         for fid in scoped:
             if text and fid not in text: E(f"build-plan.md does not include {feats[fid]} {fid}")
-        if (cfg.get("build") or {}).get("engine") == "sdlc":
-            for num, name, ids in build_slices(docs):
-                total = slice_criteria(story_map, ids)
-                if total > SDLC_MAX_CRITERIA:
-                    W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
+        sliced = {i for _, _, ids in build_slices(docs) for i in ids}
+        for fid in sorted(i for i, p in feats.items() if p == "Drop" and i in sliced):
+            E(f"build-plan.md still includes Drop {fid}; run /rspec:features triage")
+        sdlc = (cfg.get("build") or {}).get("engine") == "sdlc"
+        for num, name, ids in build_slices(docs):
+            total = slice_criteria(story_map, ids)
+            if sdlc and total > SDLC_MAX_CRITERIA:
+                W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
+            elif not sdlc and len(ids) > MAX_SLICE_FEATURES:
+                W(f"build-plan.md: Slice {num} has {len(ids)} features; keep a slice to {MAX_SLICE_FEATURES} or fewer, split it")
         if modernize:
             cp = docs / "cutover-plan.md"
             if not cp.exists():

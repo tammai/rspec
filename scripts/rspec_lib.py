@@ -229,6 +229,7 @@ def criteria_count(text):
 
 
 SDLC_MAX_CRITERIA = 10  # sdlc takes about 10 acceptance criteria per change
+MAX_SLICE_FEATURES = 8  # without sdlc: a slice one build session can finish and test
 
 
 def slice_criteria(story_map, ids):
