@@ -11,11 +11,21 @@ from rspec_lib import (TAG_RE, open_layout, feature_rows, stories, criteria_coun
                        SDLC_MAX_CRITERIA, SLICE_BUDGET)
 
 TARGETS = {"inferred_max": 0.30, "tagged_min": 0.90, "mvp_overlap_min": 0.80, "count_spread_max": 0.15}
-STOP = {"and", "the", "a", "of", "to", "in", "on", "for", "with", "by", "field", "property", "issue", "issues"}
+STOP = {"and", "the", "a", "of", "to", "in", "on", "for", "with", "by", "up", "out", "field", "fields", "property",
+        "properties", "issue", "issues", "settings", "management", "basic", "core"}
 
 
 def words(name):
-    return {w for w in re.findall(r"[a-z]+", name.lower()) if w not in STOP} or set(name.lower().split())
+    """Content words of a feature name, plural s dropped: "Teams and team keys" -> {team, key}."""
+    ws = {w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w
+          for w in re.findall(r"[a-z]+", name.lower()) if w not in STOP}
+    return ws or set(name.lower().split())
+
+
+def similar(x, y):
+    """Names match when half the words of the shorter one appear in the other."""
+    a, b = words(x), words(y)
+    return len(a & b) / min(len(a), len(b)) >= 0.5
 
 
 def score(arg):
@@ -30,7 +40,7 @@ def score(arg):
     smap = stories(docs)
     crit = [criteria_count(t) for _, t, _ in smap.values()]
     items = [i for _, t, _ in smap.values() for i in criteria_items(t)]
-    tags = [m.group(1) for _, t, _ in smap.values() for m in TAG_RE.finditer(t)]
+    tags = [m.group(1) for i in items for m in TAG_RE.finditer(i)]  # criteria only: Differences are [inferred] by rule
     sdlc = (cfg.get("build") or {}).get("engine") == "sdlc"
     budget = SDLC_MAX_CRITERIA if sdlc else SLICE_BUDGET
     slices = build_slices(docs)
@@ -44,10 +54,10 @@ def score(arg):
 
 
 def overlap(a, b):
-    """Share of MVP features in a that have a close match by name in b (Jaccard of name words >= 0.5)."""
+    """Share of MVP features in a that have a match by name in b (see similar)."""
     if not a:
         return 1.0
-    hits = sum(1 for x in a if any(len(words(x) & words(y)) / len(words(x) | words(y)) >= 0.5 for y in b))
+    hits = sum(1 for x in a if any(similar(x, y) for y in b))
     return round(hits / len(a), 2)
 
 

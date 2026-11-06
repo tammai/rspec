@@ -50,6 +50,7 @@ docs/
   research/          notes per module, with sources
   screens.md         sitemap and main flows
   features.md        feature list and priorities
+  domain.md          roles and permissions, enumerations, limits: the one source for shared rules
   features/          one story file per feature in scope (MVP and Later)
   openapi.json       API contract (+ asyncapi.json for realtime events)
   schemas/           one JSON Schema per entity

@@ -3,7 +3,7 @@
 
 Usage: merge_deps.py [project-root | spec-folder]
 Story writers may depend only on earlier modules, so parallel writers cannot form cycles. A
-dependency on a later module goes in `also_needs: [IDs]`. After every round, this script moves
+dependency on a later module goes in `also_needs: [IDs]`. After the last round, this script moves
 each one into `depends_on` unless it is unknown, Drop, an MVP feature needing a non-MVP one, or
 would close a cycle, then removes `also_needs`. Prints JSON: added and skipped (with reasons).
 """

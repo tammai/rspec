@@ -13,7 +13,8 @@ class Scorecard(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout)
 
     def test_a_run_mostly_inferred_misses_its_target(self):
-        guessed = story("F-ISS-01", edge="- Limit [inferred], order [inferred], size [docs].")
+        crit = chr(10).join(f"- [ ] Given ENG-1, when I do {n}, then I see it. `[{t}]`" for n, t in enumerate(["inferred", "inferred", "docs"]))
+        guessed = story("F-ISS-01", criteria=crit, edge="- Size [docs], order [docs], ids [docs].")
         r = run("scorecard.py", project(stories={"F-ISS-01-a.md": guessed}))
         self.assertEqual(r.returncode, 1, r.stdout)
         self.assertIn("inferred share 67%", r.stdout)
