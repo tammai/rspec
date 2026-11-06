@@ -15,6 +15,10 @@ from rspec_lib import (TAG_RE, STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8-sig"))) if STORY_TPL.exists() else set()
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+# Format descriptors and example addresses, not personal data.
+EMAIL_PLACEHOLDER = re.compile(
+    r"\b(?:local|user|name|you|someone|me|operator|admin)@(?:domain|example|host|server)\.[\w.-]+",
+    re.I)
 GHERKIN = re.compile(r"\bgiven\b.*\bwhen\b.*\bthen\b", re.I)
 
 
@@ -121,8 +125,10 @@ def main():
             if not any(p.name.lower().startswith(c.lower() + "-") for p in research):
                 W(f"no research file for module {c} in research/")
     for p in research:
-        if EMAIL.search(p.read_text(encoding="utf-8-sig")):
-            W(f"research/{p.name}: contains an email address; remove personal data before committing")
+        hits = [m.group(0) for m in EMAIL.finditer(p.read_text(encoding="utf-8-sig"))
+                if not EMAIL_PLACEHOLDER.fullmatch(m.group(0))]
+        if hits:
+            W(f"research/{p.name}: contains an email address ({hits[0]}); remove personal data before committing")
 
     # features.md
     feats = {}
@@ -276,6 +282,8 @@ def main():
         plan = docs / "build-plan.md"
         text = plan.read_text(encoding="utf-8-sig") if plan.exists() else ""
         if not text: E("build-plan.md missing; run /rspec:handoff")
+        if text and not build_slices(docs) and re.search(r"^#{3,}\s*Slice\s+\d", text, re.M):
+            E("build-plan.md: slice headings must be '## Slice N', not '### Slice N'; none were parsed")
         if not (cfg.get("stack") or "").strip() or cfg.get("stack") == "undecided":
             W("rspec.json 'stack' is empty; record the stack the accepted stack ADR chose")
         plan_ids = set(re.findall(r"\bF-[A-Z]{2,4}-\d{2,3}\b", text))  # whole IDs: F-X-10 is not F-X-100

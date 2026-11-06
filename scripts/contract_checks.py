@@ -61,6 +61,8 @@ def check_domain(domain_text, openapi, docs):
             action, allowed = row[0], {r for r, v in zip(roles, row[header.index("Operations") + 1:])
                                        if v.lower().startswith(("yes", "y", "✓"))}
             for op_id in _split(row[header.index("Operations")]):
+                if not op_id or not re.fullmatch(r"[A-Za-z][\w.-]*", op_id):
+                    continue  # blank or a placeholder like "(tech fills)"; tech fills it later
                 op = ops.get(op_id)
                 if op is None:
                     warns.append(f"domain.md: '{action}' names operation {op_id}, which openapi.json does not have")
@@ -74,10 +76,16 @@ def check_domain(domain_text, openapi, docs):
         if len(row) < 2:
             continue
         name, values = row[0].strip("`"), set(_split(row[1]))
+        seen = False
         for rel, doc in docs.items():
             for prop, vals in enum_properties(doc):
-                if prop == name and set(map(str, vals)) != values:
-                    errors.append(f"{rel}: enum '{name}' {sorted(map(str, vals))} differs from domain.md {sorted(values)}")
+                if prop == name:
+                    seen = True
+                    if set(map(str, vals)) != values:
+                        errors.append(f"{rel}: enum '{name}' {sorted(map(str, vals))} differs from domain.md {sorted(values)}")
+        if not seen:
+            warns.append(f"domain.md: enumeration '{name}' matches no schema property of that name; "
+                         "the Name cell must be the exact property name so the check is meaningful")
     return errors, warns
 
 
