@@ -4,6 +4,16 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-11-06
+Steadier results between runs, from comparing the two full-scope Linear runs (231 vs 182 features, 55% MVP overlap by name).
+### Changed
+- **Modules follow the product's own navigation.** Discover takes one module per top-level area of the product's sidebar, menu and settings (6–10 modules), records the page each maps to, and uses features, pricing and changelog only to place features. A rules file can pin `modules` so repeat runs share one split.
+- **One feature size.** A feature is one capability a user would name, deliverable in one build change: about 3–8 acceptance criteria. Smaller items merge (status, priority and assignee are one "issue properties" feature); bigger ones split.
+- **MVP from the core journey.** features.md starts with a `## Core journey` of 6–10 steps; the MVP is the features those steps touch plus their dependencies, and each MVP reason cites its step.
+- **Slices by criteria budget.** Without sdlc a slice holds about 30 acceptance criteria (0.9.2 capped it at 8 features); with sdlc it stays at 10 per slice, since sdlc takes about 10 per change.
+### Added
+- `scripts/scorecard.py` scores a finished spec, or compares two runs: MVP overlap by feature name, feature-count spread, inferred share of facts, slices over budget. Targets: overlap ≥ 80%, spread ≤ 15%, inferred ≤ 30%, no slice over budget.
+
 ## [0.9.2] - 2026-11-06
 Fixes found by the full-scope end-to-end runs on Linear.
 ### Added

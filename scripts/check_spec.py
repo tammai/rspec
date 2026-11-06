@@ -9,7 +9,7 @@ from pathlib import Path
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
-                       slice_criteria, SDLC_MAX_CRITERIA, MAX_SLICE_FEATURES)
+                       slice_criteria, SDLC_MAX_CRITERIA, SLICE_BUDGET)
 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8-sig"))) if STORY_TPL.exists() else set()
@@ -242,8 +242,8 @@ def main():
             total = slice_criteria(story_map, ids)
             if sdlc and total > SDLC_MAX_CRITERIA:
                 W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
-            elif not sdlc and len(ids) > MAX_SLICE_FEATURES:
-                W(f"build-plan.md: Slice {num} has {len(ids)} features; keep a slice to {MAX_SLICE_FEATURES} or fewer, split it")
+            elif not sdlc and total > SLICE_BUDGET and len(ids) > 1:
+                W(f"build-plan.md: Slice {num} has {total} acceptance criteria; keep a slice to about {SLICE_BUDGET}, split it")
         if modernize:
             cp = docs / "cutover-plan.md"
             if not cp.exists():

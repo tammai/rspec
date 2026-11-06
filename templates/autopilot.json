@@ -9,6 +9,7 @@
   "stack": "",
   "deploy": "",
   "layout": "auto",
+  "modules": [],
   "modernize": {
     "repos": [],
     "current_stack": "",

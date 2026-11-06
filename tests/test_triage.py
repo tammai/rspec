@@ -22,11 +22,13 @@ class Triage(unittest.TestCase):
         self.assertEqual(json.loads(run("progress.py", root).stdout)["next"], "triage")
         self.assertIn("still includes Drop F-ISS-02", run("check_spec.py", root).stdout)
 
-    def test_a_slice_over_eight_features_without_sdlc_warns(self):
-        feats = tuple((f"F-ISS-{n:02d}", "MVP") for n in range(1, 10))
+    def test_a_slice_over_the_criteria_budget_without_sdlc_warns(self):
+        eight = chr(10).join(f"- [ ] Given state {n}, when I act, then I see it." for n in range(8))
+        feats = tuple((f"F-ISS-{n:02d}", "MVP") for n in range(1, 5))
         root = project(stage="handoff", config=FULL, features=feats,
+                       stories={f"{i}-x.md": story(i, criteria=eight) for i, _ in feats},
                        files={"build-plan.md": plan([i for i, _ in feats])})
-        self.assertIn("Slice 1 has 9 features", run("check_spec.py", root).stdout)
+        self.assertIn("Slice 1 has 32 acceptance criteria; keep a slice to about 30", run("check_spec.py", root).stdout)
 
 
 class MergeDeps(unittest.TestCase):
