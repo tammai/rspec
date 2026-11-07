@@ -4,6 +4,10 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-07
+### Added
+- **`/rspec:site <url>`**: a standalone playbook to rebuild a marketing site or landing page with the same taste and UI/UX. It observes one page read-only at 375, 768 and 1440 (and dark mode), runs the read-only extraction snippets in `references/site-extract.md` through Playwright, and writes `docs/site/<name>/site-spec.md` (vibe, tokens, components, section anatomy, interactions, at most ten acceptance criteria), `tokens.json` (W3C DTCG) and `tokens.css`. It takes the system, never the text, images, icons or fonts; licensed fonts get a free substitute. It does not touch the `rspec.json` pipeline.
+
 ## [0.9.9] - 2026-11-07
 Four Minor frictions the gophish → bigin-phish run surfaced (it reached handoff and met every audit target: facts 97.4%, coverage 92%, 0 contradictions).
 ### Fixed
