@@ -10,7 +10,7 @@ description: >
   It explains the rspec pipeline and routes to the right /rspec command based on
   the current state in <spec>/rspec.json.
 metadata:
-  version: "0.9.7"
+  version: "0.10.0"
 ---
 
 # Reverse spec pipeline
@@ -31,6 +31,7 @@ Produce an original specification of an existing product, written in the project
 
 ## Routing
 
+0. If the user wants to rebuild one marketing site or landing page with the same look and feel, not a whole product, hand over to `/rspec:site <url>`.
 1. If the user wants the whole spec done in one go, hand over to `/rspec:pipeline`.
 2. Look for `<spec>/rspec.json` in the current project.
 3. If absent, propose `/rspec:init <product>`; if the user already named the product and goal, start the init workflow directly.
