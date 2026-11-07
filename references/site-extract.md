@@ -106,3 +106,96 @@ Colours here come back in the browser's own notation (often `lab()` or `oklab()`
 (el) => { const s = getComputedStyle(el);
   return { bg: s.backgroundColor, color: s.color, transform: s.transform, shadow: s.boxShadow, border: s.borderColor, textDecoration: s.textDecorationLine }; }
 ```
+
+## E. Gradient-filled text
+
+Finds text painted with a background clipped to the text (`background-clip: text`), the "gradient headline" technique. Run once at 1440. `fills` groups the elements by fill, so one entry with a high count means a single brand gradient used throughout; `image` means the text is filled with a picture rather than a CSS gradient.
+
+```js
+() => {
+  const cv = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  const hex = c => { let a = 1; const m = c.match(/\/\s*([\d.]+)(%?)\s*\)$/) || c.match(/^(?:rgba|hsla)\((?:[^,]+,){3}\s*([\d.]+)\)$/);
+    if (m) { a = parseFloat(m[1]) / (m[2] === '%' ? 100 : 1); c = c.replace(/\s*\/\s*[\d.]+%?\s*\)$/, ')').replace(/^(rgb|hsl)a\(((?:[^,]+,){2}[^,]+),[^)]*\)/, '$1($2)'); }
+    if (a === 0) return 'transparent';
+    cv.fillStyle = '#000'; cv.fillStyle = c; cv.fillRect(0, 0, 1, 1); const [r, g, b] = cv.getImageData(0, 0, 1, 1).data;
+    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('') + (a < 1 ? Math.round(a * 255).toString(16).padStart(2, '0') : ''); };
+  const hexAll = str => str.replace(/(rgba?|lab|lch|oklab|oklch|hsla?|color)\([^()]*\)/g, hex);
+  const els = [...document.querySelectorAll('body *')].filter(el => { const s = getComputedStyle(el); const r = el.getBoundingClientRect();
+    return (s.webkitBackgroundClip === 'text' || s.backgroundClip === 'text') && r.width > 0 && r.height > 0; });
+  const fills = {};
+  const items = els.map(el => { const s = getComputedStyle(el); const fill = s.backgroundImage.startsWith('url(') ? 'image' : hexAll(s.backgroundImage);
+    fills[fill] = (fills[fill] || 0) + 1;
+    return { tag: el.tagName.toLowerCase(), y: Math.round(el.getBoundingClientRect().top + scrollY), font: `${s.fontWeight} ${s.fontSize}/${s.lineHeight}`, fill: fill.slice(0, 160), chars: el.textContent.trim().length }; });
+  return { count: els.length, fills: Object.entries(fills).sort((a, b) => b[1] - a[1]), first: items.slice(0, 12) };
+}
+```
+
+## F. Scroll-reveal timing
+
+Measures how content below the fold animates in. It scrolls a few hidden headings and paragraphs into view one at a time and samples their opacity and vertical offset (summed over their ancestors) at 50 ms to 2.4 s. Run once at 1440; it moves the page, so run it last or scroll back afterwards.
+
+- `waitingToReveal`: how many elements below the fold start hidden or offset. Zero means the page has no reveal effect.
+- `before` and `curve`: the starting state and the path to rest. A positive `y` means the element rises into place; a negative `y` means it drops into place.
+- `settledByMs`: the first sample at full opacity and no offset, so the duration lies between that sample and the previous one.
+- `replaysOnScrollBack`: `true` means the effect is tied to scroll position (it reverses when the reader scrolls back up); `false` means it plays once.
+
+```js
+async () => {
+  const sleep = t => new Promise(r => setTimeout(r, Math.max(0, t)));
+  const state = el => { let op = 1, ty = 0; for (let e = el; e && e !== document.body; e = e.parentElement) { const s = getComputedStyle(e); op *= parseFloat(s.opacity);
+      const m = s.transform.match(/^matrix\(([^)]+)\)$/); if (m) ty += parseFloat(m[1].split(',')[5]); }
+    return { opacity: +op.toFixed(2), y: Math.round(ty * 10) / 10 }; };
+  scrollTo(0, 0); await sleep(400);
+  const below = [...document.querySelectorAll('h1, h2, h3, p, figure, img, video, picture')]
+    .filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().top > innerHeight * 1.5);
+  const waiting = below.filter(el => { const s = state(el); return s.opacity < 0.05 || Math.abs(s.y) >= 1; });
+  const samples = [];
+  for (const el of waiting.filter(e => /^(H1|H2|H3|P)$/.test(e.tagName)).slice(0, 3)) {
+    const before = state(el);
+    scrollTo(0, el.getBoundingClientRect().top + scrollY - innerHeight * 0.75);
+    const t0 = performance.now(), curve = [];
+    for (const t of [50, 150, 300, 600, 1000, 1600, 2400]) { await sleep(t - (performance.now() - t0)); curve.push({ t, ...state(el) }); }
+    const done = curve.find(c => c.opacity > 0.98 && Math.abs(c.y) < 0.5);
+    scrollTo(0, 0); await sleep(300); const replays = state(el).opacity < 0.05 || Math.abs(state(el).y) >= 1;
+    samples.push({ tag: el.tagName.toLowerCase(), font: getComputedStyle(el).fontSize, before, curve, settledByMs: done ? done.t : '>2400', replaysOnScrollBack: replays });
+  }
+  scrollTo(0, 0);
+  return { checked: below.length, waitingToReveal: waiting.length, samples };
+}
+```
+
+## G. Carousels and rows that run off the edge
+
+Finds horizontally scrolling rows: native scroll containers and rows moved by script (`overflow-x: hidden`). Run once at 1440 and once at 375. Each result gives:
+
+- the item count, size, gap and corner radius;
+- whether the row bleeds past the right edge of the viewport, and where the first item starts (which shows how it lines up with the page grid);
+- the scroll-snap setting;
+- the previous/next controls nearby, with their size and colour;
+- the number of dot or tab indicators.
+
+```js
+() => {
+  const vis = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const rows = [...document.querySelectorAll('body *')].filter(el => { const s = getComputedStyle(el); const r = el.getBoundingClientRect();
+    return vis(el) && r.width > 240 && r.height > 120 && el.scrollWidth > el.clientWidth + 24 && ['auto', 'scroll', 'hidden'].includes(s.overflowX); })
+    .filter((el, i, arr) => !arr.some(o => o !== el && o.contains(el) && o.scrollWidth - o.clientWidth >= el.scrollWidth - el.clientWidth));
+  return rows.map(el => {
+    let list = el; while (list.children.length === 1) list = list.firstElementChild;
+    const items = [...list.children].filter(vis); const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
+    const ir = items.map(i => i.getBoundingClientRect());
+    const gap = ir.length > 1 ? Math.round(ir[1].left - ir[0].right) : null;
+    const box = el.closest('section, article, [class*=gallery], [class*=carousel]') || el.parentElement;
+    const controls = [...box.querySelectorAll('button, [role=button], a')].filter(b => vis(b) && /next|prev|previous|forward|back|scroll|›|‹|→|←/i.test((b.getAttribute('aria-label') || '') + b.textContent))
+      .map(b => { const bs = getComputedStyle(b); const br = b.getBoundingClientRect(); return `${(b.getAttribute('aria-label') || b.textContent).trim().slice(0, 20)} ${Math.round(br.width)}x${Math.round(br.height)} r${bs.borderRadius} ${bs.backgroundColor}`; });
+    const dots = box.querySelectorAll('[role=tab], [class*=dot], [class*=paddle-nav] li').length;
+    const radiusOf = it => { const w = it.getBoundingClientRect().width; const el = [it, ...it.querySelectorAll('*')].find(e => parseFloat(getComputedStyle(e).borderTopLeftRadius) > 0 && e.getBoundingClientRect().width > w * 0.6); return el ? getComputedStyle(el).borderTopLeftRadius : '0px'; };
+    return { y: Math.round(r.top + scrollY), left: Math.round(r.left), width: Math.round(r.width), scrollWidth: el.scrollWidth, overflowX: s.overflowX,
+      scrollSnap: s.scrollSnapType, mechanism: s.overflowX === 'hidden' ? 'transform or script' : 'native scroll',
+      items: items.length, itemSize: ir[0] ? [Math.round(ir[0].width), Math.round(ir[0].height)] : null, gap, itemRadius: items[0] ? radiusOf(items[0]) : null,
+      bleedsRight: ir.some(x => x.right > innerWidth), firstItemLeft: ir[0] ? Math.round(ir[0].left) : null,
+      controls: controls.slice(0, 4), dots };
+  }).filter(c => c.controls.length || c.dots || (c.gap !== null && c.gap >= 0 && c.mechanism === 'native scroll')).slice(0, 8);
+}
+```
+

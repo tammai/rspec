@@ -4,6 +4,15 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-07
+### Added
+- `/rspec:site` extraction snippets for three things the Apple MacBook Air run had to measure by hand (`references/site-extract.md`):
+  - **E. Gradient-filled text:** every headline painted with `background-clip: text`, grouped by fill. On the Apple page it found 14 such headlines in one call: 12 share one gradient and 2 are filled with an image.
+  - **F. Scroll-reveal timing:** samples opacity and offset as hidden content scrolls into view, and says whether the effect plays once or follows the scroll. On the Apple page it corrected the hand-made spec: reveals settle in about 600 ms (not 1 s), labels drop 4 px into place while headlines rise, and the headlines follow the scroll.
+  - **G. Carousels:** every row that scrolls sideways, with item size, gap, radius, edge bleed, snap and controls. On the Apple page it found 5 carousels; the hand-made pass had spotted 1.
+### Changed
+- The `/rspec:site` skill runs the new snippets, and the spec template has a headline-fill row, scroll-reveal details under Motion and a Carousels line under Interactions.
+
 ## [0.10.0] - 2026-11-07
 ### Added
 - **`/rspec:site <url>`**: a standalone playbook to rebuild a marketing site or landing page with the same taste and UI/UX. It observes one page read-only at 375, 768 and 1440 (and dark mode), runs the read-only extraction snippets in `references/site-extract.md` through Playwright, and writes `docs/site/<name>/site-spec.md` (vibe, tokens, components, section anatomy, interactions, at most ten acceptance criteria), `tokens.json` (W3C DTCG) and `tokens.css`. It takes the system, never the text, images, icons or fonts; licensed fonts get a free substitute. It does not touch the `rspec.json` pipeline.
