@@ -10,7 +10,7 @@ description: >
   Standalone: it does not use or change the rspec.json pipeline.
 argument-hint: <url> [working name]
 metadata:
-  version: "0.10.0"
+  version: "0.10.1"
 ---
 
 # /rspec:site
@@ -29,20 +29,23 @@ A playbook for one marketing page. It extracts the **system** behind the page (t
 
 ## 1. Capture
 1. Navigate, wait for the page to settle, dismiss a cookie banner if one blocks the view.
-2. For each viewport (1440×900, 768×1024, 375×812): `browser_resize` with `width` and `height`, scroll to the bottom and back so lazy content and reveal animations run (there is no scroll tool: `browser_evaluate` with `() => window.scrollTo(0, <y>)`, one viewport height at a time), then run snippet A from `${CLAUDE_PLUGIN_ROOT}/references/site-extract.md`. Run B and C once at 1440.
+2. For each viewport (1440×900, 768×1024, 375×812): `browser_resize` with `width` and `height`, scroll to the bottom and back so lazy content and reveal animations run (there is no scroll tool: `browser_evaluate` with `() => window.scrollTo(0, <y>)`, one viewport height at a time), then run snippet A from `${CLAUDE_PLUGIN_ROOT}/references/site-extract.md`. Run B, C and E (gradient text) once at 1440, and G (carousels) at 1440 and 375.
 3. Write `captures/` into `<out>/.gitignore`, then save everything under `<out>/captures/`: it is for your own reading during this run and is never committed or published. The Playwright MCP writes only inside the project, so pass these paths as `filename`.
    - Snippet A's result is long: pass `filename: "<out>/captures/a-<width>.json"` to `browser_evaluate` and read the file.
    - Screenshots: one viewport-sized `browser_take_screenshot` per section, after scrolling to that section's `top` from snippet A. Do not rely on `fullPage: true`: a page thousands of pixels tall shrinks to an unreadable strip when you look at it. One full-page shot at 375 is fine as an overview of the order.
 4. `browser_snapshot` at 1440 to read the section structure and find the primary CTA, a secondary button, a nav link and a card. For each, run snippet D with its ref as `target`, then `browser_hover` it, wait for its transition to finish (`browser_wait_for` with `time`), and run D again. Press Tab once (`browser_press_key`) and screenshot the focus ring.
 5. If `colorScheme` includes dark or the site has a theme toggle, `browser_emulate_media` with `colorScheme: "dark"` and re-run snippet A at 1440. Then `reducedMotion: "reduce"` and reload to see what the site turns off.
-6. The MCP also leaves snapshots in `.playwright-mcp/` at the project root; delete that folder at the end.
+6. Run snippet F (scroll-reveal timing) once at 1440, after the screenshots, since it scrolls the page.
+7. The MCP also leaves snapshots in `.playwright-mcp/` at the project root; delete that folder at the end.
 
 ## 2. Analyse
 - **Colour**: cluster the colour and background counts into roles (background, surface, raised surface, text, muted text, border, accent, accent text, states). Prefer the site's own CSS variables when they map cleanly. Note how sparingly the accent is used.
 - **Type**: build the scale from the h1–h4/p/small samples; record size, weight, line-height and tracking per step at 1440 and 375, so the fluid behaviour is clear. Record font traits, then choose substitutes.
 - **Spacing and layout**: infer the base unit and scale from the spacing histogram (most values are multiples of 4 or 8; ignore outliers). Record container max-width, gutters, grid columns and section vertical rhythm. Breakpoints come from the media queries, confirmed by what changed between viewports.
 - **Shape and depth**: radii, borders and shadows as small scales.
-- **Motion**: durations and easings from transitions and animations; entrance, scroll and hover patterns from C and D, confirmed on the screenshots; whether `prefers-reduced-motion` is handled.
+- **Motion**: durations and easings from transitions and animations; hover patterns from D; the scroll reveal from F (duration, distance and direction, and whether it plays once or follows the scroll), confirmed on the screenshots; whether `prefers-reduced-motion` is handled.
+- **Gradient text**: from E, the fill of each headline painted with a gradient or an image, and how many share it. A single shared gradient is usually the page's one accent; the rebuild keeps the technique in its own colours.
+- **Carousels**: from G, each row that scrolls sideways: item size, gap and radius, whether it bleeds off the right edge and lines up with the page grid on the left, snap, and its controls.
 - **Sections**: walk the page top to bottom (hero, logos, features, proof, pricing, FAQ, CTA, footer, or whatever it has). For each: layout per viewport, hierarchy, content slots with rough lengths, spacing, media treatment, interaction.
 - **Vibe**: the adjectives, density, contrast, imagery style and copy voice, and the three to five decisions that carry the taste. This is the part a token dump misses; make it specific ("one accent, used only on CTAs and one highlight word") rather than generic ("modern and clean").
 - Tag every fact `[observed]` (measured or seen) or `[inferred]` (a judgement or a rebuild choice). Unknowns are `unknown` and go to Open questions.

@@ -23,7 +23,8 @@ Full values in `tokens.json`. Summary:
 | Spacing | base <4 or 8>px, scale <…>, section padding <…> | [inferred] |
 | Radii, borders, shadows | <…> | [observed] |
 | Layout | container max-width <…>, gutter <…>, grid <12 col / …>, breakpoints <…> | [observed] |
-| Motion | durations <…>, easing <…>, reduced-motion handled: <yes/no> | [observed] |
+| Headline fill | <solid | gradient <angle, from → to> on <which headlines> | image> | [observed] |
+| Motion | durations <…>, easing <…>; scroll reveal <distance, direction, duration, once or scroll-linked>; reduced-motion handled: <yes/no> | [observed] |
 
 ## Components
 One row per reusable component, with its states.
@@ -46,6 +47,7 @@ Top to bottom, one subsection per section. Content is a placeholder the rebuild 
 
 ## Interactions
 - Scroll: <smooth scroll, sticky header, reveal on scroll …> [observed]
+- Carousels: <item size, gap, bleeds off the right edge, snap, previous/next controls, dots> [observed]
 - Links and focus: <underline on hover, visible focus ring 2px accent> [observed]
 - Forms: <inline email capture, validation style> [observed]
 
