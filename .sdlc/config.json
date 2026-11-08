@@ -11,5 +11,6 @@
     "lint": null,
     "typecheck": null,
     "build": "claude plugin validate ."
-  }
+  },
+  "prd": "README.md"
 }
