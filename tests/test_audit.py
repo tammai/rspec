@@ -50,19 +50,24 @@ class Audit(unittest.TestCase):
         rows = "".join(f"| {i} | x | {v} | https://docs.example | n |\n" for i, v in verdict.items())
         (audit / "facts.md").write_text("accuracy: 90%, contradicted: 1\n\n| ID | Tag | Verdict | Source | Note |\n"
                                         "|---|---|---|---|---|\n" + rows, encoding="utf-8")
+        path = root / "docs" / "features" / "F-ISS-01-a.md"
+        edited = next(i for i in tags["docs"]["population"] if i not in tags["docs"]["sample"])
+        k = edited.split("AC")[1]
+        path.write_text(path.read_text(encoding="utf-8").replace(f"then I see ENG-{k}.", f"then I see ENG-{k}9."),
+                        encoding="utf-8")
         r = run("audit_sample.py", root, "--levels")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual(run("check_spec.py", root).returncode, 0)
         lock = json.loads((root / "docs" / "criteria.lock.json").read_text(encoding="utf-8"))
         level = {c["id"]: c["level"] for c in lock["criteria"]}
         observed_unsampled = set(tags["observed"]["population"]) - set(tags["observed"]["sample"])
-        self.assertTrue(all(level[i] == 1 for i in tags["docs"]["population"]))
+        self.assertTrue(all(level[i] == 1 for i in tags["docs"]["population"] if i != edited))
+        self.assertEqual(level[edited], 0)
         self.assertEqual(level[unsupported], 0)
         self.assertEqual(level[contradicted], 0)
         self.assertTrue(all(level[i] == 0 for i in observed_unsampled))
-        docs_one = tags["docs"]["population"][0]
+        docs_one = next(i for i in tags["docs"]["population"] if i != edited)
         n = docs_one.split("AC")[1]
-        path = root / "docs" / "features" / "F-ISS-01-a.md"
         path.write_text(path.read_text(encoding="utf-8").replace(f"then I see ENG-{n}.", f"then I see ENG-{n}0."),
                         encoding="utf-8")
         run("check_spec.py", root)

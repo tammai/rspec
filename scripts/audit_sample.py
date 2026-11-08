@@ -8,7 +8,7 @@ Draw: for each of [docs] [api] [observed] [code] [inferred], samples min(25, max
 <spec>/audit/sample.json (each tag's population and sample) for --levels.
 --levels: reads the verdict column of <spec>/audit/facts.md and writes <spec>/audit/levels.json, the criteria that
 reach level 1 (contracts C3) with their text hash: sampled and confirmed, or unsampled in a population whose sample
-has no CONTRADICTED; a criterion with its own finding never does. check_spec.py writes the level into the lock.
+has no CONTRADICTED; a criterion with its own finding, or edited since the draw, never does. check_spec.py writes the level into the lock.
 """
 import json, math, random, re, sys
 from pathlib import Path
@@ -54,7 +54,8 @@ def draw(spec, seed):
     for tag in TAGS:
         pop = [c for c in found if c[1] == tag]
         picked = rng.sample(pop, sample_size(len(pop)))
-        tags[tag] = {"population": [c[0] for c in pop], "sample": [c[0] for c in picked]}
+        tags[tag] = {"population": [c[0] for c in pop], "sample": [c[0] for c in picked],
+                     "text_sha256": {c[0]: c[2] for c in pop}}
         lines.append(f"\n## [{tag}]: {len(picked)} of {len(pop)}\n")
         lines += [f"- {cid} ({name}): {line}" for cid, _, _, name, line in picked]
     out = spec / "audit"
@@ -97,7 +98,7 @@ def levels(spec):
         for cid in tag["population"]:
             verdict = found.get(cid)
             ok = verdict in CONFIRMED if verdict else clean
-            if ok and cid in sha:
+            if ok and cid in sha and sha[cid] == tag["text_sha256"].get(cid):  # only text the audit saw
                 level1[cid] = sha[cid]
     (audit / "levels.json").write_text(json.dumps({"criteria": level1}, indent=2) + "\n", encoding="utf-8")
     total = sum(len(t["population"]) for t in tags.values())
