@@ -50,7 +50,7 @@ The Rollback section is required: trigger, steps, and the point of no return. Da
 
 ## 5. Production readiness (when `goal` is `production`, which the modernize track defaults to)
 Write `<spec>/production-readiness.md` from `${CLAUDE_PLUGIN_ROOT}/templates/production-readiness.md`:
-- Keep every category; keep the Cutover category only in the modernize track (delete it for rspec). Tailor items to this product: name the real SLO targets from the NFRs, the regulations that apply to its users, the roles and tenant boundaries to test.
+- Keep every category; keep the Cutover category only in the modernize track (delete it for rspec), Parity with the reference only for a rebuild that has a reference to compare with (product-rebuild), and Client app only when something ships to a device or an app store. Tailor items to this product: name the real SLO targets from the NFRs, the regulations that apply to its users, the roles and tenant boundaries to test.
 - Mark an item that cannot apply as checked with `(n/a: <reason>)`, e.g. no personal data stored. Never mark anything else done here; the build proves the rest.
 - Tell the user the pipeline will hand the open items to the build after the last slice.
 

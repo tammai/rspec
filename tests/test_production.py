@@ -1,4 +1,5 @@
 import json, unittest
+from pathlib import Path
 from helpers import project, run
 
 OPENAPI = {"openapi": "3.1.0", "info": {"title": "X", "version": "0.1"},
@@ -45,6 +46,22 @@ class ProductionGoal(unittest.TestCase):
                        root_files={".sdlc/state/f1.md": "Status: done\n"})
         p = json.loads(run("progress.py", root).stdout)
         self.assertEqual((p["next"], p["pending"]), ("readiness", ["Operations"]))
+
+    def test_handoff_accepts_the_readiness_template_and_its_categories_stay_pending(self):
+        template = (Path(__file__).resolve().parents[1] / "templates" / "production-readiness.md").read_text(encoding="utf-8")
+        rows = "| NFR-01 | Security | lockout after 10 failures | all | integration test | | [docs] |\n"
+        files = dict(tech_files(rows), **{"production-readiness.md": template,
+                                          "build-plan.md": "# Build plan\n\n## Slice 1: Issues\n| 1 | F-ISS-01 F-ISS-01.AC1 |\n"})
+        root = project(stage="handoff", config={"goal": "production", "stack": "x",
+                                                "build": {"engine": "sdlc", "slices": {"1": "f1"}}},
+                       files=files, root_files={".sdlc/state/f1.md": "Status: done\n"})
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        p = json.loads(run("progress.py", root).stdout)
+        self.assertEqual(p["next"], "readiness")
+        for category in ("Requirements (NFRs)", "Documentation",
+                         "Client app (anything shipped to a device or an app store; delete this section otherwise)"):
+            self.assertIn(category, p["pending"])
 
 
 if __name__ == "__main__":
