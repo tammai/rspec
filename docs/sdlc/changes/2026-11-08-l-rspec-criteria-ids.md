@@ -46,7 +46,9 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 - **AC-013** 02 §Decisions (New stage), §Acceptance: Given a spec whose audit is done, when `progress.py` runs, then `next` is `verify` (`decide` until `reference.run.kind` is set; skipped for `none`; done when `verify/summary.md` exists), so `/rspec:pipeline --until verify` stops after it (B4).
 - **AC-014** 02 §Decisions (Reference access): Given `reference.run` with `writes: true` on a `url` reference, or a base URL variable not named `ACCEPT_*`, when `check_spec.py` runs, then it is an error (B4).
 - **AC-015** 02 §Acceptance: the live run on `tests/fixtures/reference-app/`: `verify` reaches level 2 on every recordable criterion, the judge classifies the planted wrong criterion `spec-wrong`, the planted flaky endpoint is reported `flaky` (B4).
-- **AC-011** 02 §R7: `/rspec:amend <ID> "<reason>"` edits the criterion, logs it, regenerates the lock and drops it to level 0 (B5).
+- **AC-011** 02 §R7: Given a criterion at level 2, when `amend.py <ID> --text "<new text>" --reason "<why>"` runs, then the line reads the new text under the same ID, `<changelog>` has a line with the ID and the reason, the lock shows it at level 0, and the output names `/rspec:verify --only <feature>` when a reference is configured; a new criterion (`--new`) gets the next unused number, and text that breaks C1 is refused with nothing written (B5).
+- **AC-016** 02 §R7, contracts C6, sdlc S10: Given a `finding-v1` file (`--finding`), when amend runs, then a reproduced `spec-gap` (route `rspec`) is applied and its ID is in the changelog line; a finding routed elsewhere or not reproduced is refused (B5).
+- **AC-017** contracts C4 (a test changes only through amend): Given a criterion with a recorded test, when `amend.py <ID> --test --reason "<why>"` runs, then the test file is removed, the criterion drops to level 0 and `verify_report.py` no longer counts its old runs (B5).
 
 ## Acceptance tests
 
@@ -66,7 +68,9 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 | AC-013 | tests/test_verify.py › test_verify_step_sits_between_audit_and_handoff | `python -m unittest discover -s tests -p test_verify.py -k test_verify_step_sits_between_audit_and_handoff` |
 | AC-014 | tests/test_verify.py › test_reference_run_rules | `python -m unittest discover -s tests -p test_verify.py -k test_reference_run_rules` |
 | AC-015 | manual | live agent run 2026-11-08 on a scratch copy (USD 1.00, 18 turns): MVP 6/6 level 2, F-TSK-03.AC1 flaky, F-TSK-01.AC2 judged spec-wrong and re-recorded at 422; checked from summary.md, outcomes.jsonl, the lock and contracts.py bundle |
-| AC-011 | manual | test written in B5, which replaces this row |
+| AC-011 | tests/test_amend.py › test_amend_edits_logs_and_drops_to_level_0, test_new_criterion_takes_the_next_unused_number | `python -m unittest discover -s tests -p test_amend.py -k test_amend_edits_logs_and_drops_to_level_0 -k test_new_criterion_takes_the_next_unused_number` |
+| AC-016 | tests/test_amend.py › test_finding_input_is_routed_by_class | `python -m unittest discover -s tests -p test_amend.py -k test_finding_input_is_routed_by_class` |
+| AC-017 | tests/test_amend.py › test_amend_test_removes_the_recorded_test | `python -m unittest discover -s tests -p test_amend.py -k test_amend_test_removes_the_recorded_test` |
 
 ## Must never break
 

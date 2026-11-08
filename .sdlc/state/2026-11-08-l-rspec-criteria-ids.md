@@ -10,8 +10,8 @@ Started: 2026-11-08
 Base: 0bef83f
 Owner: tammai.it@gmail.com
 Tool: claude-code
-Verified: 8f853f1 tree 81820eb2550e2455cff46df259a4a6cbb73c6cc6
-Slice: B4   Slice base: ff638a7   Slice gates: none
+Verified: 600f2da tree 1682b9952d65c5d9e09e1755d680a985f621577a
+Slice: B5   Slice base: 600f2da   Slice gates: none
 Current: Stage 2 – Build
 
 ## Stages
@@ -32,6 +32,7 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - For B3 (R4): `audit_sample.py` reads `criteria_items` (rspec_lib), which parses `**ID**` lines fine. R4's level 1 must reach the lock, but `write_lock` only carries levels over; B3 needs a way to raise a level (e.g. an audit result file `write_lock` reads)
 - B3 done. Level 1: `audit_sample.py --levels` writes `<spec>/audit/levels.json` (ID → text hash); `write_lock` raises 0 → 1 while the hash matches and never lowers a level 2. For B4 (R5): level 2 can reach the lock the same way (a verify result file with ID → hash and test path, read by `write_lock`); `progress.py` decides the audit stage by `audit/summary.md`. The fact-checker already reads `reference.run` (absent = kind none)
 - B4 done. Verify: verify_run.py logs runs, verify_report.py decides level 2/flaky and writes verify/levels.json, which write_lock reads. For B5 (R7): skills/verify/SKILL.md step 4 edits a spec-wrong criterion directly 'until /rspec:amend exists'; point it at /rspec:amend. Amend must drop the criterion to level 0 (a text change already does via the lock hash) and run verify --only for its feature when reference.run.kind is local or url.
+- B5 done; every part is done. Next is Feature close (sdlc Review over the whole branch, then Ship): not started by the part-5 worker, since it needs fresh review agents and a push, which the orchestrator decides. Owed before a 0.11.0 release: the 02 acceptance re-run on the gophish -> bigin-phish spec (audit targets, verify level 2 share), and /rspec:pipeline resuming across every new stage end to end.
 
 ## Tasks
 1. **B1 Vendor contracts v1 + drift test** — AC-001
@@ -69,6 +70,7 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - 2026-11-08 Functions draw levels sample_size verdicts criteria (scripts/audit_sample.py), audited levels in write_lock (scripts/check_spec.py), and tests/test_audit.py's rerun test folded into test_sample_size_per_tag (B3) What: internal functions of the rewritten script; the old test asserted 25 [docs] of 40, which R4 changes to 8. Why: verify lists new functions; R4 changes the sample size. Effect: rerun determinism still asserted; --levels is a new mode of an existing script.
 - 2026-11-08 B4 files scripts/verify_report.py scripts/verify_run.py templates/autopilot.json templates/rspec.json tests/fixtures/reference-app/app/__init__.py tests/fixtures/reference-app/app/__main__.py tests/fixtures/reference-app/docs/openapi.json tests/fixtures/reference-app/docs/rspec.json tests/fixtures/reference-app/docs/schemas/task.schema.json What: the verify scripts, the reference.run block and verify rule in the templates, and the fixture app and spec (task 8 names their folders). Why: R5 report and run log by script (no agent figures), 02 Acceptance fixture. Effect: two new script commands; templates gain reference.run (kind empty = undecided).
 - 2026-11-08 B4 functions criterion_of run_once (verify_run.py) note read_jsonl share status (verify_report.py) verify_pending (progress.py), criteria moved from audit_sample.py into rspec_lib.py What: internal helpers; the criterion parser is shared by audit and verify scripts. Why: verify lists new functions. Effect: none outside the scripts.
+- 2026-11-08 B5 task 9 (skills/amend/ folder) and scripts/amend.py with helpers flag read_finding fail, plus scripts/verify_report.py status and skills/verify, skills/pipeline, README, CHANGELOG What: amend is a script plus a thin skill; verify_report ignores runs of a test amend removed; verify and pipeline skills route spec-wrong fixes and sdlc spec questions through amend. Why: R7 and C4 (a test changes only through amend), sdlc S10. Effect: new command scripts/amend.py; no other interface change.
 
 ## Open questions
 -

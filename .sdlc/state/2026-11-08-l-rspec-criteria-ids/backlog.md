@@ -8,4 +8,4 @@ Record: the feature's change file (`scaffold.py paths <feature>` â†’ `change`) Â
 | B2 | R3 PRD, R8 departures, R6 template changes | R3, R6, R8 | 6, 7, 8 | B1 | M | done |
 | B3 | R4 audit sampling and fact-checker changes | R4 | 9 | B2 | S | done |
 | B4 | R5 agents, verify skill, progress.py stage, report script, fixture app | R5 | 10, 12, 13, 14, 15 | B3, B2 | M | done |
-| B5 | R7 amend skill | R7 | 11 | B4 | S | todo |
+| B5 | R7 amend skill | R7 | 11, 16, 17 | B4 | S | done |

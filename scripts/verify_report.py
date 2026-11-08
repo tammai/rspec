@@ -22,9 +22,10 @@ def read_jsonl(path):
     return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-def status(cid, sha, runs):
+def status(cid, sha, runs, spec):
     """(status, last run or None): level-2, flaky, red, not-run or unrecorded."""
-    mine = [r for r in runs if r["criterion"] == cid and r["text_sha256"] == sha]
+    # a test /rspec:amend --test removed no longer counts, whatever its old runs said
+    mine = [r for r in runs if r["criterion"] == cid and r["text_sha256"] == sha and (spec / r["test"]).exists()]
     if not mine:
         return "unrecorded", None
     last = mine[-1]
@@ -71,7 +72,7 @@ def main():
     for cid, _, sha, _, _ in criteria(spec):
         fid = cid.split(".AC")[0]
         if fid in scoped:
-            st, last = status(cid, sha, runs)
+            st, last = status(cid, sha, runs, spec)
             rows.append({"id": cid, "feature": fid, "module": fid.split("-")[1], "mvp": prio.get(fid) == "MVP",
                          "sha": sha, "status": st, "last": last})
 

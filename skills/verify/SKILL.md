@@ -44,8 +44,8 @@ Launch one `rspec:criterion-recorder` per module with in-scope features, **at mo
 
 For each criterion a recorder reports `disputed`, launch a fresh `rspec:verify-judge` (one per criterion, in one message) with: the criterion line and its story path, the test path, the reference's actual responses for its failing runs (the `detail` of its lines in `verify/runs.jsonl`), `domain.md`, and the story's Differences. Never pass the recorder's reply. Then record the verdict with `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/verify_report.py . --note <ID> <verdict> "<reason>"` and:
 
-- `spec-wrong`: apply the corrected text to the criterion (with `/rspec:amend` once it exists; until then, edit the line and add a `<changelog>` line naming the criterion and the reason), then have one recorder re-record that criterion.
-- `test-wrong`: one more recorder attempt for that criterion, with the judge's note.
+- `spec-wrong`: apply the corrected text through `/rspec:amend <ID>` (it logs the change and drops the criterion to level 0), then have one recorder re-record that criterion.
+- `test-wrong`: one more recorder attempt for that criterion, with the judge's note. Once a test is in the bundle (`acceptance/manifest.json`), it changes only through `/rspec:amend <ID> --test`.
 - `unrecordable`: nothing more; it stays level 1 with the reason.
 
 ## 5. Report
