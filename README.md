@@ -54,6 +54,7 @@ docs/
   features.md        feature list and priorities
   domain.md          roles and permissions, enumerations, limits: the one source for shared rules
   features/          one story file per feature in scope (MVP and Later)
+  criteria.lock.json every criterion's ID, text hash and verification level, written by /rspec:check
   openapi.json       API contract (+ asyncapi.json for realtime events)
   schemas/           one JSON Schema per entity
   api.md  data-model.md  nfr.md   readable summaries
@@ -78,7 +79,7 @@ The spec is a reverse-engineered software requirements specification. It uses th
 | Part | Standard |
 |---|---|
 | User stories | "As a <role>, I want <capability> so that <benefit>", with YAML frontmatter (`id`, `priority`, `depends_on`, `status`) |
-| Acceptance criteria | Gherkin-style "Given …, when …, then …", one test each |
+| Acceptance criteria | Gherkin-style "Given …, when …, then …", one test each, with an ID (`F-ISS-01.AC2`), example data and one source tag: [shared contracts v1](contracts/v1/CONTRACTS.md) C1–C3, vendored in `contracts/v1/`. A spec written before 0.11 is upgraded with `python3 scripts/migrate_criteria.py .` |
 | API | [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.0); realtime events in [AsyncAPI 3.0](https://www.asyncapi.com/docs/reference/specification/v3.0.0) |
 | Data model | [JSON Schema 2020-12](https://json-schema.org/draft/2020-12) per entity, relations as a Mermaid `erDiagram` |
 | Non-functional requirements | Measurable targets grouped by ISO/IEC 25010 quality characteristic, each with the test, monitor or review that verifies it |

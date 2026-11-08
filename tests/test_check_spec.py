@@ -15,7 +15,7 @@ class CheckSpec(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout)
 
     def test_leftover_template_placeholder_fails(self):
-        r = run("check_spec.py", project(stories={"F-ISS-01-x.md": story("F-ISS-01", edge="- <case>: <expected behaviour>")}))
+        r = run("check_spec.py", project(stories={"F-ISS-01-x.md": story("F-ISS-01", failure="- <invariant that must hold> → F-ISS-01.AC1")}))
         self.assertEqual(r.returncode, 1, r.stdout)
         self.assertIn("template placeholders", r.stdout)
 

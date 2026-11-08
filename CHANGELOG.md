@@ -3,6 +3,14 @@
 All notable changes to the rspec plugin. Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added
+- Shared contracts v1 vendored byte-identical in `contracts/v1/` (contracts 1.0.0), with a test that fails when the copy drifts from its `MANIFEST`.
+- **Criterion IDs** (contracts C1): every acceptance criterion starts with `**F-<CODE>-<NN>.AC<n>**`, never renumbered or reused.
+- `scripts/migrate_criteria.py <spec>`: gives the criteria of an existing spec their IDs in file order, turns `Edge cases` into `Failure modes` lines marked `→ TODO` for the next `/rspec:stories` pass, adds the missing story sections, and changes nothing on a second run.
+- **Criteria lock** (contracts C3): `check_spec.py` writes `<spec>/criteria.lock.json` on every passing run. A criterion whose text changed since the last lock drops to level 0 and is listed as `needs re-verify`.
+### Changed
+- Story template and `story-writer` follow contracts C2: `Failure modes` (each line → a criterion or `MNB-<n>`), `Must never break`, and `Open questions` after `Sources`. `Edge cases` is removed.
+- `check_spec.py` checks stories with the vendored `contracts.py`: grammar, example data, one source tag and the C2 sections are errors (they were warnings). `→ TODO` failure modes and Differences lines without a `→ D-<nnn>` link are warnings for now.
 
 ## [0.10.1] - 2026-11-07
 ### Added

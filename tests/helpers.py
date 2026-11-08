@@ -3,8 +3,10 @@ from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 
-def story(fid, depends=(), status="todo", criteria="- [ ] Given an empty list, when I create an issue, then it appears with the next number.",
-          edge="- Empty title: the issue is not created and an error is shown."):
+def story(fid, depends=(), status="todo", criteria=None, failure=None):
+    criteria = criteria or (f'- [ ] **{fid}.AC1** Given team ENG with 11 issues, when a member creates "Fix login", '
+                            'then it is shown as ENG-12. `[docs]`')
+    failure = failure or f"- Empty title → {fid}.AC1"
     code = fid.split("-")[1]
     return f"""---
 id: {fid}
@@ -21,8 +23,11 @@ As a member, I want to do it so that work is tracked.
 ## Acceptance criteria
 {criteria}
 
-## Edge cases
-{edge}
+## Failure modes
+{failure}
+
+## Must never break
+- none
 
 ## Differences from the original
 - none

@@ -12,4 +12,6 @@
   - Concrete: use example data a test can use as is: an identifier (`ENG-12`), a value (priority Urgent), a count (three selected issues), a name typed ("prio").
   - Evidenced: end each criterion with its confidence tag (`[docs]`, `[api]`, `[observed]`, `[3p]`, `[code]` or `[inferred]`). The tag is for the expected result (the "then"), not the topic: `[docs]` or `[api]` only when the source states that result. If the source covers only part of it, split the criterion or tag it `[inferred]`. A rebuild choice is `[inferred]` and says so in Differences.
   - One behaviour per criterion, observable by a user or an API client, and within the feature's row in features.md.
+  - Clean line: the criterion ends with its tag; citations (`repo@abc1234 path:line`, URLs) go under the story's Sources.
+  - Identified: each criterion starts with its ID, `**F-ISS-01.AC2**` (contracts C1 in `contracts/v1/CONTRACTS.md`). IDs are never renumbered or reused; `check_spec.py` enforces C1 and the story sections (C2).
 - Do not invent precision. If a limit or behaviour is unknown, write `unknown` and add it to the module's open questions.
