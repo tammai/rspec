@@ -10,7 +10,7 @@ Started: 2026-11-08
 Base: 0bef83f
 Owner: tammai.it@gmail.com
 Tool: claude-code
-Verified: 3cd06c6 tree 5aa50f4683c733b757d3407128b21b5391359c8b
+Verified: 8f853f1 tree 81820eb2550e2455cff46df259a4a6cbb73c6cc6
 Slice: B4   Slice base: ff638a7   Slice gates: none
 Current: Stage 2 – Build
 
@@ -31,6 +31,7 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - B2 done. R8: `check_departures` and `criterion_ids` in scripts/check_spec.py; the lock's `departures` comes from the registry's `criteria` lists. Q5 (a): story-time and legacy differences are decided at the end of /rspec:stories (skills/stories/SKILL.md).
 - For B3 (R4): `audit_sample.py` reads `criteria_items` (rspec_lib), which parses `**ID**` lines fine. R4's level 1 must reach the lock, but `write_lock` only carries levels over; B3 needs a way to raise a level (e.g. an audit result file `write_lock` reads)
 - B3 done. Level 1: `audit_sample.py --levels` writes `<spec>/audit/levels.json` (ID → text hash); `write_lock` raises 0 → 1 while the hash matches and never lowers a level 2. For B4 (R5): level 2 can reach the lock the same way (a verify result file with ID → hash and test path, read by `write_lock`); `progress.py` decides the audit stage by `audit/summary.md`. The fact-checker already reads `reference.run` (absent = kind none)
+- B4 done. Verify: verify_run.py logs runs, verify_report.py decides level 2/flaky and writes verify/levels.json, which write_lock reads. For B5 (R7): skills/verify/SKILL.md step 4 edits a spec-wrong criterion directly 'until /rspec:amend exists'; point it at /rspec:amend. Amend must drop the criterion to level 0 (a text change already does via the lock hash) and run verify --only for its feature when reference.run.kind is local or url.
 
 ## Tasks
 1. **B1 Vendor contracts v1 + drift test** — AC-001

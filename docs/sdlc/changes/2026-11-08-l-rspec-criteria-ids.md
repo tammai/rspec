@@ -65,7 +65,7 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 | AC-012 | tests/test_verify.py › test_pass_and_fail_on_one_build_is_flaky | `python -m unittest discover -s tests -p test_verify.py -k test_pass_and_fail_on_one_build_is_flaky` |
 | AC-013 | tests/test_verify.py › test_verify_step_sits_between_audit_and_handoff | `python -m unittest discover -s tests -p test_verify.py -k test_verify_step_sits_between_audit_and_handoff` |
 | AC-014 | tests/test_verify.py › test_reference_run_rules | `python -m unittest discover -s tests -p test_verify.py -k test_reference_run_rules` |
-| AC-015 | manual | live agent run (approved, about 0.45M tokens), results in the part's report |
+| AC-015 | manual | live agent run 2026-11-08 on a scratch copy (USD 1.00, 18 turns): MVP 6/6 level 2, F-TSK-03.AC1 flaky, F-TSK-01.AC2 judged spec-wrong and re-recorded at 422; checked from summary.md, outcomes.jsonl, the lock and contracts.py bundle |
 | AC-011 | manual | test written in B5, which replaces this row |
 
 ## Must never break
