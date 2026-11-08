@@ -1,0 +1,15 @@
+{
+  "min_plugin_version": "3.2.1",
+  "project": {
+    "kind": "brownfield",
+    "stack": "python"
+  },
+  "docs_dir": "docs/sdlc",
+  "commands": {
+    "install": null,
+    "test": "python -m unittest discover tests",
+    "lint": null,
+    "typecheck": null,
+    "build": "claude plugin validate ."
+  }
+}

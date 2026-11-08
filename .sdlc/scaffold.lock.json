@@ -1,0 +1,40 @@
+{
+  "scaffold_version": "3.2.1",
+  "hosts": [
+    "claude-code"
+  ],
+  "files": {},
+  "merged": {},
+  "migrations": {
+    "applied": [],
+    "skipped": {}
+  },
+  "setup": {
+    "kind": "brownfield",
+    "completed_steps": [
+      "stack",
+      "commands",
+      "baseline"
+    ],
+    "complete": false
+  },
+  "command_runs": {
+    "(root)": {
+      "build": {
+        "command": "claude plugin validate .",
+        "ran": true,
+        "exit": 0,
+        "at": "2026-11-08T05:21:56Z"
+      },
+      "test": {
+        "command": "python -m unittest discover tests",
+        "ran": true,
+        "exit": 0,
+        "at": "2026-11-08T05:21:57Z"
+      }
+    }
+  },
+  "declined": [
+    ".sdlc/baseline.md"
+  ]
+}
