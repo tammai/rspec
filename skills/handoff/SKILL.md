@@ -11,7 +11,7 @@ metadata:
 
 # /rspec:handoff
 
-Requires stage `tech` and a finished audit (`<spec>/audit/summary.md`; run `/rspec:audit` first). Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists; `build-plan` pending at this point while a plan exists means the engine is sdlc and a slice not yet started has more than 10 criteria (e.g. the engine changed after the plan was cut): keep the slices already mapped in `build.slices` as they are, re-cut the rest after them, and number on (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
+Requires stage `tech`, a finished audit (`<spec>/audit/summary.md`; run `/rspec:audit` first) and a settled verify (`<spec>/verify/summary.md`, or `reference.run.kind` `none`; run `/rspec:verify` first). Without verify, every criterion stays at level 1 or below: say so in the build plan's header. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists; `build-plan` pending at this point while a plan exists means the engine is sdlc and a slice not yet started has more than 10 criteria (e.g. the engine changed after the plan was cut): keep the slices already mapped in `build.slices` as they are, re-cut the rest after them, and number on (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
 
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.

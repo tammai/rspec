@@ -23,7 +23,18 @@
     "retire_used_features": false,
     "adrs": "accept-recommended",
     "build_engine": "sdlc",
-    "accept_risks": false
+    "accept_risks": false,
+    "verify": false
   },
-  "stop_after": null
+  "stop_after": null,
+  "reference": {
+    "run": {
+      "kind": "none",
+      "base_url_env": "ACCEPT_BASE_URL",
+      "accounts": [],
+      "writes": false,
+      "start": "",
+      "stop": ""
+    }
+  }
 }
