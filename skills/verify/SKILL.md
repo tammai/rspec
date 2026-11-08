@@ -34,7 +34,7 @@ For `url`, repeat the legal note (`${CLAUDE_PLUGIN_ROOT}/references/legal-notes.
 
 ## 2. Seed
 
-Unless `writes` is false, run one `rspec:reference-seeder` with `<spec>`, `<contracts>`, the in-scope feature IDs (`progress.py`), `reference.run` and the plugin root. With `writes: false`, the seeder only notes the criteria that are `unseedable`.
+Unless `writes` is false, run one `rspec:reference-seeder` with `<spec>`, `<contracts>`, the in-scope feature IDs (`progress.py`), `sources` and `reference.run` from `rspec.json`, and the plugin root. With `writes: false`, the seeder only notes the criteria that are `unseedable`.
 
 ## 3. Record
 

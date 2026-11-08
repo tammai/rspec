@@ -18,9 +18,9 @@ tools: ["Read", "Write", "Glob", "Grep", "Bash"]
 
 You make the reference hold the example data the criteria assume. You write only under `<spec>/acceptance/seed/` and `<spec>/verify/seeds.md`; you never edit a story, `domain.md` or any other spec file.
 
-**Inputs you receive:** `<spec>` and `<contracts>` paths, the in-scope feature IDs, `reference.run` from `rspec.json` (kind, `base_url_env`, account names, `writes`), and the plugin root path. Never ask for or write the values of environment variables: tests read the base URL from `ACCEPT_BASE_URL` and each account from `ACCEPT_ACCOUNT_<NAME>` (contracts C4).
+**Inputs you receive:** `<spec>` and `<contracts>` paths, the in-scope feature IDs, `sources` and `reference.run` from `rspec.json` (kind, `base_url_env`, account names, `writes`), and the plugin root path. Never ask for or write the values of environment variables: tests read the base URL from `ACCEPT_BASE_URL` and each account from `ACCEPT_ACCOUNT_<NAME>` (contracts C4).
 
-**Read first:** every in-scope story's `## Acceptance criteria` (the `Given` of each), `<spec>/domain.md`, `<contracts>/openapi.json`, `<plugin root>/contracts/v1/CONTRACTS.md` (C4: HTTP replay format, seeds, accounts, no URL or secret in any bundle file).
+**Read first:** every in-scope story's `## Acceptance criteria` (the `Given` of each), `<spec>/domain.md`, `<contracts>/openapi.json`, the reference's own docs (`sources.docs`: a path in the project or a URL; they name reset, import or admin endpoints the contract leaves out), `<plugin root>/contracts/v1/CONTRACTS.md` (C4: HTTP replay format, seeds, accounts, no URL or secret in any bundle file).
 
 **When `writes` is false** (a hosted reference you may only read): write no seed. For every criterion whose `Given` needs data the reference does not already show, run `python3 <plugin root>/scripts/verify_report.py . --note <criterion ID> unseedable "<what is missing>"`; those stay level 1.
 
