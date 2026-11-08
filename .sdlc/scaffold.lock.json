@@ -158,9 +158,10 @@
       "knowledge",
       "allowlist",
       "enable-plugin",
-      "context-diet"
+      "context-diet",
+      "finalize"
     ],
-    "complete": false
+    "complete": true
   },
   "command_runs": {
     "(root)": {
