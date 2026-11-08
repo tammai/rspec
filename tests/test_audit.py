@@ -23,7 +23,7 @@ class Audit(unittest.TestCase):
         self.assertEqual((p["next"], p["pending"]), ("audit", ["facts", "coverage", "consistency"]))
         (root / "docs" / "audit").mkdir()
         (root / "docs" / "audit" / "summary.md").write_text("done", encoding="utf-8")
-        self.assertEqual(json.loads(run("progress.py", root).stdout)["next"], "handoff")
+        self.assertEqual(json.loads(run("progress.py", root).stdout)["next"], "verify")
 
     def test_sample_size_per_tag(self):
         counts = [("docs", 40), ("api", 3), ("observed", 200), ("code", 26), ("inferred", 12), ("3p", 4)]

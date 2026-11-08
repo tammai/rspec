@@ -10,37 +10,15 @@ Draw: for each of [docs] [api] [observed] [code] [inferred], samples min(25, max
 reach level 1 (contracts C3) with their text hash: sampled and confirmed, or unsampled in a population whose sample
 has no CONTRADICTED; a criterion with its own finding, or edited since the draw, never does. check_spec.py writes the level into the lock.
 """
-import json, math, random, re, sys
-from pathlib import Path
-from rspec_lib import open_layout, stories, table_cells
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "contracts" / "v1"))
-import contracts
+import json, math, random, sys
+from rspec_lib import open_layout, table_cells, criteria, contracts
 
 TAGS = ("docs", "api", "observed", "code", "inferred")
 CONFIRMED = {"SUPPORTED", "NOT-CONTRADICTED"}
-AC_SECTION = re.compile(r"^##\s*Acceptance criteria\s*$(.*?)(?=^##\s|\Z)", re.M | re.S)
 
 
 def arg(name, default):
     return int(sys.argv[sys.argv.index(name) + 1]) if name in sys.argv else default
-
-
-def criteria(spec):
-    """[(id, tag, text_sha256, file name, line)] for every active criterion, in file order."""
-    out = []
-    for fid, (path, text, _) in stories(spec).items():
-        sec = AC_SECTION.search(text)
-        for line in (sec.group(1).split("\n") if sec else []):
-            line = line.rstrip("\r")
-            m = contracts.CRIT_LINE.match(line)
-            a = contracts.ACTIVE.match(m.group("body")) if m else None
-            if not a:
-                continue
-            tags = [t for t in contracts.TAG.findall(a.group("rest")) if t in contracts.REVERSE_TAGS]
-            if tags:
-                out.append((a.group("id"), tags[0], contracts.criterion_text_sha256(line), path.name, line.strip()))
-    return out
 
 
 def sample_size(population):

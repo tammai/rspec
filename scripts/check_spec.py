@@ -165,12 +165,15 @@ def write_lock(layout, story_map, feats, departures, E, W):
             E(f"criteria.lock.json is not valid JSON ({e}); restore it from git, or delete it to reset every level to 0")
             return
     old = {c.get("id"): c for c in prev.get("criteria") or []}
-    levels = layout.spec / "audit" / "levels.json"
-    try:
-        audited = json.loads(levels.read_text(encoding="utf-8")).get("criteria") or {} if levels.exists() else {}
-    except json.JSONDecodeError as e:
-        E(f"audit/levels.json is not valid JSON ({e}); rerun scripts/audit_sample.py --levels")
-        return
+    found = {}
+    for rel, rerun in (("audit/levels.json", "audit_sample.py --levels"), ("verify/levels.json", "verify_report.py")):
+        src = layout.spec / rel
+        try:
+            found[rel] = (json.loads(src.read_text(encoding="utf-8")).get("criteria") or {}) if src.exists() else None
+        except json.JSONDecodeError as e:
+            E(f"{rel} is not valid JSON ({e}); rerun scripts/{rerun}")
+            return
+    audited, verified = found["audit/levels.json"] or {}, found["verify/levels.json"]
     criteria = []
     for fid, (p, text, fm) in story_map.items():
         sec = AC_SECTION.search(text)
@@ -192,6 +195,11 @@ def write_lock(layout, story_map, feats, departures, E, W):
                     entry["level"] = was.get("level", 0)
                 else:
                     W(f"{cid}: text changed since the last lock (level {was.get('level', 0)} → 0); needs re-verify")
+            green = (verified or {}).get(cid) or {}
+            if green.get("text_sha256") == sha:
+                entry["level"], entry["test"] = 2, green.get("test")
+            elif entry["level"] == 2 and verified is not None:
+                entry["level"] = 0  # the latest verify report no longer has it green (flaky or red now)
             if entry["level"] < 1 and audited.get(cid) == sha:
                 entry["level"] = 1
             criteria.append(entry)
@@ -228,6 +236,18 @@ def main():
     track = cfg.get("track", "rspec")
     if track not in ("rspec", "modernize"): E(f"rspec.json: track '{track}' must be 'rspec' or 'modernize'")
     modernize = track == "modernize"
+    ref = (cfg.get("reference") or {}).get("run") or {}
+    if ref:
+        kind = ref.get("kind", "")
+        if kind not in ("", "local", "url", "none"): E(f"rspec.json: reference.run.kind '{kind}' must be local, url or none")
+        if ref.get("writes") and kind != "local":
+            E("rspec.json: reference.run.writes is true only for a local reference (a url reference is read-only)")
+        if kind in ("local", "url") and not re.fullmatch(r"ACCEPT_[A-Z0-9_]+", ref.get("base_url_env") or ""):
+            E("rspec.json: reference.run.base_url_env must name an ACCEPT_* variable (contracts C4), e.g. ACCEPT_BASE_URL")
+        for name in ref.get("accounts") or []:
+            if not re.fullmatch(r"[A-Z0-9_]+", str(name)):
+                E(f"rspec.json: reference.run.accounts entry '{name}' must be a name like MEMBER (read from ACCEPT_ACCOUNT_MEMBER)")
+        if kind == "local" and not ref.get("start"): E("rspec.json: reference.run.start is empty; a local reference needs its start command")
     if not modernize and cfg.get("code"):
         src = cfg.get("sources") or {}
         if not src.get("repo"): E("rspec.json: code is true but sources.repo is empty")

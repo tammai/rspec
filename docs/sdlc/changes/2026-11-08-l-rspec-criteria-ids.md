@@ -24,6 +24,8 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 | Story-writer's `Open:` notes go in an `Open questions` section after `Sources` | notes in the Story section | user Q3 (a); C2 allows extra sections |
 | Level 1 (B3): sampled + confirmed, or unsampled in a tag population whose sample has no CONTRADICTED; any criterion with its own finding stays 0; written to `audit/levels.json` with each criterion's text hash, and `check_spec.py` raises 0 → 1 only while the hash matches | levels written by the fact-checker; every population member level 1 regardless of contradictions | C3's level rule plus R4's "no finding"; figures come from a script, not an agent (02 §Acceptance) |
 | 20% of a tag population rounds up; `[3p]` is not sampled (stays level 0) | rounding down; sampling `[3p]` | R4 names five tags; rounding up never samples fewer than the rule |
+| Verify runners: http via `contracts.run_http`, playwright via `npx playwright test`, maestro via `maestro test` (exit code; missing tool = not run); a cli criterion stays level 1 with reason `cli runner not in contracts v1` | rspec-defined cli fields; http only | orchestrator Q7 (a): cli fields are unsettled in contracts v1 |
+| Level 2 and flaky come from `verify/runs.jsonl`, written by `verify_run.py`, judged by `verify_report.py`: the last three runs on the build green with no red on it → level 2; a pass and a fail on one build → flaky. Build = `sources.commit` or `unversioned` | recorders reporting their own results | 02 §Acceptance: no agent-written figures |
 | Accuracy target counts `[docs]` `[api]` `[observed]` `[code]`; `[inferred]` is reported apart (not contradicted / contradicted / decision) | counting `[inferred]` in accuracy | an inferred criterion has no source to support it, so it can only be contradicted or not |
 
 **Proposals not asked for:** None
@@ -39,7 +41,11 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 - **AC-007** 02 §R8: `features` approval writes `departures.yaml` entries; `check_spec.py` errors on a dangling `D-` reference and on a Differences line without one (B2).
 - **AC-008** 02 §R6: `build-plan.md` lists criterion IDs per slice and the bundle path; both CLAUDE.md templates carry the cite-only and read-only rules (B2).
 - **AC-009** 02 §R4: `audit_sample.py` samples `min(25, max(5, 20%))` per tag (`[docs]` `[api]` `[observed]` `[code]` `[inferred]`) with a fixed seed; after the audit, `audit_sample.py --levels` turns the fact-checker's verdicts into level 1 (C3: sampled and confirmed, or unsampled in a population whose sample has no contradiction; never a criterion with its own finding), and `check_spec.py` writes that level into the lock while the criterion's text is unchanged (B3).
-- **AC-010** 02 §R5, §Acceptance: `/rspec:verify` on `tests/fixtures/reference-app/` reaches level 2 on recordable criteria, classifies the planted wrong criterion `spec-wrong` and reports the flaky one; `summary.md` is script-generated; `/rspec:pipeline --until verify` stops there (B4).
+- **AC-010** 02 §R5.3, §R5.6: Given a recorded HTTP test for a criterion, when `verify_run.py` runs it three times green against the reference and `verify_report.py` runs, then the criterion is level 2 in `criteria.lock.json` with its test, `acceptance/manifest.json` passes `contracts.py bundle`, and `verify/summary.md` reports the level 2 share for MVP and per module (B4).
+- **AC-012** 02 §R5.5: Given a test that passes and fails on the same reference build, when the report runs, then the criterion is listed `flaky` and is not level 2 (B4).
+- **AC-013** 02 §Decisions (New stage), §Acceptance: Given a spec whose audit is done, when `progress.py` runs, then `next` is `verify` (`decide` until `reference.run.kind` is set; skipped for `none`; done when `verify/summary.md` exists), so `/rspec:pipeline --until verify` stops after it (B4).
+- **AC-014** 02 §Decisions (Reference access): Given `reference.run` with `writes: true` on a `url` reference, or a base URL variable not named `ACCEPT_*`, when `check_spec.py` runs, then it is an error (B4).
+- **AC-015** 02 §Acceptance: the live run on `tests/fixtures/reference-app/`: `verify` reaches level 2 on every recordable criterion, the judge classifies the planted wrong criterion `spec-wrong`, the planted flaky endpoint is reported `flaky` (B4).
 - **AC-011** 02 §R7: `/rspec:amend <ID> "<reason>"` edits the criterion, logs it, regenerates the lock and drops it to level 0 (B5).
 
 ## Acceptance tests
@@ -55,7 +61,11 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 | AC-007 | tests/test_departures.py › test_differences_link_to_departures_registry, test_proposed_departure_warns_until_handoff | `python -m unittest discover -s tests -p test_departures.py` |
 | AC-008 | tests/test_build_plan_criteria.py › test_slice_lists_its_criterion_ids | `python -m unittest discover -s tests -p test_build_plan_criteria.py` |
 | AC-009 | tests/test_audit.py › test_sample_size_per_tag, test_audit_verdicts_raise_criteria_to_level_1 | `python -m unittest discover -s tests -p test_audit.py` |
-| AC-010 | manual | test written in B4, which replaces this row |
+| AC-010 | tests/test_verify.py › test_three_greens_reach_level_2 | `python -m unittest discover -s tests -p test_verify.py -k test_three_greens_reach_level_2` |
+| AC-012 | tests/test_verify.py › test_pass_and_fail_on_one_build_is_flaky | `python -m unittest discover -s tests -p test_verify.py -k test_pass_and_fail_on_one_build_is_flaky` |
+| AC-013 | tests/test_verify.py › test_verify_step_sits_between_audit_and_handoff | `python -m unittest discover -s tests -p test_verify.py -k test_verify_step_sits_between_audit_and_handoff` |
+| AC-014 | tests/test_verify.py › test_reference_run_rules | `python -m unittest discover -s tests -p test_verify.py -k test_reference_run_rules` |
+| AC-015 | manual | live agent run (approved, about 0.45M tokens), results in the part's report |
 | AC-011 | manual | test written in B5, which replaces this row |
 
 ## Must never break

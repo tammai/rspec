@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Task",
+  "type": "object",
+  "x-features": [
+    "F-TSK-01",
+    "F-TSK-02",
+    "F-TSK-03"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "readOnly": true
+    },
+    "key": {
+      "type": "string",
+      "readOnly": true
+    },
+    "title": {
+      "type": "string"
+    }
+  }
+}

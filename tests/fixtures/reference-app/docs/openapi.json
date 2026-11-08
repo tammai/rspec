@@ -1,0 +1,39 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tasks",
+    "version": "1"
+  },
+  "paths": {
+    "/api/tasks": {
+      "post": {
+        "operationId": "createTask",
+        "x-features": [
+          "F-TSK-01"
+        ]
+      },
+      "get": {
+        "operationId": "listTasks",
+        "x-features": [
+          "F-TSK-02"
+        ]
+      }
+    },
+    "/api/tasks/{id}": {
+      "get": {
+        "operationId": "getTask",
+        "x-features": [
+          "F-TSK-02"
+        ]
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "operationId": "getStats",
+        "x-features": [
+          "F-TSK-03"
+        ]
+      }
+    }
+  }
+}
