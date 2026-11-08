@@ -10,7 +10,7 @@ Started: 2026-11-08
 Base: 0bef83f
 Owner: tammai.it@gmail.com
 Tool: claude-code
-Verified: 600f2da tree 1682b9952d65c5d9e09e1755d680a985f621577a
+Verified: caa235c tree 25d2726c56661f7a7a8b91443c4b58ac6198314f
 Slice: B5   Slice base: 600f2da   Slice gates: none
 Current: Stage 2 – Build
 
@@ -71,6 +71,7 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - 2026-11-08 B4 files scripts/verify_report.py scripts/verify_run.py templates/autopilot.json templates/rspec.json tests/fixtures/reference-app/app/__init__.py tests/fixtures/reference-app/app/__main__.py tests/fixtures/reference-app/docs/openapi.json tests/fixtures/reference-app/docs/rspec.json tests/fixtures/reference-app/docs/schemas/task.schema.json What: the verify scripts, the reference.run block and verify rule in the templates, and the fixture app and spec (task 8 names their folders). Why: R5 report and run log by script (no agent figures), 02 Acceptance fixture. Effect: two new script commands; templates gain reference.run (kind empty = undecided).
 - 2026-11-08 B4 functions criterion_of run_once (verify_run.py) note read_jsonl share status (verify_report.py) verify_pending (progress.py), criteria moved from audit_sample.py into rspec_lib.py What: internal helpers; the criterion parser is shared by audit and verify scripts. Why: verify lists new functions. Effect: none outside the scripts.
 - 2026-11-08 B5 task 9 (skills/amend/ folder) and scripts/amend.py with helpers flag read_finding fail, plus scripts/verify_report.py status and skills/verify, skills/pipeline, README, CHANGELOG What: amend is a script plus a thin skill; verify_report ignores runs of a test amend removed; verify and pipeline skills route spec-wrong fixes and sdlc spec questions through amend. Why: R7 and C4 (a test changes only through amend), sdlc S10. Effect: new command scripts/amend.py; no other interface change.
+- 2026-11-08 Re-vendor to contracts 1.1.0 (gate G-F): contracts/v1/fixtures/finding/invalid/borrowed-question-shape.json contracts/v1/fixtures/finding/valid/SQ-0001-spec-question.json and the changed contracts/v1 files, plus docs/specs/rebuild-upgrade/01-shared-contracts.md 03-sdlc.md copied as context What: byte-identical copy from product-rebuild 683e7d7 (MANIFEST 4064651b...). Why: C6 exception for sdlc spec questions; amend.py routes through contracts.finding_route. Effect: amend accepts a spec question, still refuses any other unreproduced finding.
 
 ## Open questions
 -

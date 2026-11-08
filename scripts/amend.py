@@ -35,7 +35,7 @@ def read_finding(path):
         fail(f"{path}: not a valid finding-v1: {'; '.join(errors)}")
     route = contracts.finding_route(f)
     if route is None:
-        fail(f"{f['id']}: not routed: verified_by is not reproduced (contracts C6)")
+        fail(f"{f['id']}: not routed: verified_by is not reproduced and it is not a spec question (contracts C6)")
     if route != "rspec":
         fail(f"{f['id']}: route is {route}, not rspec: only a spec-gap finding changes the spec")
     return f

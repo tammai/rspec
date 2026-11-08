@@ -72,6 +72,22 @@ class Amend(unittest.TestCase):
                 self.assertEqual(r.returncode, 1, r.stdout)
                 self.assertIn(needle, r.stdout + r.stderr)
 
+    def test_spec_question_is_routed_without_a_verifier(self):
+        question = {"id": "SQ-0001", "source": "sdlc-question", "class": "spec-gap", "severity": "medium",
+                    "criterion": "F-ISS-01.AC1", "rule": None, "repro": None, "observed": None, "route": "rspec",
+                    "question": "Is the new issue listed first or last?",
+                    "verified_by": {"agent": None, "result": "not run: spec question"}}
+        path = self.root / "sq.json"
+        path.write_text(json.dumps(question), encoding="utf-8")
+        r = run("amend.py", self.root, "--finding", str(path), "--text", NEW_TEXT, "--reason", "order unclear")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("finding SQ-0001", self.changelog())
+        borrowed = dict(question, id="BH-0009", source="bug-hunter")
+        path.write_text(json.dumps(borrowed), encoding="utf-8")
+        r = run("amend.py", self.root, "--finding", str(path), "--text", NEW_TEXT, "--reason", "again")
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertNotIn("finding BH-0009", self.changelog())
+
     def test_amend_test_removes_the_recorded_test(self):
         self.make_level_2()
         green = {"ts": "2026-11-08T10:00:00Z", "criterion": "F-ISS-01.AC1", "test": "acceptance/http/F-ISS-01.AC1.yaml",
