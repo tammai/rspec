@@ -122,6 +122,16 @@
       ".sdlc/state/*.events.jsonl",
       ".sdlc/state/*.commands/",
       ".claude/*.local.md"
+    ],
+    ".claude/settings.json": [
+      "Bash(python -m unittest discover tests:*)",
+      "Bash(claude plugin validate .:*)"
+    ],
+    ".claude/settings.local.json#plugin": [
+      "extraKnownMarketplaces.sdlc",
+      "enabledPlugins.sdlc@sdlc",
+      "enabledPlugins.sdlc-extras@sdlc",
+      "enabledPlugins.sdlc-stepper@sdlc"
     ]
   },
   "migrations": {
@@ -145,7 +155,10 @@
       "prd",
       "design-system",
       "constitution",
-      "knowledge"
+      "knowledge",
+      "allowlist",
+      "enable-plugin",
+      "context-diet"
     ],
     "complete": false
   },
