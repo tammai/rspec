@@ -22,6 +22,9 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 | Differences lines without `→ D-<nnn>` warn (part 1) | error now | orchestrator Q2; R8 needs the registry first |
 | `→ TODO` failure modes WARN `needs /rspec:stories <module>`; all other C1/C2 problems ERROR, legacy criteria included | TODO as ERROR | user Q1 (a): a migrated spec fails only on real C1 problems |
 | Story-writer's `Open:` notes go in an `Open questions` section after `Sources` | notes in the Story section | user Q3 (a); C2 allows extra sections |
+| Level 1 (B3): sampled + confirmed, or unsampled in a tag population whose sample has no CONTRADICTED; any criterion with its own finding stays 0; written to `audit/levels.json` with each criterion's text hash, and `check_spec.py` raises 0 → 1 only while the hash matches | levels written by the fact-checker; every population member level 1 regardless of contradictions | C3's level rule plus R4's "no finding"; figures come from a script, not an agent (02 §Acceptance) |
+| 20% of a tag population rounds up; `[3p]` is not sampled (stays level 0) | rounding down; sampling `[3p]` | R4 names five tags; rounding up never samples fewer than the rule |
+| Accuracy target counts `[docs]` `[api]` `[observed]` `[code]`; `[inferred]` is reported apart (not contradicted / contradicted / decision) | counting `[inferred]` in accuracy | an inferred criterion has no source to support it, so it can only be contradicted or not |
 
 **Proposals not asked for:** None
 
@@ -35,7 +38,7 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 - **AC-006** 02 §R3: handoff writes `<docs>/prd.md` from sdlc's PRD sections with links into the SRS (B2).
 - **AC-007** 02 §R8: `features` approval writes `departures.yaml` entries; `check_spec.py` errors on a dangling `D-` reference and on a Differences line without one (B2).
 - **AC-008** 02 §R6: `build-plan.md` lists criterion IDs per slice and the bundle path; both CLAUDE.md templates carry the cite-only and read-only rules (B2).
-- **AC-009** 02 §R4: `audit_sample.py` samples `min(25, max(5, 20%))` per tag with a fixed seed (B3).
+- **AC-009** 02 §R4: `audit_sample.py` samples `min(25, max(5, 20%))` per tag (`[docs]` `[api]` `[observed]` `[code]` `[inferred]`) with a fixed seed; after the audit, `audit_sample.py --levels` turns the fact-checker's verdicts into level 1 (C3: sampled and confirmed, or unsampled in a population whose sample has no contradiction; never a criterion with its own finding), and `check_spec.py` writes that level into the lock while the criterion's text is unchanged (B3).
 - **AC-010** 02 §R5, §Acceptance: `/rspec:verify` on `tests/fixtures/reference-app/` reaches level 2 on recordable criteria, classifies the planted wrong criterion `spec-wrong` and reports the flaky one; `summary.md` is script-generated; `/rspec:pipeline --until verify` stops there (B4).
 - **AC-011** 02 §R7: `/rspec:amend <ID> "<reason>"` edits the criterion, logs it, regenerates the lock and drops it to level 0 (B5).
 
@@ -51,7 +54,7 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 | AC-006 | manual | handoff skill prose (R3 adds no check rule); checked by reading skills/handoff/SKILL.md in Review |
 | AC-007 | tests/test_departures.py › test_differences_link_to_departures_registry, test_proposed_departure_warns_until_handoff | `python -m unittest discover -s tests -p test_departures.py` |
 | AC-008 | tests/test_build_plan_criteria.py › test_slice_lists_its_criterion_ids | `python -m unittest discover -s tests -p test_build_plan_criteria.py` |
-| AC-009 | manual | test written in B3, which replaces this row |
+| AC-009 | tests/test_audit.py › test_sample_size_per_tag, test_audit_verdicts_raise_criteria_to_level_1 | `python -m unittest discover -s tests -p test_audit.py` |
 | AC-010 | manual | test written in B4, which replaces this row |
 | AC-011 | manual | test written in B5, which replaces this row |
 

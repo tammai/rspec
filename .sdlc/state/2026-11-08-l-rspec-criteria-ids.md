@@ -10,8 +10,8 @@ Started: 2026-11-08
 Base: 0bef83f
 Owner: tammai.it@gmail.com
 Tool: claude-code
-Verified: ccebbce tree 7eb5516d7c29006385919bc46e133d847fe887ef
-Slice: B2   Slice base: 1e50121   Slice gates: none
+Verified: 3cd06c6 tree 5aa50f4683c733b757d3407128b21b5391359c8b
+Slice: B3   Slice base: 3cd06c6   Slice gates: none
 Current: Stage 2 – Build
 
 ## Stages
@@ -30,6 +30,7 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - Smoke run on bigin-phish-rspec (scratch copy): migration 111 stories, idempotent; check then shows 679 errors, 557 of them grammar because criteria carry a `[code]` citation after the tag (`repo@… path:line`). story-writer and writing-rules now put citations under Sources; legacy specs need a stories pass
 - B2 done. R8: `check_departures` and `criterion_ids` in scripts/check_spec.py; the lock's `departures` comes from the registry's `criteria` lists. Q5 (a): story-time and legacy differences are decided at the end of /rspec:stories (skills/stories/SKILL.md).
 - For B3 (R4): `audit_sample.py` reads `criteria_items` (rspec_lib), which parses `**ID**` lines fine. R4's level 1 must reach the lock, but `write_lock` only carries levels over; B3 needs a way to raise a level (e.g. an audit result file `write_lock` reads)
+- B3 done. Level 1: `audit_sample.py --levels` writes `<spec>/audit/levels.json` (ID → text hash); `write_lock` raises 0 → 1 while the hash matches and never lowers a level 2. For B4 (R5): level 2 can reach the lock the same way (a verify result file with ID → hash and test path, read by `write_lock`); `progress.py` decides the audit stage by `audit/summary.md`. The fact-checker already reads `reference.run` (absent = kind none)
 
 ## Tasks
 1. **B1 Vendor contracts v1 + drift test** — AC-001
@@ -64,6 +65,7 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - 2026-11-08 New module-level helpers body_end find main migrate sections (scripts/migrate_criteria.py) story_issues write_lock (scripts/check_spec.py) What: internal functions of the planned scripts. Why: verify lists new functions as surface. Effect: none outside the scripts; the only new command is migrate_criteria.py (Public Surface).
 - 2026-11-08 New helpers criterion_ids and check_departures in scripts/check_spec.py, and tests/test_departures.py tests/test_build_plan_criteria.py skills/pipeline/SKILL.md (B2) What: internal functions, the part's tests, and the pipeline's slice request now cites criterion IDs. Why: verify lists new functions; the pipeline request restated the old cite-the-story rule R6 replaces. Effect: none outside check_spec; pipeline asks sdlc for '- **AC-001** -> F-ISS-01.AC2' ACs.
 - 2026-11-08 scripts/migrate_criteria.py tests/test_criteria_ids.py changed in B2 (part 1's script) What: migration moves text after a criterion's last tag into Sources as '- <ID>: <text>'. Why: user decision relayed in msg_9590b3af8de3, spec 02 R1 updated. Effect: still idempotent; on bigin-phish grammar errors 557 -> 35.
+- 2026-11-08 Functions draw levels sample_size verdicts criteria (scripts/audit_sample.py), audited levels in write_lock (scripts/check_spec.py), and tests/test_audit.py's rerun test folded into test_sample_size_per_tag (B3) What: internal functions of the rewritten script; the old test asserted 25 [docs] of 40, which R4 changes to 8. Why: verify lists new functions; R4 changes the sample size. Effect: rerun determinism still asserted; --levels is a new mode of an existing script.
 
 ## Open questions
 -

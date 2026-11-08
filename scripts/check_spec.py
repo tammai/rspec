@@ -165,6 +165,12 @@ def write_lock(layout, story_map, feats, departures, E, W):
             E(f"criteria.lock.json is not valid JSON ({e}); restore it from git, or delete it to reset every level to 0")
             return
     old = {c.get("id"): c for c in prev.get("criteria") or []}
+    levels = layout.spec / "audit" / "levels.json"
+    try:
+        audited = json.loads(levels.read_text(encoding="utf-8")).get("criteria") or {} if levels.exists() else {}
+    except json.JSONDecodeError as e:
+        E(f"audit/levels.json is not valid JSON ({e}); rerun scripts/audit_sample.py --levels")
+        return
     criteria = []
     for fid, (p, text, fm) in story_map.items():
         sec = AC_SECTION.search(text)
@@ -186,6 +192,8 @@ def write_lock(layout, story_map, feats, departures, E, W):
                     entry["level"] = was.get("level", 0)
                 else:
                     W(f"{cid}: text changed since the last lock (level {was.get('level', 0)} → 0); needs re-verify")
+            if entry["level"] < 1 and audited.get(cid) == sha:
+                entry["level"] = 1
             criteria.append(entry)
     unchanged = prev.get("criteria") == criteria and prev.get("generated")
     lock = {"contracts": contracts.VERSION, "spec": layout.spec.relative_to(layout.root).as_posix(),

@@ -37,7 +37,7 @@ Update with `/plugin marketplace update rspec`. To try a local checkout: `claude
 | `/rspec:stories` | A story and acceptance criteria for every feature except Drop (MVP first); `scope: mvp` limits it to the MVP |
 | `/rspec:tech` | OpenAPI and JSON Schema contracts, non-functional requirements, proposed ADRs |
 | `/rspec:handoff` | **Asks you to accept the ADRs** and how to build (sdlc or Claude Code), writes the build plan and a `CLAUDE.md` section |
-| `/rspec:audit` | Fact-checks a sample of criteria against the sources, checks coverage against the product's docs and changelog, and finds contradictions; fixes the important findings (runs before handoff) |
+| `/rspec:audit` | Fact-checks a sample of every evidence tag against the sources (and the running product when one is configured), marks the confirmed criteria level 1 in the lock, checks coverage against the product's docs and changelog, and finds contradictions; fixes the important findings (runs before handoff) |
 | `/rspec:site <url>` | Standalone playbook for one marketing site or landing page: extracts its tokens, components, sections, motion and vibe at three viewports and writes `docs/site/<name>/` (site spec, DTCG `tokens.json`, `tokens.css`) to rebuild one with the same feel and your own content. Needs the Playwright MCP |
 | `/rspec:check` | Validates the spec; `python3 scripts/scorecard.py <run> [<other run>]` scores it or compares two runs |
 
