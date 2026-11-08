@@ -30,7 +30,7 @@ class Departures(unittest.TestCase):
         lock = json.loads((ok / "docs" / "criteria.lock.json").read_text(encoding="utf-8"))
         self.assertEqual(lock["criteria"][0]["departures"], ["D-004"])
         cases = {
-            "no link": (differing("- Keys use 2-4 letters"), {"departures.yaml": ACCEPTED}, "→ D-<nnn>"),
+            "no link": (differing("- Keys use 2-4 letters"), {"departures.yaml": ACCEPTED}, "the next /rspec:stories pass asks"),
             "dangling": (differing("- Keys use 2-4 letters → D-009"), {"departures.yaml": ACCEPTED},
                          "D-009 is not in departures.yaml"),
             "undecided": (differing("- Keys use 2-4 letters → D-004"),

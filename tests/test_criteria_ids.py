@@ -86,6 +86,21 @@ class CriteriaIds(unittest.TestCase):
         self.assertEqual(check.returncode, 0, check.stdout)
         self.assertIn("needs /rspec:stories ISS", check.stdout)
 
+    def test_migration_moves_text_after_the_tag_to_sources(self):
+        cited = LEGACY.replace("then 403 is returned. `[api]`",
+                               "then 403 is returned. `[code]` repo@95618469 controllers/route.go:395-403")
+        root = project(stories={"F-ISS-01-x.md": cited})
+        path = root / "docs" / "features" / "F-ISS-01-x.md"
+        run("migrate_criteria.py", root)
+        text = path.read_text(encoding="utf-8")
+        self.assertIn("then 403 is returned. `[code]`\n", text)
+        self.assertIn("## Sources\n- research/iss-issues.md, Flows\n"
+                      "- F-ISS-01.AC4: repo@95618469 controllers/route.go:395-403\n", text)
+        first = path.read_bytes()
+        run("migrate_criteria.py", root)
+        self.assertEqual(path.read_bytes(), first)
+        self.assertEqual(run("check_spec.py", root).returncode, 0)
+
     def test_lock_written_and_changed_text_drops_to_level_0(self):
         two = (story("F-ISS-01").split("## Acceptance criteria\n")[1].split("\n")[0] + "\n"
                '- [ ] **F-ISS-01.AC2** Given an issue ENG-3, when a member opens it, then "Fix login" is shown. `[observed]`')

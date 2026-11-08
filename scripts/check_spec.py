@@ -97,6 +97,8 @@ def story_issues(text, module, domain):
         line = lines[int(m.group(1)) - 1].rstrip() if m else ""
         if "failure mode must end" in msg and line.endswith("→ TODO"):
             sev, msg = "warning", f"{m.group(0)}failure mode → TODO from migration; needs /rspec:stories {module}"
+        elif "difference must end with" in msg:
+            msg += "; the next /rspec:stories pass asks the user to accept it as a departures.yaml entry"
         elif "Edge cases" in msg:
             msg += "; run scripts/migrate_criteria.py"
         issues.append((sev, msg))

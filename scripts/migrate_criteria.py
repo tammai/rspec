@@ -3,7 +3,8 @@
 
 Usage: migrate_criteria.py [project-root | spec-folder]
 Gives each criterion without an ID the next free `<feature>.AC<n>` in file order, turns `## Edge cases` into
-`## Failure modes` lines ending `→ TODO` (the next /rspec:stories pass links each to a criterion), and adds the
+`## Failure modes` lines ending `→ TODO` (the next /rspec:stories pass links each to a criterion), moves any text
+after a criterion's last tag (a `repo@commit path:line` citation) unchanged into `## Sources`, and adds the
 `Failure modes` and `Must never break` sections a story lacks.
 """
 import re, sys
@@ -12,6 +13,8 @@ from rspec_lib import open_layout, stories
 HEADING = re.compile(r"^##\s+(.+?)\s*$")
 LOOSE = re.compile(r"^(\s*[-*] (?:\[[ xX]\] )?)(?!~~|\*\*|\[[ xX]\] )(\S.*)$")
 ITEM = re.compile(r"^\s*[-*] (.*)$")
+TAG = re.compile(r"`\[[^\]`]*\]`")
+CITED = re.compile(r"^\s*[-*] (?:\[[ xX]\] )?\*\*(?P<id>[^*]+)\*\*")
 
 
 def sections(lines):
@@ -45,6 +48,12 @@ def migrate(text, fid):
             if m:
                 n += 1
                 lines[i] = f"{m.group(1)}**{fid}.AC{n}** {m.group(2)}"
+    moved = []
+    for i in range(ac[0] + 1, ac[1]) if ac else ():
+        c, tags = CITED.match(lines[i]), list(TAG.finditer(lines[i]))
+        if c and tags and lines[i][tags[-1].end():].strip():
+            moved.append(f"- {c.group('id')}: {lines[i][tags[-1].end():].strip()}")
+            lines[i] = lines[i][:tags[-1].end()]
     edge = find(lines, "Edge cases")
     if edge:
         todo = []
@@ -60,6 +69,13 @@ def migrate(text, fid):
             lines[at:at] = todo
         else:
             lines[edge[0]:edge[1]] = ["## Failure modes"] + (todo or ["- none"]) + [""]
+    if moved:
+        src = find(lines, "Sources")
+        if src:
+            at = body_end(lines, *src)
+            lines[at:at] = moved
+        else:
+            lines += ["", "## Sources"] + moved
     anchor = find(lines, "Differences from the original") or find(lines, "Sources")
     for title in ("Failure modes", "Must never break"):
         if not find(lines, title):

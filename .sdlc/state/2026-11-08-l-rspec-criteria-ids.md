@@ -10,7 +10,7 @@ Started: 2026-11-08
 Base: 0bef83f
 Owner: tammai.it@gmail.com
 Tool: claude-code
-Verified: 0bef83f tree 9a483ab10611ac1069fb5c4111baf4514f63c759
+Verified: ccebbce tree 7eb5516d7c29006385919bc46e133d847fe887ef
 Slice: B2   Slice base: 1e50121   Slice gates: none
 Current: Stage 2 – Build
 
@@ -28,6 +28,8 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - Q1/Q3 answered (a)/(a): severities live in `story_issues` (scripts/check_spec.py); `## Open questions` section in templates/feature-story.md and agents/story-writer.md
 - B1 done. For B2 (R8): `story_issues` downgrades "difference must end with → D-" to a WARN; make it an ERROR and add the dangling D- check; `write_lock` keeps `departures: []` (scripts/check_spec.py), fill it from the Differences links
 - Smoke run on bigin-phish-rspec (scratch copy): migration 111 stories, idempotent; check then shows 679 errors, 557 of them grammar because criteria carry a `[code]` citation after the tag (`repo@… path:line`). story-writer and writing-rules now put citations under Sources; legacy specs need a stories pass
+- B2 done. R8: `check_departures` and `criterion_ids` in scripts/check_spec.py; the lock's `departures` comes from the registry's `criteria` lists. Q5 (a): story-time and legacy differences are decided at the end of /rspec:stories (skills/stories/SKILL.md).
+- For B3 (R4): `audit_sample.py` reads `criteria_items` (rspec_lib), which parses `**ID**` lines fine. R4's level 1 must reach the lock, but `write_lock` only carries levels over; B3 needs a way to raise a level (e.g. an audit result file `write_lock` reads)
 
 ## Tasks
 1. **B1 Vendor contracts v1 + drift test** — AC-001
@@ -61,6 +63,7 @@ parts in fresh sessions: each spec part is its own orchestrator task; this sessi
 - 2026-11-08 tests/test_check_spec.py tests/test_quality_bar.py tests/test_scorecard.py What: adapted to the C1/C2 story format (failure= instead of edge=; untagged criterion now an ERROR, not a WARN). Why: helpers.story() changed format and the evidence-tag warning became contracts' source-tag error. Effect: same behaviours asserted, stricter where the rule is now an error.
 - 2026-11-08 New module-level helpers body_end find main migrate sections (scripts/migrate_criteria.py) story_issues write_lock (scripts/check_spec.py) What: internal functions of the planned scripts. Why: verify lists new functions as surface. Effect: none outside the scripts; the only new command is migrate_criteria.py (Public Surface).
 - 2026-11-08 New helpers criterion_ids and check_departures in scripts/check_spec.py, and tests/test_departures.py tests/test_build_plan_criteria.py skills/pipeline/SKILL.md (B2) What: internal functions, the part's tests, and the pipeline's slice request now cites criterion IDs. Why: verify lists new functions; the pipeline request restated the old cite-the-story rule R6 replaces. Effect: none outside check_spec; pipeline asks sdlc for '- **AC-001** -> F-ISS-01.AC2' ACs.
+- 2026-11-08 scripts/migrate_criteria.py tests/test_criteria_ids.py changed in B2 (part 1's script) What: migration moves text after a criterion's last tag into Sources as '- <ID>: <text>'. Why: user decision relayed in msg_9590b3af8de3, spec 02 R1 updated. Effect: still idempotent; on bigin-phish grammar errors 557 -> 35.
 
 ## Open questions
 -

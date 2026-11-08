@@ -29,7 +29,7 @@ A spec handed to any builder (sdlc, Claude Code, a human team) should state how 
 ### R1 Criterion IDs and story sections
 
 - Story template and `story-writer` adopt contracts C1/C2: `F-<CODE>-<NN>.AC<n>` IDs, `Failure modes`, `Must never break`, departure links. `Edge cases` is removed from the template.
-- `scripts/migrate_criteria.py <spec>` assigns IDs to an existing spec in file order, converts `Edge cases` lines into `Failure modes` lines marked `→ TODO` for the next `stories` pass, and is idempotent.
+- `scripts/migrate_criteria.py <spec>` assigns IDs to an existing spec in file order, converts `Edge cases` lines into `Failure modes` lines marked `→ TODO` for the next `stories` pass, moves any text after a criterion's source tag (e.g. `repo@commit path:line` citations) into that story's `Sources` section unchanged, and is idempotent.
 - `check_spec.py` enforces C1 via the vendored `contracts.py` (example-data rule at error level) and the C2 sections.
 
 ### R2 Criteria lock
@@ -74,7 +74,7 @@ Cost controls: verify records only criteria of features in scope (MVP and Later 
 
 ### R8 Departures
 
-`Differences from the original` lines reference `departures.yaml` entries (C5). `features` approval writes a `D-<nnn>` entry for each Drop or simplification the user accepts. `check_spec.py` errors on a dangling `D-` reference.
+`Differences from the original` lines reference `departures.yaml` entries (C5). `features` approval writes a `D-<nnn>` entry for each Drop or simplification the user accepts. `check_spec.py` errors on a dangling `D-` reference. A difference found after features approval (by a story writer, or a prose `Differences` line in an existing spec) is never written by a writer: it goes under the story's `## Open questions` as `Open: departure: <what>`; after the last `stories` round the stories skill collects these and every unlinked `Differences` line, asks the user once (up to 4 per question), writes each accepted one to `departures.yaml` with `decided_by` and adds the link. Under autopilot it writes them `status: proposed` and parks them.
 
 ## Standalone behaviour
 

@@ -22,4 +22,4 @@
 
 ## Open
 
-- Q5 (with the user): how a story writer records a difference that has no accepted entry yet.
+- none (Q5 (a) answered; built in skills/stories/SKILL.md and agents/story-writer.md)
