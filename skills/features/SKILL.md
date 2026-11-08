@@ -8,7 +8,7 @@ description: >
   "/rspec:features triage"): changes priorities and specs only what changed, without rerunning the pipeline.
 argument-hint: "[triage F-ID=MVP|Later|Drop ...]"
 metadata:
-  version: "0.9.7"
+  version: "0.11.0"
 ---
 
 # /rspec:features

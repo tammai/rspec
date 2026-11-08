@@ -6,7 +6,7 @@ description: >
   reverse-specced. Runs three tech-analyst subagents in parallel (api, data-model, nfr)
   and drafts proposed ADRs for the rebuild.
 metadata:
-  version: "0.9.7"
+  version: "0.11.0"
 ---
 
 # /rspec:tech

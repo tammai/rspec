@@ -8,7 +8,7 @@ description: >
   it after tech, before handoff.
 argument-hint: "[facts | coverage | consistency, optional; default all three]"
 metadata:
-  version: "0.9.7"
+  version: "0.11.0"
 ---
 
 # /rspec:audit

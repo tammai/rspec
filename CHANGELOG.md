@@ -3,6 +3,8 @@
 All notable changes to the rspec plugin. Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+
+## [0.11.0-rc.1] - 2026-11-09
 ### Added
 - Shared contracts v1 vendored byte-identical in `contracts/v1/` (contracts 1.1.1: an sdlc spec question routes to rspec without a verifier), with a test that fails when the copy drifts from its `MANIFEST`.
 - **Criterion IDs** (contracts C1): every acceptance criterion starts with `**F-<CODE>-<NN>.AC<n>**`, never renumbered or reused.

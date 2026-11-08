@@ -7,7 +7,7 @@ description: >
   and creates the spec skeleton (single repo or sdlc monorepo layout).
 argument-hint: <product name>
 metadata:
-  version: "0.9.4"
+  version: "0.11.0"
 ---
 
 # /rspec:init

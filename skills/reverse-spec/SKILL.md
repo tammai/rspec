@@ -10,7 +10,7 @@ description: >
   It explains the rspec pipeline and routes to the right /rspec command based on
   the current state in <spec>/rspec.json.
 metadata:
-  version: "0.10.0"
+  version: "0.11.0"
 ---
 
 # Reverse spec pipeline
