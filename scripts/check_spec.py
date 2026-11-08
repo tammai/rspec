@@ -4,7 +4,7 @@
 Usage: check_spec.py [project-root | spec-folder]
 Exit code 1 if any ERROR is found. WARN lines do not fail.
 """
-import json, re, sys
+import hashlib, json, re, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from contract_checks import check_domain, check_bodies, server_set_not_readonly
@@ -212,10 +212,21 @@ def write_lock(layout, story_map, feats, departures, E, W):
         E(f"criteria.lock.json: {m}")
     if not issues and lock != prev:
         path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    return None if issues else criteria
+
+
+def tech_basis(criteria):
+    """One hash over every criterion's ID and text: what /rspec:tech last wrote the contracts from."""
+    lines = sorted(f"{c['id']} {c['text_sha256']}" for c in criteria)
+    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
 
 
 def main():
-    arg = sys.argv[1] if len(sys.argv) > 1 else "."
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    arg = args[0] if args else "."
+    unknown = [a for a in sys.argv[1:] if a.startswith("--") and a != "--mark-tech"]
+    if unknown:
+        print(f"ERROR unknown option {unknown[0]} (the only option is --mark-tech)"); sys.exit(2)
     errors, warns = [], []
     E, W = errors.append, warns.append
 
@@ -286,6 +297,9 @@ def main():
         reason = cells[5] if len(cells) > 5 else ""
         if prio not in PRIORITIES: E(f"features.md:{n} {fid} priority '{prio}' must be MVP/Later/Drop")
         if prio == "Drop" and not reason: E(f"features.md:{n} {fid} is Drop without a reason")
+        elif prio == "Drop" and not re.search(r"→\s*D-\d{3,}\s*$", reason):
+            (E if si >= 5 else W)(f"features.md:{n} {fid} is Drop without a → D-<nnn> link; features approval writes a "
+                                  "departures.yaml entry for each Drop (contracts C5)")
         feats[fid] = prio
     if si >= 2 and not feats: E("stage >= features-approved but features.md has no rows")
     mvp = [k for k, v in feats.items() if v == "MVP"]
@@ -458,7 +472,19 @@ def main():
         W(f"{len(parked)} autopilot decision(s) parked for you in autopilot-log.md")
 
     if not errors:
-        write_lock(layout, story_map, feats, departures, E, W)
+        criteria = write_lock(layout, story_map, feats, departures, E, W)
+        if criteria is not None and "--mark-tech" in sys.argv:
+            if cfg.get("tech_basis") != tech_basis(criteria):
+                cfg["tech_basis"] = tech_basis(criteria)
+                (docs / "rspec.json").write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8", newline="\n")
+        elif criteria is not None and si >= 4 and cfg.get("tech_basis") is None:
+            W("no tech basis: nothing records which criteria the contracts were written from (a spec from before "
+              "0.11); once the contracts match the stories, run check_spec.py --mark-tech, or re-run /rspec:tech")
+        elif criteria is not None and si >= 4 and cfg.get("tech_basis") != tech_basis(criteria):
+            W("tech is stale: acceptance criteria were added, changed or removed since /rspec:tech last ran; re-run "
+              "/rspec:tech for the changed stories (it ends with check_spec.py --mark-tech)")
+    if errors and "--mark-tech" in sys.argv:
+        E("--mark-tech not recorded: fix the errors above first, then run it again")
 
     print(f"product={cfg.get('product')} stage={stage} modules={len(codes)} features={len(feats)} "
           f"mvp={len(mvp)} stories={len(story_map)} contracts={len(contract_files(contracts))} adrs={len(adrs)}")

@@ -14,6 +14,24 @@ class CheckSpec(unittest.TestCase):
         r = run("check_spec.py", project(stage="tech", files=tech_files()))
         self.assertEqual(r.returncode, 0, r.stdout)
 
+    def test_criteria_changed_after_tech_say_tech_is_stale(self):
+        root = project(stage="tech", files=tech_files())
+        self.assertIn("no tech basis", run("check_spec.py", root).stdout)
+        self.assertEqual(run("check_spec.py", root, "--mark-teck").returncode, 2)
+        broken = project(stage="tech", files=dict(tech_files(), **{"openapi.json": "{"}))
+        r = run("check_spec.py", broken, "--mark-tech")
+        self.assertIn("--mark-tech not recorded", r.stdout)
+        r = run("check_spec.py", root, "--mark-tech")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertNotIn("tech is stale", r.stdout)
+        path = root / "docs" / "features" / "F-ISS-01-x.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("then", "then after a reload", 1), encoding="utf-8")
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("tech is stale", r.stdout)
+        self.assertEqual(run("check_spec.py", root, "--mark-tech").returncode, 0)
+        self.assertNotIn("tech is stale", run("check_spec.py", root).stdout)
+
     def test_leftover_template_placeholder_fails(self):
         r = run("check_spec.py", project(stories={"F-ISS-01-x.md": story("F-ISS-01", failure="- <invariant that must hold> → F-ISS-01.AC1")}))
         self.assertEqual(r.returncode, 1, r.stdout)

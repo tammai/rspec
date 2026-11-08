@@ -66,7 +66,7 @@ Write it whenever status changes and after each batch of subagents returns, so a
 
 1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:audit`, `rspec:verify`, `rspec:handoff` or `rspec:check`. `verify` comes after the audit: with `pending` `decide` it asks once whether to verify against a running reference (`reference.run.kind` `none` skips it); its pending units are module codes still to record, then `report`. When `next` is `triage` (a priority changed after its stage), run `rspec:features` with `triage` and the `pending` IDs. `build` and `readiness` are not skills; they are handled in the sections below. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
 2. After each batch of subagents: update `last` and `updated`.
-3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn.
+3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn. A `tech is stale` warning means the stories changed after tech: run `rspec:tech` for the changed stories before the audit, verify or handoff.
 4. If the user has asked to pause or stop, or the finished stage equals `stop_after`, apply Pause/Stop below. Otherwise continue with the next step.
 
 ## Autopilot
@@ -98,7 +98,7 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 
 **At the end**, report the parked count from `progress.py` first: the spec or build is not finished while anything is parked. The user resolves parked items (checks them and writes the decision) and runs `/rspec:pipeline continue`.
 
-**Running without a terminal:** `claude -p "/rspec:pipeline --autopilot rspec-autopilot.json"` with the allowed tools in the README, or `/loop /rspec:pipeline continue` to keep it going across sessions.
+**Running without a terminal:** `claude -p "/rspec:pipeline --autopilot rspec-autopilot.json"` with the allowed tools in the README, or `/loop /rspec:pipeline continue` to keep it going across sessions. A headless session ends when your turn ends and stops any subagent still running in the background, so under `claude -p` launch every subagent as a foreground call (several in one message still run in parallel) and end the turn only when the step is done.
 
 ## Approval gate
 

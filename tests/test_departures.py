@@ -54,6 +54,24 @@ class Departures(unittest.TestCase):
         self.assertEqual(r.returncode, 1, r.stdout)
         self.assertIn("ERROR departures.yaml: D-004 is proposed", r.stdout)
 
+    def test_drop_row_links_a_departure(self):
+        features = (("F-ISS-01", "MVP"), ("F-ISS-02", "Drop"))
+        r = run("check_spec.py", project(features=features))
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("F-ISS-02 is Drop without a → D-<nnn> link", r.stdout)
+        files = dict(tech_files(), **{"build-plan.md": "# Build plan\n\n## Slice 1: Issues\n| 1 | F-ISS-01 F-ISS-01.AC1 |\n"})
+        r = run("check_spec.py", project(stage="handoff", features=features, files=files, config={"stack": "x"}))
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("F-ISS-02 is Drop without a → D-<nnn> link", r.stdout)
+        linked = project(stage="handoff", features=features, config={"stack": "x"},
+                         files=dict(files, **{"departures.yaml": ACCEPTED.replace("[F-ISS-01.AC1]", "[]").replace("[F-ISS-01]", "[F-ISS-02]")}))
+        md = linked / "docs" / "features.md"
+        md.write_text(md.read_text(encoding="utf-8").replace("| Drop | r |", "| Drop | r → D-004 |"), encoding="utf-8")
+        r = run("check_spec.py", linked)
+        self.assertNotIn("F-ISS-02 is Drop without", r.stdout)
+        md.write_text(md.read_text(encoding="utf-8").replace("| Drop | r → D-004 |", "| Drop | was → D-004, gone |"), encoding="utf-8")
+        self.assertIn("F-ISS-02 is Drop without", run("check_spec.py", linked).stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

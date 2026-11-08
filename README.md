@@ -154,6 +154,8 @@ claude -p "/rspec:pipeline --autopilot rspec-autopilot.json" \
 
 The build stage also needs whatever sdlc runs (git, your package manager, tests); allow those too, or stop at `--until handoff` and build interactively. For a run longer than one session, use `/loop /rspec:pipeline continue`.
 
+Known limit: a headless run ends when the main session ends its turn, and subagents still running in the background are stopped with it (seen in 0.11 testing: the last of 8 story writers was cut off, and the stories step never finished). In headless use, run the writers, explorers and auditors as foreground calls (several in one message is fine), so the session waits for all of them; the pipeline skill does this when it runs under `claude -p`. If a run is cut short, `/rspec:pipeline continue` (or `claude -p --resume <session>`) picks up from the checkpoint.
+
 Autopilot trades your review during the run for a review at the end. It suits a second run, or a product you already know well.
 
 ## Contributing
