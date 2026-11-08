@@ -48,9 +48,9 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 | AC-003 | tests/test_criteria_ids.py › test_template_is_c2_and_placeholders_fail | `python -m unittest discover -s tests -p test_criteria_ids.py -k test_template_is_c2_and_placeholders_fail` |
 | AC-004 | tests/test_criteria_ids.py › test_migration_assigns_ids_and_is_idempotent | `python -m unittest discover -s tests -p test_criteria_ids.py -k test_migration_assigns_ids_and_is_idempotent` |
 | AC-005 | tests/test_criteria_ids.py › test_lock_written_and_changed_text_drops_to_level_0 | `python -m unittest discover -s tests -p test_criteria_ids.py -k test_lock_written_and_changed_text_drops_to_level_0` |
-| AC-006 | manual | test written in B2, which replaces this row |
-| AC-007 | manual | test written in B2, which replaces this row |
-| AC-008 | manual | test written in B2, which replaces this row |
+| AC-006 | manual | handoff skill prose (R3 adds no check rule); checked by reading skills/handoff/SKILL.md in Review |
+| AC-007 | tests/test_departures.py › test_differences_link_to_departures_registry, test_proposed_departure_warns_until_handoff | `python -m unittest discover -s tests -p test_departures.py` |
+| AC-008 | tests/test_build_plan_criteria.py › test_slice_lists_its_criterion_ids | `python -m unittest discover -s tests -p test_build_plan_criteria.py` |
 | AC-009 | manual | test written in B3, which replaces this row |
 | AC-010 | manual | test written in B4, which replaces this row |
 | AC-011 | manual | test written in B5, which replaces this row |

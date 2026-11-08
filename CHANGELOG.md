@@ -7,10 +7,14 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 - Shared contracts v1 vendored byte-identical in `contracts/v1/` (contracts 1.0.0), with a test that fails when the copy drifts from its `MANIFEST`.
 - **Criterion IDs** (contracts C1): every acceptance criterion starts with `**F-<CODE>-<NN>.AC<n>**`, never renumbered or reused.
 - `scripts/migrate_criteria.py <spec>`: gives the criteria of an existing spec their IDs in file order, turns `Edge cases` into `Failure modes` lines marked `→ TODO` for the next `/rspec:stories` pass, adds the missing story sections, and changes nothing on a second run.
+- **Departures registry** (contracts C5): features approval writes `<spec>/departures.yaml`, one `D-<nnn>` entry per Drop or accepted simplification; story `Differences from the original` lines link them. `check_spec.py` errors on a Differences line without a link, a link to a missing entry and an entry without `decided_by`; a proposed entry (autopilot) is a warning until handoff and an error from then on. The lock lists each criterion's departures.
+- **PRD without a second summary**: with the sdlc engine, handoff writes sdlc's `prd.md` itself, a short paragraph per section linking into the SRS, and tells `/sdlc:setup` to use it as is.
 - **Criteria lock** (contracts C3): `check_spec.py` writes `<spec>/criteria.lock.json` on every passing run. A criterion whose text changed since the last lock drops to level 0 and is listed as `needs re-verify`.
 ### Changed
 - Story template and `story-writer` follow contracts C2: `Failure modes` (each line → a criterion or `MNB-<n>`), `Must never break`, and `Open questions` after `Sources`. `Edge cases` is removed.
-- `check_spec.py` checks stories with the vendored `contracts.py`: grammar, example data, one source tag and the C2 sections are errors (they were warnings). `→ TODO` failure modes and Differences lines without a `→ D-<nnn>` link are warnings for now.
+- `check_spec.py` checks stories with the vendored `contracts.py`: grammar, example data, one source tag and the C2 sections are errors (they were warnings). `→ TODO` failure modes from migration are warnings.
+- Build plan: each slice lists its criterion IDs and names the acceptance bundle (`<spec>/acceptance/`); a slice is done when every criterion with a level 2 test passes it against the build and every other criterion has a builder test. `check_spec.py` warns about a slice that leaves out a criterion ID.
+- Both CLAUDE.md templates: cite criterion IDs, never restate them; bundle tests are read-only. The sdlc variant uses `- **AC-001** → F-ISS-01.AC2`; the Claude Code variant says how to run the bundle against the build.
 
 ## [0.10.1] - 2026-11-07
 ### Added

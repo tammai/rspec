@@ -97,8 +97,6 @@ def story_issues(text, module, domain):
         line = lines[int(m.group(1)) - 1].rstrip() if m else ""
         if "failure mode must end" in msg and line.endswith("→ TODO"):
             sev, msg = "warning", f"{m.group(0)}failure mode → TODO from migration; needs /rspec:stories {module}"
-        elif "difference must end with" in msg:
-            sev = "warning"  # an error once departures.yaml exists (R8)
         elif "Edge cases" in msg:
             msg += "; run scripts/migrate_criteria.py"
         issues.append((sev, msg))
@@ -115,7 +113,46 @@ def story_issues(text, module, domain):
     return issues
 
 
-def write_lock(layout, story_map, feats, E, W):
+def criterion_ids(text):
+    """IDs of the active (not struck) criteria under a story's `## Acceptance criteria`."""
+    sec = AC_SECTION.search(text)
+    return [a.group("id") for line in (sec.group(1).split("\n") if sec else [])
+            for m in [contracts.CRIT_LINE.match(line.rstrip("\r"))] if m
+            for a in [contracts.ACTIVE.match(m.group("body"))] if a]
+
+
+def check_departures(docs, story_map, handoff, E, W):
+    """C5 registry at <spec>/departures.yaml, and every D- link in the stories and features.md; {criterion: [D-ids]}."""
+    path = docs / "departures.yaml"
+    entries = []
+    if path.exists():
+        try:
+            entries = contracts.parse_yaml(path.read_text(encoding="utf-8-sig")) or []
+        except contracts.YamlError as e:
+            E(f"departures.yaml: {e}")
+            return {}
+        for sev, msg in contracts.check_departures(entries):
+            if sev == "error" or (sev == "blocked" and handoff):
+                E(f"departures.yaml: {msg}")
+            else:
+                W(f"departures.yaml: {msg}")
+    entries = [d for d in entries if isinstance(d, dict)] if isinstance(entries, list) else []
+    known = {d.get("id") for d in entries}
+    texts = [(p.name, text) for p, text, _ in story_map.values()]
+    if (docs / "features.md").exists():
+        texts.append(("features.md", (docs / "features.md").read_text(encoding="utf-8-sig")))
+    for name, text in texts:
+        for did in dict.fromkeys(re.findall(r"\bD-\d{3,}\b", text)):
+            if did not in known:
+                E(f"{name}: {did} is not in departures.yaml")
+    by_criterion = {}
+    for d in entries:
+        for cid in d.get("criteria") or []:
+            by_criterion.setdefault(cid, []).append(d.get("id"))
+    return by_criterion
+
+
+def write_lock(layout, story_map, feats, departures, E, W):
     """Write <spec>/criteria.lock.json (contracts C3); a criterion whose text changed drops to level 0."""
     path = layout.spec / "criteria.lock.json"
     prev = {}
@@ -139,10 +176,10 @@ def write_lock(layout, story_map, feats, E, W):
             tag = next(t for t in contracts.TAG.findall(a.group("rest")) if t in contracts.REVERSE_TAGS)
             entry = {"id": cid, "feature": fid, "file": p.relative_to(layout.spec).as_posix(), "text_sha256": sha,
                      "tag": tag, "priority": feats.get(fid) or (fm or {}).get("priority") or None,
-                     "level": 0, "test": None, "departures": []}
+                     "level": 0, "test": None, "departures": departures.get(cid, [])}
             was = old.get(cid)
             if was:
-                entry.update(test=was.get("test"), departures=was.get("departures") or [])
+                entry["test"] = was.get("test")
                 if was.get("text_sha256") == sha:
                     entry["level"] = was.get("level", 0)
                 else:
@@ -250,6 +287,7 @@ def main():
             (E if sev == "error" else W)(f"{p.name}: {msg}")
         left = sorted(ph for ph in PLACEHOLDERS if ph in text)
         if left: E(f"{p.name}: template placeholders left in file: {', '.join(left)}")
+    departures = check_departures(docs, story_map, si >= 5, E, W)
     for cycle in find_cycles(dependencies(story_map)):
         E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
@@ -364,6 +402,11 @@ def main():
                 W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
             elif not sdlc and total > SLICE_BUDGET and len(ids) > 1:
                 W(f"build-plan.md: Slice {num} has {total} acceptance criteria; keep a slice to about {SLICE_BUDGET}, split it")
+            listed = set(re.findall(r"\bF-[A-Z]{2,4}-\d{2,3}\.AC\d+\b", text))
+            unlisted = [c for i in ids if i in story_map for c in criterion_ids(story_map[i][1]) if c not in listed]
+            if unlisted:
+                W(f"build-plan.md: Slice {num} does not list {len(unlisted)} criterion ID(s) of its features "
+                  f"(e.g. {', '.join(unlisted[:3])}); list them per feature")
         if modernize:
             cp = docs / "cutover-plan.md"
             if not cp.exists():
@@ -385,7 +428,7 @@ def main():
         W(f"{len(parked)} autopilot decision(s) parked for you in autopilot-log.md")
 
     if not errors:
-        write_lock(layout, story_map, feats, E, W)
+        write_lock(layout, story_map, feats, departures, E, W)
 
     print(f"product={cfg.get('product')} stage={stage} modules={len(codes)} features={len(feats)} "
           f"mvp={len(mvp)} stories={len(story_map)} contracts={len(contract_files(contracts))} adrs={len(adrs)}")

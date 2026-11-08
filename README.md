@@ -55,6 +55,7 @@ docs/
   domain.md          roles and permissions, enumerations, limits: the one source for shared rules
   features/          one story file per feature in scope (MVP and Later)
   criteria.lock.json every criterion's ID, text hash and verification level, written by /rspec:check
+  departures.yaml    every accepted difference from the original (D-001, …), linked from stories and Drop rows
   openapi.json       API contract (+ asyncapi.json for realtime events)
   schemas/           one JSON Schema per entity
   api.md  data-model.md  nfr.md   readable summaries

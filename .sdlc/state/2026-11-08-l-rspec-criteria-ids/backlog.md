@@ -5,7 +5,7 @@ Record: the feature's change file (`scaffold.py paths <feature>` → `change`) �
 | ID | Slice | FRs | ACs | Deps | Size | Status |
 |---|---|---|---|---|---|---|
 | B1 | Vendor contracts v1; R1 template, story-writer, check rules, migration script; R2 criteria lock | R1, R2 | 1, 2, 3, 4, 5 | — | M | done |
-| B2 | R3 PRD, R8 departures, R6 template changes | R3, R6, R8 | 6, 7, 8 | B1 | M | todo |
+| B2 | R3 PRD, R8 departures, R6 template changes | R3, R6, R8 | 6, 7, 8 | B1 | M | in progress |
 | B3 | R4 audit sampling and fact-checker changes | R4 | 9 | B2 | S | todo |
 | B4 | R5 agents, verify skill, progress.py stage, report script, fixture app | R5 | 10 | B3, B2 | M | todo |
 | B5 | R7 amend skill | R7 | 11 | B4 | S | todo |
