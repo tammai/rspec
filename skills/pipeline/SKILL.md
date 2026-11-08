@@ -109,7 +109,7 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 
 ## Build with sdlc
 
-When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`) and `.sdlc/config.json` is missing, set up sdlc first. Interactive: run `sdlc:setup` as in handoff, giving it the stack recorded in `rspec.json` → `stack`. Under autopilot: set `status` to `paused` and tell the user to run `/sdlc:setup` with that stack (from the accepted stack ADR), then `/rspec:pipeline continue`.
+When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`) and `.sdlc/config.json` is missing, set up sdlc first. Interactive: run `sdlc:setup` as in handoff, giving it the stack recorded in `rspec.json` → `stack` and the PRD handoff wrote at `<docs>/prd.md` (setup's "a PRD already exists" path: use it as is; write it first as in handoff step 2a if it is missing). Under autopilot: set `status` to `paused` and tell the user to run `/sdlc:setup` with that stack (from the accepted stack ADR), saying that the PRD at `<docs>/prd.md` exists and is used as is, then `/rspec:pipeline continue`.
 
 Then take the first pending slice:
 1. **Not started** (no `sdlc_feature`): run `sdlc:start` with the Skill tool and this request: "Build slice <N> (<name>) of <spec>/build-plan.md: features <IDs>, stories in <spec>/features/. Follow the rspec section of CLAUDE.md: one backlog part per feature, each AC citing one criterion ID (`- **AC-001** → F-ISS-01.AC2`) without restating it; tests in `<spec>/acceptance/` are read-only." Once sdlc has created its feature, record its name in `<spec>/rspec.json` → `build.slices.<N>` (the newest `.sdlc/state/*.md` with `Status: active`).
