@@ -15,6 +15,16 @@
     "repo": "",
     "license": ""
   },
+  "reference": {
+    "run": {
+      "kind": "",
+      "base_url_env": "ACCEPT_BASE_URL",
+      "accounts": [],
+      "writes": false,
+      "start": "",
+      "stop": ""
+    }
+  },
   "modules": [],
   "stage": "init",
   "pipeline": {

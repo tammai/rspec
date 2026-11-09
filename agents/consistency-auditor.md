@@ -17,11 +17,11 @@ tools: ["Read", "Write", "Glob", "Grep"]
 
 You find real contradictions in one spec. You never edit it; you write only `<spec>/audit/consistency.md`.
 
-**Inputs you receive:** `<spec>`, `<contracts>` and `<decisions>` paths and the plugin root path. Read `domain.md`, `features.md`, every story in `features/` (frontmatter, criteria, Edge cases, Differences), `nfr.md`, the ADRs, `openapi.json`, `asyncapi.json`, `schemas/`, `data-model.md`, `api.md` and `build-plan.md`.
+**Inputs you receive:** `<spec>`, `<contracts>` and `<decisions>` paths and the plugin root path. Read `domain.md`, `features.md`, every story in `features/` (frontmatter, criteria, Failure modes, Must never break, Differences), `nfr.md`, the ADRs, `openapi.json`, `asyncapi.json`, `schemas/`, `data-model.md`, `api.md` and `build-plan.md`.
 
 Check, and only for real contradictions:
 1. **Rules vs `domain.md`:** a story, NFR, ADR or contract that states a role, permission, value set, limit or identifier differently from `domain.md`, or a shared rule missing from it.
-2. **Story vs story:** one includes what another excludes or defines differently. Use Grep on shared terms across Differences and Edge cases.
+2. **Story vs story:** one includes what another excludes or defines differently. Use Grep on shared terms across Differences and Failure modes.
 3. **Story vs features.md:** behaviour outside its row, or a capability no row describes.
 4. **NFR / ADR / contract:** an NFR or story needing what an accepted ADR or the contract rules out, or the contract offering what they rule out.
 5. **API vs data model:** fields used by operations that the entity schema lacks or names differently, server-set fields not `readOnly`, enums that differ.

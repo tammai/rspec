@@ -4,7 +4,8 @@
 The reverse-engineered SRS in `<spec>/` (contracts in `<contracts>/`, ADRs in `<decisions>/`) is the written spec for this rebuild. sdlc runs the build; rspec's pipeline starts one sdlc feature per slice of `<spec>/build-plan.md`.
 
 - One sdlc feature per build-plan slice, one backlog part per rspec feature (`F-…`) in that slice, in build-plan order.
-- The change file points to the spec instead of restating it. Each acceptance criterion cites the story it proves, as `<spec>/features/<file>.md §<feature ID>`, e.g. `**AC-001** <spec>/features/F-ISS-01-create-issue.md §F-ISS-01: Given …, when …, then …`. `verify.py trace` checks these.
+- The change file cites criterion IDs and never restates their text: `- **AC-001** → F-ISS-01.AC2`, one per criterion of the slice (sdlc spec-backed mode reads the text from `<spec>/criteria.lock.json`). A criterion of the slice left out goes under `## Out of scope` with a reason. `verify.py trace` checks these.
+- Acceptance tests in `<spec>/acceptance/` (the bundle `/rspec:verify` recorded against the reference) are read-only: a test that looks wrong is a spec question for `/rspec:amend`, never an edit.
 - API work follows `<contracts>/openapi.json` (and `<contracts>/asyncapi.json`); data types follow `<contracts>/schemas/`. Change the contract first, then the code.
 - ADRs in `<decisions>/` marked Accepted are binding decisions; record a change as a new ADR that supersedes one.
 - sdlc tracks progress. Do not edit `status` in the story files; `/rspec:pipeline` sets it when a slice's sdlc feature is done.

@@ -38,6 +38,23 @@ def triage_pending(docs, stage, prio, scoped, story_map):
     return out
 
 
+def verify_pending(docs, cfg, scoped):
+    """What /rspec:verify still has to do: `decide` (no reference kind yet), module codes with nothing recorded,
+    then `report`; [] once verify/summary.md exists or the reference kind is none."""
+    kind = ((cfg.get("reference") or {}).get("run") or {}).get("kind", "")
+    if kind == "none" or (docs / "verify" / "summary.md").exists():
+        return []
+    if not kind:
+        return ["decide"]
+    touched = set()
+    for name in ("runs.jsonl", "outcomes.jsonl"):
+        p = docs / "verify" / name
+        if p.exists():
+            touched |= {json.loads(l)["criterion"].split("-")[1] for l in p.read_text(encoding="utf-8").splitlines() if l.strip()}
+    modules = list(dict.fromkeys(i.split("-")[1] for i in scoped))
+    return [m for m in modules if m not in touched] or ["report"]
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     layout, cfg = open_layout(args[0] if args else ".")
@@ -81,6 +98,9 @@ def main():
         # the audit runs between tech and handoff; it is done when its summary exists
         nxt = "audit"
         pending = [p for p in ("facts", "coverage", "consistency") if not (docs / "audit" / f"{p}.md").exists()] or ["summary"]
+    elif nxt == "handoff" and verify_pending(docs, cfg, scoped):
+        # verify runs between the audit and handoff; `reference.run.kind: none` skips it
+        nxt, pending = "verify", verify_pending(docs, cfg, scoped)
     elif nxt == "handoff":
         if any(s.lower() == "proposed" for s in adr_statuses(layout.decisions).values()):
             pending.append("adr-approval")

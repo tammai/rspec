@@ -8,11 +8,11 @@ description: >
   for modernizing your own product ("modernize our legacy app", "rewrite our product
   on a new stack", "migrate our app from X to Y"). Also
   runs unattended ("run the spec on autopilot", "--autopilot").
-  Drives init → discover → features → stories → tech → audit → handoff → check, then hands the build to sdlc slice by slice, from where it left off,
+  Drives init → discover → features → stories → tech → audit → verify → handoff → check, then hands the build to sdlc slice by slice, from where it left off,
   pausing at the features and ADR approval gates.
 argument-hint: "[product | continue | pause | stop | status] [--until <stage>]"
 metadata:
-  version: "0.9.7"
+  version: "0.11.0"
 ---
 
 # /rspec:pipeline
@@ -30,13 +30,13 @@ Drive the reverse spec to a finished, checked spec, across as many sessions as i
 | `stop` | Stop: end this run and clear `stop_after`; a later run starts fresh from the saved stage |
 | `status` | Report the checkpoint and pending work; change nothing |
 | `--autopilot [rules.json]` | Run unattended: ask everything once up front (or read the rules file), then apply the rules at every gate; see Autopilot |
-| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `audit`, `handoff`, `build`, `readiness`), or after a build release (`release-1` is the MVP) |
+| `--until <stage>` | Stop after that stage (`discover`, `features`, `stories`, `tech`, `audit`, `verify`, `handoff`, `build`, `readiness`), or after a build release (`release-1` is the MVP) |
 
 Plain words count too: "pause", "stop here", "carry on", "resume" in the user's language mean the same as the arguments.
 
 ## Where things stand
 
-The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `adr-approval`, `build-plan`, `claude-md`, feature IDs for `triage`, slice numbers for `build`, readiness categories for `readiness`, `check`) and, while building with sdlc, `slices` (each slice's features, its sdlc feature and that feature's sdlc status) and the saved `pipeline` checkpoint.
+The truth is on disk. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py .` at the start of every turn of this skill, and after each unit of work. It prints JSON with `stage`, `next` (the step to run), `pending` (what that step still has to do: module codes, MVP feature IDs, tech areas, `module-map`, `screens`, `adrs`, `approval`, `decide`, `report`, `adr-approval`, `build-plan`, `claude-md`, feature IDs for `triage`, slice numbers for `build`, readiness categories for `readiness`, `check`) and, while building with sdlc, `slices` (each slice's features, its sdlc feature and that feature's sdlc status) and the saved `pipeline` checkpoint.
 
 The checkpoint lives in `<spec>/rspec.json`:
 
@@ -64,9 +64,9 @@ Write it whenever status changes and after each batch of subagents returns, so a
 
 ## Loop
 
-1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:audit`, `rspec:handoff` or `rspec:check`. When `next` is `triage` (a priority changed after its stage), run `rspec:features` with `triage` and the `pending` IDs. `build` and `readiness` are not skills; they are handled in the sections below. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
+1. Run the next step's skill with the Skill tool: `rspec:discover`, `rspec:features`, `rspec:stories`, `rspec:tech`, `rspec:audit`, `rspec:verify`, `rspec:handoff` or `rspec:check`. `verify` comes after the audit: with `pending` `decide` it asks once whether to verify against a running reference (`reference.run.kind` `none` skips it); its pending units are module codes still to record, then `report`. When `next` is `triage` (a priority changed after its stage), run `rspec:features` with `triage` and the `pending` IDs. `build` and `readiness` are not skills; they are handled in the sections below. Pass the `pending` list and say it is a resume, so the skill does only the pending units and leaves finished files alone.
 2. After each batch of subagents: update `last` and `updated`.
-3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn.
+3. When the step's skill finishes: confirm with `progress.py` that the stage advanced, and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. If errors remain after one fix attempt, set `status` to `paused`, show the errors and end the turn. A `tech is stale` warning means the stories changed after tech: run `rspec:tech` for the changed stories before the audit, verify or handoff.
 4. If the user has asked to pause or stop, or the finished stage equals `stop_after`, apply Pause/Stop below. Otherwise continue with the next step.
 
 ## Autopilot
@@ -85,6 +85,7 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 |---|---|---|
 | `read_oss_code` | init: clone an open-source product's code | `true` / `false` |
 | `features`, `mvp_max`, `retire_used_features` | features approval | `approve-as-proposed`: approve the list if MVP ≤ `mvp_max`; above it, cut the lowest-value MVP features to Later until it fits, each logged. Modernize: a feature that still has users is never retired unless `retire_used_features` is true; otherwise keep it MVP and park it |
+| `verify`, `reference` | verify, after the audit | `verify`: `true` records against the reference described in `reference` (the `reference.run` block of `rspec.json`; account and URL values stay in environment variables); `false` sets `reference.run.kind` to `none` |
 | `adrs` | ADR approval in handoff | `accept-recommended`: accept each ADR's recommended decision. `park`: leave them Proposed and stop before the build plan |
 | `build_engine` | build engine in handoff | `sdlc`, `claude-code` or `none` |
 | `accept_risks` | readiness items that can only be closed by accepting a risk | `false` (default): park them. Never `true` for security or privacy items |
@@ -93,11 +94,11 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 
 **The build** asks sdlc for autopilot in words, never with the `--autopilot` flag: in sdlc that flag means a headless session started by its `autopilot.py`, which runs one part and ends. End each `sdlc:start` request with: "Run this on autopilot in this session: keep going without me, every remaining part then Feature close, taking your recommendations." sdlc then runs every part and Review and Ship back to back without stopping for its approvals.
 
-**Still stops:** check errors not fixed after one attempt, a test still failing after a fix attempt, anything needing credentials or a login, usage limits. Save the checkpoint with `status: paused` and report. **Never automatic:** deploying to production; sdlc's go-ahead for it stays with the user.
+**Still stops:** a verify preflight that fails (the reference does not answer, an account variable is unset), check errors not fixed after one attempt, a test still failing after a fix attempt, anything needing credentials or a login, usage limits. Save the checkpoint with `status: paused` and report. **Never automatic:** deploying to production; sdlc's go-ahead for it stays with the user.
 
 **At the end**, report the parked count from `progress.py` first: the spec or build is not finished while anything is parked. The user resolves parked items (checks them and writes the decision) and runs `/rspec:pipeline continue`.
 
-**Running without a terminal:** `claude -p "/rspec:pipeline --autopilot rspec-autopilot.json"` with the allowed tools in the README, or `/loop /rspec:pipeline continue` to keep it going across sessions.
+**Running without a terminal:** `claude -p "/rspec:pipeline --autopilot rspec-autopilot.json"` with the allowed tools in the README, or `/loop /rspec:pipeline continue` to keep it going across sessions. A headless session ends when your turn ends and stops any subagent still running in the background, so under `claude -p` launch every subagent as a foreground call (several in one message still run in parallel) and end the turn only when the step is done.
 
 ## Approval gate
 
@@ -109,12 +110,12 @@ Unattended mode, for a product you know well or a second run. Started by `--auto
 
 ## Build with sdlc
 
-When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`) and `.sdlc/config.json` is missing, set up sdlc first. Interactive: run `sdlc:setup` as in handoff, giving it the stack recorded in `rspec.json` → `stack`. Under autopilot: set `status` to `paused` and tell the user to run `/sdlc:setup` with that stack (from the accepted stack ADR), then `/rspec:pipeline continue`.
+When `next` is `build` (stage `handoff`, `build.engine` = `sdlc`) and `.sdlc/config.json` is missing, set up sdlc first. Interactive: run `sdlc:setup` as in handoff, giving it the stack recorded in `rspec.json` → `stack` and the PRD handoff wrote at `<docs>/prd.md` (setup's "a PRD already exists" path: use it as is; write it first as in handoff step 2a if it is missing). Under autopilot: set `status` to `paused` and tell the user to run `/sdlc:setup` with that stack (from the accepted stack ADR), saying that the PRD at `<docs>/prd.md` exists and is used as is, then `/rspec:pipeline continue`.
 
 Then take the first pending slice:
-1. **Not started** (no `sdlc_feature`): run `sdlc:start` with the Skill tool and this request: "Build slice <N> (<name>) of <spec>/build-plan.md: features <IDs>, stories in <spec>/features/. Follow the rspec section of CLAUDE.md: one backlog part per feature, each AC citing `<spec>/features/<file>.md §<ID>`." Once sdlc has created its feature, record its name in `<spec>/rspec.json` → `build.slices.<N>` (the newest `.sdlc/state/*.md` with `Status: active`).
+1. **Not started** (no `sdlc_feature`): run `sdlc:start` with the Skill tool and this request: "Build slice <N> (<name>) of <spec>/build-plan.md: features <IDs>, stories in <spec>/features/. Follow the rspec section of CLAUDE.md: one backlog part per feature, each AC citing one criterion ID (`- **AC-001** → F-ISS-01.AC2`) without restating it; tests in `<spec>/acceptance/` are read-only." Once sdlc has created its feature, record its name in `<spec>/rspec.json` → `build.slices.<N>` (the newest `.sdlc/state/*.md` with `Status: active`).
 2. **Started, not done**: run `sdlc:start` with no new request so sdlc resumes its active feature.
-3. sdlc runs its own phases, approvals and stops. When it stops for the user, end the turn with `status` `running`; `/rspec:pipeline continue` brings it back here.
+3. sdlc runs its own phases, approvals and stops. When it stops for the user, end the turn with `status` `running`; `/rspec:pipeline continue` brings it back here. A part blocked on a spec question (`.sdlc/.work/spec-questions/*.json`, a `finding-v1` of class `spec-gap`) is answered with `/rspec:amend --finding <file>` (the user approves a change to an MVP criterion's `then`; autopilot parks it); sdlc unblocks the part when the lock shows the new hash.
 4. **Done** (sdlc status `done`): set `status: done` in the frontmatter of each story in that slice, add a line to `<changelog>`, and go to the next pending slice. When the slice was the last of a release (the next slice is under a new `## Release` heading, or none is left), add a release line to `<changelog>`; if `stop_after` is `release-<N>` for that release, apply Pause.
 
 When every slice is done, `next` becomes `readiness` (goal `production` with open checklist items) or `check`; continue below.

@@ -1,6 +1,6 @@
 {
   "name": "rspec",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "Reverse-spec an existing product, or modernize your own: discover features in parallel, prioritise, write stories, contracts and technical specs, then hand the build to sdlc.",
   "author": {
     "name": "Tam Mai"

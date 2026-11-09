@@ -1,0 +1,83 @@
+# 2026-11-08-l-rspec-criteria-ids
+Status: active
+Process: 3
+Change: docs/sdlc/changes/2026-11-08-l-rspec-criteria-ids.md   (this feature's record for people)
+Track: L   (sized up because: written spec sized L with 5 backlog parts (rebuild-upgrade README); footprint: 12 files)
+Risk: low
+Top model: opus   (fable only if the user chose it)
+Commands: test: `python -m unittest discover tests`
+Started: 2026-11-08
+Base: 0bef83f
+Owner: tammai.it@gmail.com
+Tool: claude-code
+Verified: caa235c tree 25d2726c56661f7a7a8b91443c4b58ac6198314f
+Slice: B5   Slice base: 600f2da   Slice gates: none
+Current: Stage 2 – Build
+
+## Stages
+- [x] 1 Define   — the change file, the plan sections below
+- [ ] 2 Build
+- [ ] 3 Review   — the change file's ## Review
+- [ ] 4 Ship     — PR: (Learn: knowledge, recurring-defects.md)
+
+## How the build runs
+parts in fresh sessions: each spec part is its own orchestrator task; this session builds B1 only
+
+## Handoff
+- contracts API used: contracts.check_story, check_criteria(profile='rspec', domain=...), criterion_text_sha256, check_lock (contracts/v1/contracts.py)
+- Q1/Q3 answered (a)/(a): severities live in `story_issues` (scripts/check_spec.py); `## Open questions` section in templates/feature-story.md and agents/story-writer.md
+- B1 done. For B2 (R8): `story_issues` downgrades "difference must end with → D-" to a WARN; make it an ERROR and add the dangling D- check; `write_lock` keeps `departures: []` (scripts/check_spec.py), fill it from the Differences links
+- Smoke run on bigin-phish-rspec (scratch copy): migration 111 stories, idempotent; check then shows 679 errors, 557 of them grammar because criteria carry a `[code]` citation after the tag (`repo@… path:line`). story-writer and writing-rules now put citations under Sources; legacy specs need a stories pass
+- B2 done. R8: `check_departures` and `criterion_ids` in scripts/check_spec.py; the lock's `departures` comes from the registry's `criteria` lists. Q5 (a): story-time and legacy differences are decided at the end of /rspec:stories (skills/stories/SKILL.md).
+- For B3 (R4): `audit_sample.py` reads `criteria_items` (rspec_lib), which parses `**ID**` lines fine. R4's level 1 must reach the lock, but `write_lock` only carries levels over; B3 needs a way to raise a level (e.g. an audit result file `write_lock` reads)
+- B3 done. Level 1: `audit_sample.py --levels` writes `<spec>/audit/levels.json` (ID → text hash); `write_lock` raises 0 → 1 while the hash matches and never lowers a level 2. For B4 (R5): level 2 can reach the lock the same way (a verify result file with ID → hash and test path, read by `write_lock`); `progress.py` decides the audit stage by `audit/summary.md`. The fact-checker already reads `reference.run` (absent = kind none)
+- B4 done. Verify: verify_run.py logs runs, verify_report.py decides level 2/flaky and writes verify/levels.json, which write_lock reads. For B5 (R7): skills/verify/SKILL.md step 4 edits a spec-wrong criterion directly 'until /rspec:amend exists'; point it at /rspec:amend. Amend must drop the criterion to level 0 (a text change already does via the lock hash) and run verify --only for its feature when reference.run.kind is local or url.
+- B5 done; every part is done. Next is Feature close (sdlc Review over the whole branch, then Ship): not started by the part-5 worker, since it needs fresh review agents and a push, which the orchestrator decides. Owed before a 0.11.0 release: the 02 acceptance re-run on the gophish -> bigin-phish spec (audit targets, verify level 2 share), and /rspec:pipeline resuming across every new stage end to end.
+
+## Tasks
+1. **B1 Vendor contracts v1 + drift test** — AC-001
+   - Files: `contracts/v1/`, `.gitattributes`, `tests/test_contracts_vendor.py`
+2. **B1 Story template, story-writer, stories skill, auditors** — AC-003
+   - Files: `templates/feature-story.md`, `agents/story-writer.md`, `skills/stories/SKILL.md`, `agents/consistency-auditor.md`, `templates/claude-md.md`, `references/writing-rules.md`
+3. **B1 check_spec C1/C2 via contracts** — AC-002
+   - Files: `scripts/check_spec.py`, `scripts/rspec_lib.py`, `tests/helpers.py`, `tests/test_criteria_ids.py`
+4. **B1 migrate_criteria.py** — AC-004
+   - Files: `scripts/migrate_criteria.py`
+5. **B1 criteria lock** — AC-005
+   - Files: `scripts/check_spec.py`, `CHANGELOG.md`, `README.md`
+6. **B2 PRD, departures, handoff templates** — AC-006 AC-007 AC-008
+   - Files: `skills/handoff/SKILL.md`, `skills/features/SKILL.md`, `templates/`
+7. **B3 per-tag audit sampling** — AC-009
+   - Files: `scripts/audit_sample.py`, `agents/fact-checker.md`
+8. **B4 verify stage** — AC-010
+   - Files: `skills/verify/`, `agents/`, `scripts/progress.py`, `tests/fixtures/reference-app/`
+9. **B5 amend** — AC-011
+   - Files: `skills/amend/`
+
+## Public Surface
+- command `scripts/migrate_criteria.py` — AC-004
+- dependency `contracts/v1 (vendored)` — AC-001
+
+## Gate log
+- 2026-11-08 Stage 1: pass — plan self-approved (L), partial: (1) spec R1/R2 + 01 vendoring map to AC-001..005, R3-R8 indexed as AC-006..011 for later parts; (2) open questions Q1/Q3 are with the user via orchestrator, built in one place each; (3) Q2/Q4 settled by orchestrator msg_ae7b769d541a; (4) nothing irreversible
+
+## Deviations
+- 2026-11-08 Vendored contracts/v1/ (task 1 names the folder; verify lists each file and function): contracts/v1/MANIFEST contracts/v1/acceptance-manifest.schema.json contracts/v1/contracts.py contracts/v1/cost-line.schema.json contracts/v1/criteria-lock.schema.json contracts/v1/departures.schema.json contracts/v1/finding.schema.json contracts/v1/fixtures/bundle/invalid/seed-outside-bundle/http/F-ISS-01.AC2.yaml contracts/v1/fixtures/bundle/invalid/seed-outside-bundle/manifest.json contracts/v1/fixtures/bundle/invalid/seed-outside-bundle/seed/team-eng-11-issues.yaml contracts/v1/fixtures/bundle/invalid/sha256-mismatch/http/F-ISS-01.AC2.yaml contracts/v1/fixtures/bundle/invalid/sha256-mismatch/manifest.json contracts/v1/fixtures/bundle/invalid/sha256-mismatch/seed/team-eng-11-issues.yaml contracts/v1/fixtures/bundle/invalid/url-in-test/http/F-ISS-01.AC2.yaml contracts/v1/fixtures/bundle/invalid/url-in-test/manifest.json contracts/v1/fixtures/bundle/invalid/url-in-test/seed/team-eng-11-issues.yaml contracts/v1/fixtures/bundle/valid/trackr/http/F-ISS-01.AC2.yaml contracts/v1/fixtures/bundle/valid/trackr/manifest.json contracts/v1/fixtures/bundle/valid/trackr/seed/team-eng-11-issues.yaml contracts/v1/fixtures/cost/invalid/negative-wall-s.jsonl contracts/v1/fixtures/cost/valid/cost.jsonl contracts/v1/fixtures/departures/invalid/no-decided-by.yaml contracts/v1/fixtures/departures/invalid/proposed-blocks.yaml contracts/v1/fixtures/departures/valid/departures.yaml contracts/v1/fixtures/finding/invalid/no-verified-by.json contracts/v1/fixtures/finding/invalid/route-mismatch.json contracts/v1/fixtures/finding/valid/BH-0007.json contracts/v1/fixtures/finding/valid/BH-0008-not-reproduced.json contracts/v1/fixtures/http/invalid/capture-used-before-taken.yaml contracts/v1/fixtures/http/invalid/json-not-a-list.yaml contracts/v1/fixtures/http/invalid/no-steps.yaml contracts/v1/fixtures/http/valid/F-ISS-01.AC2.yaml contracts/v1/fixtures/lock/invalid/level-2-without-test.json contracts/v1/fixtures/lock/invalid/tag-with-brackets.json contracts/v1/fixtures/lock/valid/trackr/criteria.lock.json contracts/v1/fixtures/yaml/invalid/anchor.yaml contracts/v1/fixtures/yaml/invalid/block-scalar.yaml contracts/v1/fixtures/yaml/invalid/duplicate-key.yaml contracts/v1/fixtures/yaml/invalid/empty-key.yaml contracts/v1/fixtures/yaml/invalid/unclosed-flow-value.yaml contracts/v1/fixtures/yaml/valid/scalars.yaml contracts/v1/test_contracts.py SchemaUnsupported YamlError check_bundle check_cost check_criteria check_departures check_finding check_http_test check_id check_lock check_story criterion_text_sha256 finding_route header_for parse_yaml run_fixtures run_http schema_errors seal sum_cost vendor_check  What: copied byte-identical from product-rebuild 34dd29a. Why: 01 Distribution; never edited here. Effect: vendor-check passes; no rspec code beyond check_spec imports it.
+- 2026-11-08 tests/test_check_spec.py tests/test_quality_bar.py tests/test_scorecard.py What: adapted to the C1/C2 story format (failure= instead of edge=; untagged criterion now an ERROR, not a WARN). Why: helpers.story() changed format and the evidence-tag warning became contracts' source-tag error. Effect: same behaviours asserted, stricter where the rule is now an error.
+- 2026-11-08 New module-level helpers body_end find main migrate sections (scripts/migrate_criteria.py) story_issues write_lock (scripts/check_spec.py) What: internal functions of the planned scripts. Why: verify lists new functions as surface. Effect: none outside the scripts; the only new command is migrate_criteria.py (Public Surface).
+- 2026-11-08 New helpers criterion_ids and check_departures in scripts/check_spec.py, and tests/test_departures.py tests/test_build_plan_criteria.py skills/pipeline/SKILL.md (B2) What: internal functions, the part's tests, and the pipeline's slice request now cites criterion IDs. Why: verify lists new functions; the pipeline request restated the old cite-the-story rule R6 replaces. Effect: none outside check_spec; pipeline asks sdlc for '- **AC-001** -> F-ISS-01.AC2' ACs.
+- 2026-11-08 scripts/migrate_criteria.py tests/test_criteria_ids.py changed in B2 (part 1's script) What: migration moves text after a criterion's last tag into Sources as '- <ID>: <text>'. Why: user decision relayed in msg_9590b3af8de3, spec 02 R1 updated. Effect: still idempotent; on bigin-phish grammar errors 557 -> 35.
+- 2026-11-08 Functions draw levels sample_size verdicts criteria (scripts/audit_sample.py), audited levels in write_lock (scripts/check_spec.py), and tests/test_audit.py's rerun test folded into test_sample_size_per_tag (B3) What: internal functions of the rewritten script; the old test asserted 25 [docs] of 40, which R4 changes to 8. Why: verify lists new functions; R4 changes the sample size. Effect: rerun determinism still asserted; --levels is a new mode of an existing script.
+- 2026-11-08 B4 files scripts/verify_report.py scripts/verify_run.py templates/autopilot.json templates/rspec.json tests/fixtures/reference-app/app/__init__.py tests/fixtures/reference-app/app/__main__.py tests/fixtures/reference-app/docs/openapi.json tests/fixtures/reference-app/docs/rspec.json tests/fixtures/reference-app/docs/schemas/task.schema.json What: the verify scripts, the reference.run block and verify rule in the templates, and the fixture app and spec (task 8 names their folders). Why: R5 report and run log by script (no agent figures), 02 Acceptance fixture. Effect: two new script commands; templates gain reference.run (kind empty = undecided).
+- 2026-11-08 B4 functions criterion_of run_once (verify_run.py) note read_jsonl share status (verify_report.py) verify_pending (progress.py), criteria moved from audit_sample.py into rspec_lib.py What: internal helpers; the criterion parser is shared by audit and verify scripts. Why: verify lists new functions. Effect: none outside the scripts.
+- 2026-11-08 B5 task 9 (skills/amend/ folder) and scripts/amend.py with helpers flag read_finding fail, plus scripts/verify_report.py status and skills/verify, skills/pipeline, README, CHANGELOG What: amend is a script plus a thin skill; verify_report ignores runs of a test amend removed; verify and pipeline skills route spec-wrong fixes and sdlc spec questions through amend. Why: R7 and C4 (a test changes only through amend), sdlc S10. Effect: new command scripts/amend.py; no other interface change.
+- 2026-11-08 Re-vendor to contracts 1.1.0 (gate G-F): contracts/v1/fixtures/finding/invalid/borrowed-question-shape.json contracts/v1/fixtures/finding/valid/SQ-0001-spec-question.json and the changed contracts/v1 files, plus docs/specs/rebuild-upgrade/01-shared-contracts.md 03-sdlc.md copied as context What: byte-identical copy from product-rebuild 683e7d7 (MANIFEST 4064651b...). Why: C6 exception for sdlc spec questions; amend.py routes through contracts.finding_route. Effect: amend accepts a spec question, still refuses any other unreproduced finding.
+- 2026-11-08 Re-vendor to contracts 1.1.1 (user-approved patch): the changed contracts/v1 files, plus docs/specs/rebuild-upgrade/01-shared-contracts.md copied as context What: byte-identical copy from product-rebuild 3274d37 (MANIFEST e385f981...). Why: contracts.py CLI no longer crashes on a non-UTF-8 console; 01 C4 notes the cli test format is not settled in v1. Effect: none on rspec behaviour; verify_run.py already skips cli/.
+- 2026-11-08 Release prep (bigin-phish stories re-run) agents/story-writer.md What: a failure mode links to a criterion of its own story. Why: the re-run's writers linked 45 failure modes to other stories' criteria, which contracts C2 (check_story) rejects as unknown IDs; the prompt did not say same story. Effect: prompt wording only.
+- 2026-11-08 Release fix (gate after release prep, user choice a) scripts/check_spec.py tech_basis --mark-tech, tests/test_check_spec.py tests/test_departures.py, skills tech stories pipeline amend, README What: a Drop row without a trailing link to a D-<nnn> entry warns before handoff and errors from handoff (02 R8, contracts C5); rspec.json tech_basis (one hash over criterion IDs and texts) is written by check_spec.py --mark-tech at the end of /rspec:tech, and check_spec warns 'tech is stale' when criteria change after it ('no tech basis' for a spec from before 0.11); README documents that headless runs stop background subagents and the pipeline launches them in the foreground under claude -p. Why: the bigin-phish release-prep re-run showed an unlinked Drop row going unflagged and a stories re-run leaving the contracts stale with no pointer. Effect: two new check messages and one check_spec option; review 2 rounds, no high left (tickets: triage into scope does not mark tech stale; argument parsing nits).
+- 2026-11-09 Production-readiness template from product-rebuild (05 P8, PR at product-rebuild 2026-11-08-l-product-rebuild-3 @ 5a446cd, docs/rspec-pr/) templates/production-readiness.md skills/handoff/SKILL.md tests/test_production.py What: the template is the PR's merged file verbatim (GP items added; optional Parity with the reference and Client app categories); handoff keeps those two only when they apply. Why: one checklist for rspec and product-rebuild; product-rebuild 3.0 reads only rspec's file. Effect: more readiness items for goal production; readiness_open and progress unchanged; no review trigger fired (template and prose).
+- 2026-11-09 Version bump to 0.11.0-rc.1 (orchestrator request: product-rebuild pins >=0.11.0-rc.1) .claude-plugin/plugin.json .claude-plugin/marketplace.json, skills metadata.version, CHANGELOG What: both manifests at 0.11.0-rc.1, skills changed since v0.10.1 at metadata 0.11.0, the Unreleased entries under [0.11.0-rc.1] - 2026-11-09. Why: the E2E run loads this branch and product-rebuild needs the pre-release version. Effect: no tag (RELEASE.md has no pre-release process), nothing pushed; the 0.11.0 release itself still follows RELEASE.md.
+- 2026-11-09 Smoke S-37 fix (user decision 2026-11-09: fix now, test-first, one test) scripts/verify_report.py tests/test_verify.py, version 0.11.0-rc.2 (.claude-plugin/plugin.json .claude-plugin/marketplace.json CHANGELOG), docs/sdlc/todo.md What: verify_report.py keeps manifest entries marked `visibility: hidden` as they are, counts their criteria at level 2, skips check_bundle's not-found error for their absent files, and stops with a restore-from-git error on an unreadable prior manifest. Why: re-running verify after product-rebuild's holdout split dropped the hidden entries and reported MVP 67% instead of 100%. Effect: the manifest survives a re-run. Review: 2 rounds, round-1 M1 and M2 fixed; round 2 PASS; M3, L1, L2 (round 1) and M4, L3 (round 2) ticketed in docs/sdlc/todo.md.
+
+## Open questions
+-

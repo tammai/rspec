@@ -4,13 +4,17 @@
 Usage: check_spec.py [project-root | spec-folder]
 Exit code 1 if any ERROR is found. WARN lines do not fail.
 """
-import json, re, sys
+import hashlib, json, re, sys
+from datetime import datetime, timezone
 from pathlib import Path
 from contract_checks import check_domain, check_bodies, server_set_not_readonly
-from rspec_lib import (TAG_RE, STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
+from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
                        slice_criteria, SDLC_MAX_CRITERIA, SLICE_BUDGET)
+
+sys.path.insert(0, str(TEMPLATES.parent / "contracts" / "v1"))
+import contracts
 
 STORY_TPL = TEMPLATES / "feature-story.md"
 PLACEHOLDERS = set(re.findall(r"<[^<>\n]+>", STORY_TPL.read_text(encoding="utf-8-sig"))) if STORY_TPL.exists() else set()
@@ -19,7 +23,7 @@ EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 EMAIL_PLACEHOLDER = re.compile(
     r"\b(?:local|user|name|you|someone|me|operator|admin)@(?:domain|example|host|server)\.[\w.-]+",
     re.I)
-GHERKIN = re.compile(r"\bgiven\b.*\bwhen\b.*\bthen\b", re.I)
+AC_SECTION = re.compile(r"^##\s*Acceptance criteria\s*$(.*?)(?=^##\s|\Z)", re.M | re.S)
 
 
 SNAKE = re.compile(r"^[a-z][a-z0-9]*(_[a-z0-9]+)+$")
@@ -82,8 +86,147 @@ def broken_refs(path, doc):
     return out
 
 
+def story_issues(text, module, domain):
+    """Contracts C1/C2 for one story, with rspec's severities and hints."""
+    lines = text.split("\n")
+    issues = []
+    for sev, msg in contracts.check_story(text):
+        if msg.startswith("Acceptance criteria: "):
+            continue  # re-checked below with domain.md, which check_story does not take
+        m = re.match(r"line (\d+): ", msg)
+        line = lines[int(m.group(1)) - 1].rstrip() if m else ""
+        if "failure mode must end" in msg and line.endswith("→ TODO"):
+            sev, msg = "warning", f"{m.group(0)}failure mode → TODO from migration; needs /rspec:stories {module}"
+        elif "difference must end with" in msg:
+            msg += "; the next /rspec:stories pass asks the user to accept it as a departures.yaml entry"
+        elif "Edge cases" in msg:
+            msg += "; run scripts/migrate_criteria.py"
+        issues.append((sev, msg))
+    sec = AC_SECTION.search(text)
+    if sec:
+        loose = [i for i in re.findall(r"^\s*[-*] (?:\[[ xX]\] )?(\S.*)$", sec.group(1), re.M)
+                 if not re.match(r"(~~)?\*\*", i)]
+        if loose:
+            issues.append(("error", f"{len(loose)} acceptance criteria have no ID (**F-…-NN.AC<n>**); "
+                                    "run scripts/migrate_criteria.py"))
+        for sev, msg in contracts.check_criteria(text, "rspec", domain):
+            if not (loose and msg.startswith("no criterion line")):
+                issues.append((sev, msg))
+    return issues
+
+
+def criterion_ids(text):
+    """IDs of the active (not struck) criteria under a story's `## Acceptance criteria`."""
+    sec = AC_SECTION.search(text)
+    return [a.group("id") for line in (sec.group(1).split("\n") if sec else [])
+            for m in [contracts.CRIT_LINE.match(line.rstrip("\r"))] if m
+            for a in [contracts.ACTIVE.match(m.group("body"))] if a]
+
+
+def check_departures(docs, story_map, handoff, E, W):
+    """C5 registry at <spec>/departures.yaml, and every D- link in the stories and features.md; {criterion: [D-ids]}."""
+    path = docs / "departures.yaml"
+    entries = []
+    if path.exists():
+        try:
+            entries = contracts.parse_yaml(path.read_text(encoding="utf-8-sig")) or []
+        except contracts.YamlError as e:
+            E(f"departures.yaml: {e}")
+            return {}
+        for sev, msg in contracts.check_departures(entries):
+            if sev == "error" or (sev == "blocked" and handoff):
+                E(f"departures.yaml: {msg}")
+            else:
+                W(f"departures.yaml: {msg}")
+    entries = [d for d in entries if isinstance(d, dict)] if isinstance(entries, list) else []
+    known = {d.get("id") for d in entries}
+    texts = [(p.name, text) for p, text, _ in story_map.values()]
+    if (docs / "features.md").exists():
+        texts.append(("features.md", (docs / "features.md").read_text(encoding="utf-8-sig")))
+    for name, text in texts:
+        for did in dict.fromkeys(re.findall(r"\bD-\d{3,}\b", text)):
+            if did not in known:
+                E(f"{name}: {did} is not in departures.yaml")
+    by_criterion = {}
+    for d in entries:
+        for cid in d.get("criteria") or []:
+            by_criterion.setdefault(cid, []).append(d.get("id"))
+    return by_criterion
+
+
+def write_lock(layout, story_map, feats, departures, E, W):
+    """Write <spec>/criteria.lock.json (contracts C3); a criterion whose text changed drops to level 0."""
+    path = layout.spec / "criteria.lock.json"
+    prev = {}
+    if path.exists():
+        try:
+            prev = json.loads(path.read_text(encoding="utf-8-sig"))
+        except json.JSONDecodeError as e:
+            E(f"criteria.lock.json is not valid JSON ({e}); restore it from git, or delete it to reset every level to 0")
+            return
+    old = {c.get("id"): c for c in prev.get("criteria") or []}
+    found = {}
+    for rel, rerun in (("audit/levels.json", "audit_sample.py --levels"), ("verify/levels.json", "verify_report.py")):
+        src = layout.spec / rel
+        try:
+            found[rel] = (json.loads(src.read_text(encoding="utf-8")).get("criteria") or {}) if src.exists() else None
+        except json.JSONDecodeError as e:
+            E(f"{rel} is not valid JSON ({e}); rerun scripts/{rerun}")
+            return
+    audited, verified = found["audit/levels.json"] or {}, found["verify/levels.json"]
+    criteria = []
+    for fid, (p, text, fm) in story_map.items():
+        sec = AC_SECTION.search(text)
+        for line in (sec.group(1).split("\n") if sec else []):
+            line = line.rstrip("\r")
+            m = contracts.CRIT_LINE.match(line)
+            a = contracts.ACTIVE.match(m.group("body")) if m else None
+            if not a:
+                continue
+            cid, sha = a.group("id"), contracts.criterion_text_sha256(line)
+            tag = next(t for t in contracts.TAG.findall(a.group("rest")) if t in contracts.REVERSE_TAGS)
+            entry = {"id": cid, "feature": fid, "file": p.relative_to(layout.spec).as_posix(), "text_sha256": sha,
+                     "tag": tag, "priority": feats.get(fid) or (fm or {}).get("priority") or None,
+                     "level": 0, "test": None, "departures": departures.get(cid, [])}
+            was = old.get(cid)
+            if was:
+                entry["test"] = was.get("test")
+                if was.get("text_sha256") == sha:
+                    entry["level"] = was.get("level", 0)
+                else:
+                    W(f"{cid}: text changed since the last lock (level {was.get('level', 0)} → 0); needs re-verify")
+            green = (verified or {}).get(cid) or {}
+            if green.get("text_sha256") == sha:
+                entry["level"], entry["test"] = 2, green.get("test")
+            elif entry["level"] == 2 and verified is not None:
+                entry["level"] = 0  # the latest verify report no longer has it green (flaky or red now)
+            if entry["level"] < 1 and audited.get(cid) == sha:
+                entry["level"] = 1
+            criteria.append(entry)
+    unchanged = prev.get("criteria") == criteria and prev.get("generated")
+    lock = {"contracts": contracts.VERSION, "spec": layout.spec.relative_to(layout.root).as_posix(),
+            "generated": prev["generated"] if unchanged else datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "criteria": criteria}
+    issues = [m for s, m in contracts.check_lock(lock, str(layout.root)) if s == "error"]
+    for m in issues:
+        E(f"criteria.lock.json: {m}")
+    if not issues and lock != prev:
+        path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    return None if issues else criteria
+
+
+def tech_basis(criteria):
+    """One hash over every criterion's ID and text: what /rspec:tech last wrote the contracts from."""
+    lines = sorted(f"{c['id']} {c['text_sha256']}" for c in criteria)
+    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+
 def main():
-    arg = sys.argv[1] if len(sys.argv) > 1 else "."
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    arg = args[0] if args else "."
+    unknown = [a for a in sys.argv[1:] if a.startswith("--") and a != "--mark-tech"]
+    if unknown:
+        print(f"ERROR unknown option {unknown[0]} (the only option is --mark-tech)"); sys.exit(2)
     errors, warns = [], []
     E, W = errors.append, warns.append
 
@@ -104,6 +247,18 @@ def main():
     track = cfg.get("track", "rspec")
     if track not in ("rspec", "modernize"): E(f"rspec.json: track '{track}' must be 'rspec' or 'modernize'")
     modernize = track == "modernize"
+    ref = (cfg.get("reference") or {}).get("run") or {}
+    if ref:
+        kind = ref.get("kind", "")
+        if kind not in ("", "local", "url", "none"): E(f"rspec.json: reference.run.kind '{kind}' must be local, url or none")
+        if ref.get("writes") and kind != "local":
+            E("rspec.json: reference.run.writes is true only for a local reference (a url reference is read-only)")
+        if kind in ("local", "url") and not re.fullmatch(r"ACCEPT_[A-Z0-9_]+", ref.get("base_url_env") or ""):
+            E("rspec.json: reference.run.base_url_env must name an ACCEPT_* variable (contracts C4), e.g. ACCEPT_BASE_URL")
+        for name in ref.get("accounts") or []:
+            if not re.fullmatch(r"[A-Z0-9_]+", str(name)):
+                E(f"rspec.json: reference.run.accounts entry '{name}' must be a name like MEMBER (read from ACCEPT_ACCOUNT_MEMBER)")
+        if kind == "local" and not ref.get("start"): E("rspec.json: reference.run.start is empty; a local reference needs its start command")
     if not modernize and cfg.get("code"):
         src = cfg.get("sources") or {}
         if not src.get("repo"): E("rspec.json: code is true but sources.repo is empty")
@@ -142,6 +297,9 @@ def main():
         reason = cells[5] if len(cells) > 5 else ""
         if prio not in PRIORITIES: E(f"features.md:{n} {fid} priority '{prio}' must be MVP/Later/Drop")
         if prio == "Drop" and not reason: E(f"features.md:{n} {fid} is Drop without a reason")
+        elif prio == "Drop" and not re.search(r"→\s*D-\d{3,}\s*$", reason):
+            (E if si >= 5 else W)(f"features.md:{n} {fid} is Drop without a → D-<nnn> link; features approval writes a "
+                                  "departures.yaml entry for each Drop (contracts C5)")
         feats[fid] = prio
     if si >= 2 and not feats: E("stage >= features-approved but features.md has no rows")
     mvp = [k for k, v in feats.items() if v == "MVP"]
@@ -152,7 +310,7 @@ def main():
 
     # stories
     story_map = stories(docs)
-    untagged = []
+    domain_text = (docs / "domain.md").read_text(encoding="utf-8-sig") if (docs / "domain.md").exists() else None
     for p in sorted((docs / "features").glob("F-*.md")):
         if not FILE_ID_RE.match(p.name):
             E(f"{p.name}: file name must start with feature ID")
@@ -169,22 +327,11 @@ def main():
                 if feats and d not in feats: E(f"{p.name}: depends on unknown {d}")
                 elif feats.get(fid) == "MVP" and feats.get(d) and feats[d] != "MVP":
                     E(f"{p.name}: MVP {fid} depends on {d} which is {feats[d]}")
-        sec = re.search(r"^##\s*(Acceptance criteria|Tiêu chí[^\n]*)\s*$(.*?)(?=^##\s|\Z)", text, re.M | re.S | re.I)
-        if not sec:
-            E(f"{p.name}: missing '## Acceptance criteria' section")
-        else:
-            items = re.findall(r"^\s*-\s*\[[ xX]\]\s+(\S.*)$", sec.group(2), re.M)
-            if not items: E(f"{p.name}: acceptance criteria has no '- [ ]' items")
-            loose = [i for i in items if not GHERKIN.search(i)]
-            if loose: W(f"{p.name}: {len(loose)} criteria not in 'Given …, when …, then …' form")
-            bare = [i for i in items if not TAG_RE.search(i)]
-            if bare: untagged.append((p.name, len(bare), len(items)))
+        for sev, msg in story_issues(text, (fm or {}).get("module") or fid.split("-")[1], domain_text):
+            (E if sev == "error" else W)(f"{p.name}: {msg}")
         left = sorted(ph for ph in PLACEHOLDERS if ph in text)
         if left: E(f"{p.name}: template placeholders left in file: {', '.join(left)}")
-    if untagged:
-        n = sum(b for _, b, _ in untagged)
-        W(f"{n} acceptance criteria in {len(untagged)} stories have no evidence tag (e.g. "
-          + ", ".join(name for name, _, _ in untagged[:3]) + "); end each with [docs], [api], [inferred]…")
+    departures = check_departures(docs, story_map, si >= 5, E, W)
     for cycle in find_cycles(dependencies(story_map)):
         E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
@@ -299,6 +446,11 @@ def main():
                 W(f"build-plan.md: Slice {num} has {total} acceptance criteria; sdlc takes about 10 per change, split it")
             elif not sdlc and total > SLICE_BUDGET and len(ids) > 1:
                 W(f"build-plan.md: Slice {num} has {total} acceptance criteria; keep a slice to about {SLICE_BUDGET}, split it")
+            listed = set(re.findall(r"\bF-[A-Z]{2,4}-\d{2,3}\.AC\d+\b", text))
+            unlisted = [c for i in ids if i in story_map for c in criterion_ids(story_map[i][1]) if c not in listed]
+            if unlisted:
+                W(f"build-plan.md: Slice {num} does not list {len(unlisted)} criterion ID(s) of its features "
+                  f"(e.g. {', '.join(unlisted[:3])}); list them per feature")
         if modernize:
             cp = docs / "cutover-plan.md"
             if not cp.exists():
@@ -318,6 +470,21 @@ def main():
     parked = parked_decisions(docs)
     if parked:
         W(f"{len(parked)} autopilot decision(s) parked for you in autopilot-log.md")
+
+    if not errors:
+        criteria = write_lock(layout, story_map, feats, departures, E, W)
+        if criteria is not None and "--mark-tech" in sys.argv:
+            if cfg.get("tech_basis") != tech_basis(criteria):
+                cfg["tech_basis"] = tech_basis(criteria)
+                (docs / "rspec.json").write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8", newline="\n")
+        elif criteria is not None and si >= 4 and cfg.get("tech_basis") is None:
+            W("no tech basis: nothing records which criteria the contracts were written from (a spec from before "
+              "0.11); once the contracts match the stories, run check_spec.py --mark-tech, or re-run /rspec:tech")
+        elif criteria is not None and si >= 4 and cfg.get("tech_basis") != tech_basis(criteria):
+            W("tech is stale: acceptance criteria were added, changed or removed since /rspec:tech last ran; re-run "
+              "/rspec:tech for the changed stories (it ends with check_spec.py --mark-tech)")
+    if errors and "--mark-tech" in sys.argv:
+        E("--mark-tech not recorded: fix the errors above first, then run it again")
 
     print(f"product={cfg.get('product')} stage={stage} modules={len(codes)} features={len(feats)} "
           f"mvp={len(mvp)} stories={len(story_map)} contracts={len(contract_files(contracts))} adrs={len(adrs)}")

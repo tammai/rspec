@@ -1,0 +1,46 @@
+{
+  "product": "Reference task app",
+  "working_name": "Tasks fixture",
+  "track": "rspec",
+  "goal": "learn",
+  "scope": "full",
+  "focus": [],
+  "lang": "en",
+  "stack": "",
+  "deploy": "local only",
+  "sources": {
+    "site": "",
+    "docs": "README.md",
+    "changelog": "",
+    "api": "",
+    "repo": "",
+    "license": ""
+  },
+  "modules": [
+    {
+      "code": "TSK",
+      "name": "Tasks"
+    }
+  ],
+  "stage": "tech",
+  "reference": {
+    "run": {
+      "kind": "local",
+      "base_url_env": "ACCEPT_BASE_URL",
+      "accounts": [
+        "MEMBER"
+      ],
+      "writes": true,
+      "start": "python3 -m app --port 8765",
+      "stop": ""
+    }
+  },
+  "pipeline": {
+    "status": "",
+    "stop_after": null,
+    "current": "",
+    "last": "",
+    "updated": ""
+  },
+  "updated": "2026-11-08"
+}

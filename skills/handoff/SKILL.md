@@ -6,12 +6,12 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.9.7"
+  version: "0.11.0"
 ---
 
 # /rspec:handoff
 
-Requires stage `tech` and a finished audit (`<spec>/audit/summary.md`; run `/rspec:audit` first). Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists; `build-plan` pending at this point while a plan exists means the engine is sdlc and a slice not yet started has more than 10 criteria (e.g. the engine changed after the plan was cut): keep the slices already mapped in `build.slices` as they are, re-cut the rest after them, and number on (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
+Requires stage `tech`, a finished audit (`<spec>/audit/summary.md`; run `/rspec:audit` first) and a settled verify (`<spec>/verify/summary.md`, or `reference.run.kind` `none`; run `/rspec:verify` first). Without verify, every criterion stays at level 1 or below: say so in the build plan's header. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists; `build-plan` pending at this point while a plan exists means the engine is sdlc and a slice not yet started has more than 10 criteria (e.g. the engine changed after the plan was cut): keep the slices already mapped in `build.slices` as they are, re-cut the rest after them, and number on (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
 
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.
@@ -26,7 +26,10 @@ Ask once (AskUserQuestion; under autopilot use `autopilot.rules.build_engine`) h
 - **claude-code**: build directly from the plan, tracking `status` in the story files.
 - **none**: no build is started; still write the plan and the CLAUDE.md section, so whoever builds later has them.
 
-If the choice is sdlc and `.sdlc/config.json` is missing, run `/sdlc:setup` now with the Skill tool (`sdlc:setup`); under autopilot, skip this and leave it to the build stage, which pauses for it. Tell it to use the stack in `rspec.json` → `stack` (the accepted ADR's choice) and the deployment target in `deploy` (sdlc setup asks where it deploys), and that the repo holds a reverse-engineered SRS in `<spec>/` (not code), that the PRD should be drafted from `<spec>/README.md` (goals, scope), `<spec>/features.md` (MVP capabilities, Drop rows as non-goals) and `<spec>/nfr.md` (constraints), and that the API contract is `<contracts>/openapi.json` (in a monorepo: `packages/api-contract/v1/openapi.json`, so the contract check's spec file is `openapi.json`). Follow setup through its own questions, then continue here.
+If the choice is sdlc, first write the PRD (2a below). Then, if `.sdlc/config.json` is missing, run `/sdlc:setup` now with the Skill tool (`sdlc:setup`); under autopilot, skip this and leave it to the build stage, which pauses for it. Tell it to use the stack in `rspec.json` → `stack` (the accepted ADR's choice) and the deployment target in `deploy` (sdlc setup asks where it deploys), and that the repo holds a reverse-engineered SRS in `<spec>/` (not code), that a PRD already exists at `<docs>/prd.md` (written in step 2a; setup's "a PRD already exists" path: use it as is), and that the API contract is `<contracts>/openapi.json` (in a monorepo: `packages/api-contract/v1/openapi.json`, so the contract check's spec file is `openapi.json`). Follow setup through its own questions, then continue here.
+
+### 2a. PRD (engine sdlc)
+Do this before `/sdlc:setup` runs, here or at the build stage: write `<docs>/prd.md`, where `<docs>` is sdlc's docs folder: `docs_dir` in `.sdlc/config.json`, else `docs/sdlc`. Never overwrite an existing `<docs>/prd.md`. Use the sections of sdlc's PRD template, in this order: Problem, Users and audience, Goals and non-goals, Core capabilities, Constraints, Success measures, Voice and brand (only when the product has a UI), Open questions. Each section is a short paragraph plus links into the SRS, never a second summary of it: goals and scope link `<spec>/README.md`, capabilities link `<spec>/features.md` (the MVP release; Drop rows are the non-goals), constraints link `<spec>/nfr.md` and the accepted ADRs. Paths in the links are relative to `<docs>/`.
 
 If sdlc is not available but the user wants it, say how to install it and record `claude-code` until they do.
 
@@ -35,8 +38,8 @@ Write `<spec>/build-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/build-plan.md
 - Take `order` from the progress output: every feature in scope, MVP first, dependencies first. Keep that order.
 - Group into releases: `## Release 1: MVP` holds every MVP feature; the Later features follow in releases 2 and up, each a coherent increment a user would notice (e.g. "Planning: cycles and projects"). Group a release around one area or module where the dependencies allow, rather than following `order` blindly across modules; a feature still never comes before one it depends on. A release heading and its one-line goal name no feature IDs.
 - Group consecutive features into vertical slices by a criteria budget: without sdlc, about 30 acceptance criteria per slice (one build session can finish and test it); with sdlc, as many as needed so that no slice has more than 10 acceptance criteria (sdlc takes about 10 per change), and a story with more than 10 is a slice of its own, each ending in something a user can try (e.g. "sign in and create a workspace", "create and list issues"). The first slice is the thinnest end-to-end path.
-- For each feature list its story file, the `operationId`s and schemas whose `x-features` include it, and the NFRs that name it or `all`.
-- State the "done when" rule for each slice: every acceptance criterion of its stories has a passing test.
+- For each feature list its story file, its criterion IDs (the active ones, from `<spec>/criteria.lock.json`), the `operationId`s and schemas whose `x-features` include it, and the NFRs that name it or `all`. Name the acceptance bundle `<spec>/acceptance/` once at the top. `check_spec.py` warns about a slice that leaves out a criterion ID of its features.
+- State the "done when" rule for each slice: every criterion with a level 2 test passes that test against the build; every other criterion has a builder test.
 
 ## 4. Cutover plan (modernize track only)
 Write `<spec>/cutover-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/cutover-plan.md` for the chosen `strategy`:
@@ -47,7 +50,7 @@ The Rollback section is required: trigger, steps, and the point of no return. Da
 
 ## 5. Production readiness (when `goal` is `production`, which the modernize track defaults to)
 Write `<spec>/production-readiness.md` from `${CLAUDE_PLUGIN_ROOT}/templates/production-readiness.md`:
-- Keep every category; keep the Cutover category only in the modernize track (delete it for rspec). Tailor items to this product: name the real SLO targets from the NFRs, the regulations that apply to its users, the roles and tenant boundaries to test.
+- Keep every category; keep the Cutover category only in the modernize track (delete it for rspec), Parity with the reference only for a rebuild that has a reference to compare with (product-rebuild), and Client app only when something ships to a device or an app store. Tailor items to this product: name the real SLO targets from the NFRs, the regulations that apply to its users, the roles and tenant boundaries to test.
 - Mark an item that cannot apply as checked with `(n/a: <reason>)`, e.g. no personal data stored. Never mark anything else done here; the build proves the rest.
 - Tell the user the pipeline will hand the open items to the build after the last slice.
 

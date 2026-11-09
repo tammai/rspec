@@ -11,14 +11,20 @@ status: todo
 As a <role>, I want <capability> so that <benefit>.
 
 ## Acceptance criteria
-- [ ] Given <state with example data>, when <action>, then <visible result>. `[docs]`
-- [ ] Given <state with example data>, when <action>, then <visible result>. `[inferred]`
+- [ ] **F-<CODE>-<NN>.AC1** Given <state with example data>, when <action>, then <visible result with a literal>. `[docs]`
+- [ ] **F-<CODE>-<NN>.AC2** Given <state with example data>, when <action>, then <visible result with a literal>. `[inferred]`
 
-## Edge cases
-- <case>: <expected behaviour>
+## Failure modes
+- <what goes wrong: empty input, permission denied, concurrent edit, limit> → F-<CODE>-<NN>.AC<n>
+
+## Must never break
+- **MNB-1** <invariant that must hold> — test: <criterion ID or check>
 
 ## Differences from the original
 - <none | what and why, link ADR>
 
 ## Sources
 - <research/<module>.md section or URL>
+
+## Open questions
+- <none | Open: domain: … | Open: … (an idea no features.md row describes)>

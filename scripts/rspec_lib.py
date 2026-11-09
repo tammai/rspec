@@ -1,6 +1,9 @@
 """Shared parsing for the rspec scripts (standard library only)."""
-import json, re
+import json, re, sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "contracts" / "v1"))
+import contracts
 
 STAGES = ["init", "discovered", "features-approved", "stories", "tech", "handoff"]
 PRIORITIES = {"MVP", "Later", "Drop"}
@@ -294,3 +297,23 @@ def parked_decisions(spec):
         return []
     m = re.search(r"^##\s*Parked\s*$(.*?)(?=^##\s|\Z)", p.read_text(encoding="utf-8-sig"), re.M | re.S)
     return re.findall(r"^\s*-\s*\[ \]\s+(\S.*)$", m.group(1), re.M) if m else []
+
+
+AC_SECTION = re.compile(r"^##\s*Acceptance criteria\s*$(.*?)(?=^##\s|\Z)", re.M | re.S)
+
+
+def criteria(spec):
+    """[(id, source tag, text_sha256, story file name, line)] for every active criterion, in file order."""
+    out = []
+    for fid, (path, text, _) in stories(spec).items():
+        sec = AC_SECTION.search(text)
+        for line in (sec.group(1).split("\n") if sec else []):
+            line = line.rstrip("\r")
+            m = contracts.CRIT_LINE.match(line)
+            a = contracts.ACTIVE.match(m.group("body")) if m else None
+            if not a:
+                continue
+            tags = [t for t in contracts.TAG.findall(a.group("rest")) if t in contracts.REVERSE_TAGS]
+            if tags:
+                out.append((a.group("id"), tags[0], contracts.criterion_text_sha256(line), path.name, line.strip()))
+    return out
