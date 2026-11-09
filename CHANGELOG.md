@@ -4,6 +4,10 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-11-09
+### Added
+- **Rules-recall test for OSS-mode discovery**, ported from product-rebuild 3.0.0 when it retired its Rule Cards (`docs/MIGRATION-3.md` row 9). `tests/fixtures/rules-recall/` holds a small Rails billing codebase written for the fixture and `gold.yaml`, its 33 known business rules (defaults, error handlers and rules split across files among them). `scripts/rules_recall.py <project> --model <tier>` scores a spec written from that code: a rule is found when a `domain.md` line or a `[code]` criterion cites `path:line` inside one of its locations, and strict when that line also names the values a test would assert on. It prints recall and strict recall with the rspec version and model tier, the missed rules, and citations that match no gold rule (the gold set may be short). Every other check measures precision; this is the one that notices discovery finding fewer rules. It sets no threshold: a change to the module explorer or story writer briefs states its before-and-after numbers here. The run procedure is in the fixture's README; no baseline run is recorded yet.
+
 ## [0.11.0] - 2026-11-09
 ### Added
 - Shared contracts v1 vendored byte-identical in `contracts/v1/` (contracts 1.1.1: an sdlc spec question routes to rspec without a verifier), with a test that fails when the copy drifts from its `MANIFEST`.

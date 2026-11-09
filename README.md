@@ -112,6 +112,8 @@ When the product has a public repo, `/rspec:init` offers to read its code as wel
 
 The code is a source to learn from, never to copy, whatever its licence: the spec describes behaviour in its own words and the rebuild writes its own code. `/rspec:check` requires the repo and the pinned commit to be recorded.
 
+How much of a codebase's rules discovery records is measured on a fixture with a known answer: `python3 scripts/rules_recall.py <project>` (see `tests/fixtures/rules-recall/README.md`).
+
 ## Modernize track
 
 For your own product. `/rspec:init` asks for the source repos, current and target stack, why you are modernizing, and the strategy (default **full rewrite**; strangler fig or refactor in place on request). Then:

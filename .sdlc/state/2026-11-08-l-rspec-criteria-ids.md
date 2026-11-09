@@ -1,5 +1,5 @@
 # 2026-11-08-l-rspec-criteria-ids
-Status: active
+Status: done
 Process: 3
 Change: docs/sdlc/changes/2026-11-08-l-rspec-criteria-ids.md   (this feature's record for people)
 Track: L   (sized up because: written spec sized L with 5 backlog parts (rebuild-upgrade README); footprint: 12 files)
