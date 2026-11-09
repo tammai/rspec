@@ -71,11 +71,14 @@ def main():
     outcomes = {o["criterion"]: o for o in read_jsonl(spec / "verify" / "outcomes.jsonl")}
     bundle = spec / "acceptance"
     # product-rebuild's holdout split moves these files out of the bundle; their entries are its record, kept as is
-    prior = json.loads((bundle / "manifest.json").read_text(encoding="utf-8")) if (bundle / "manifest.json").exists() else {}
-    hidden = [t for t in prior.get("tests") or [] if t.get("visibility") == "hidden"]
-    hidden_test = {}
-    for t in hidden:
-        hidden_test.setdefault(t["criterion"], {"test": "acceptance/" + t["path"]})
+    try:
+        prior = json.loads((bundle / "manifest.json").read_text(encoding="utf-8")) if (bundle / "manifest.json").exists() else {}
+        hidden = [t for t in prior.get("tests") or [] if t.get("visibility") == "hidden"]
+        hidden_test = {}
+        for t in hidden:
+            hidden_test.setdefault(t["criterion"], {"test": "acceptance/" + t["path"]})
+    except (ValueError, AttributeError, KeyError, TypeError) as e:
+        sys.exit(f"ERROR acceptance/manifest.json is not a readable manifest ({e!r}); restore it from git")
     rows = []
     for cid, _, sha, _, _ in criteria(spec):
         fid = cid.split(".AC")[0]

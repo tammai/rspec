@@ -98,6 +98,9 @@ class Verify(unittest.TestCase):
         after = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))["tests"]
         self.assertEqual([json.dumps(t, indent=2) for t in after], [hidden])
         self.assertIn("| MVP | 6 | 1 | 17% |", (self.root / "docs" / "verify" / "summary.md").read_text(encoding="utf-8"))
+        self.assertEqual(run("check_spec.py", self.root).returncode, 0)
+        entry = self.lock()["F-TSK-02.AC3"]
+        self.assertEqual((entry["level"], entry["test"]), (2, "acceptance/http/F-TSK-02.AC3.yaml"))
 
     def test_pass_and_fail_on_one_build_is_flaky(self):
         r = self.record("F-TSK-03.AC1.yaml", STATS)
