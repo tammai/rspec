@@ -84,6 +84,21 @@ class Verify(unittest.TestCase):
         entry = self.lock()["F-TSK-02.AC3"]
         self.assertEqual((entry["level"], entry["test"]), (2, "acceptance/http/F-TSK-02.AC3.yaml"))
 
+    def test_hidden_entry_survives_a_rerun_and_counts_as_level_2(self):
+        self.record("F-TSK-02.AC3.yaml", LIST)
+        self.script("verify_report.py")
+        bundle = self.root / "docs" / "acceptance"
+        manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
+        manifest["tests"][0]["visibility"] = "hidden"
+        hidden = json.dumps(manifest["tests"][0], indent=2)
+        (bundle / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        (bundle / "http" / "F-TSK-02.AC3.yaml").unlink()
+        r = self.script("verify_report.py")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        after = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))["tests"]
+        self.assertEqual([json.dumps(t, indent=2) for t in after], [hidden])
+        self.assertIn("| MVP | 6 | 1 | 17% |", (self.root / "docs" / "verify" / "summary.md").read_text(encoding="utf-8"))
+
     def test_pass_and_fail_on_one_build_is_flaky(self):
         r = self.record("F-TSK-03.AC1.yaml", STATS)
         self.assertNotEqual(r.returncode, 0, r.stdout)

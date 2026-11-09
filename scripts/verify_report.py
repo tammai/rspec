@@ -6,7 +6,8 @@ Usage: verify_report.py [project-root | spec-folder]
 Reads <spec>/verify/runs.jsonl (verify_run.py) and <spec>/verify/outcomes.jsonl (--note: the judge's and the
 seeder's calls). On the latest build of a criterion's latest test, with its current text: three passes in a row and
 no failure → level 2; a pass and a failure → flaky. Writes <spec>/verify/levels.json (check_spec.py puts level 2
-into the lock), <spec>/acceptance/manifest.json (contracts C4, level 2 tests only) and <spec>/verify/summary.md.
+into the lock), <spec>/acceptance/manifest.json (contracts C4, level 2 tests only;
+an entry marked `visibility: hidden` is kept as is and counts as level 2) and <spec>/verify/summary.md.
 """
 import hashlib, json, sys
 from datetime import datetime, timezone
@@ -68,11 +69,18 @@ def main():
     scoped = set(in_scope(prio, cfg))
     runs = read_jsonl(spec / "verify" / "runs.jsonl")
     outcomes = {o["criterion"]: o for o in read_jsonl(spec / "verify" / "outcomes.jsonl")}
+    bundle = spec / "acceptance"
+    # product-rebuild's holdout split moves these files out of the bundle; their entries are its record, kept as is
+    prior = json.loads((bundle / "manifest.json").read_text(encoding="utf-8")) if (bundle / "manifest.json").exists() else {}
+    hidden = [t for t in prior.get("tests") or [] if t.get("visibility") == "hidden"]
+    hidden_test = {}
+    for t in hidden:
+        hidden_test.setdefault(t["criterion"], {"test": "acceptance/" + t["path"]})
     rows = []
     for cid, _, sha, _, _ in criteria(spec):
         fid = cid.split(".AC")[0]
         if fid in scoped:
-            st, last = status(cid, sha, runs, spec)
+            st, last = ("level-2", hidden_test[cid]) if cid in hidden_test else status(cid, sha, runs, spec)
             rows.append({"id": cid, "feature": fid, "module": fid.split("-")[1], "mvp": prio.get(fid) == "MVP",
                          "sha": sha, "status": st, "last": last})
 
@@ -81,9 +89,8 @@ def main():
     (spec / "verify").mkdir(exist_ok=True)
     (spec / "verify" / "levels.json").write_text(json.dumps({"criteria": levels}, indent=2) + "\n", encoding="utf-8")
 
-    bundle = spec / "acceptance"
     tests = []
-    for r in level2:
+    for r in (r for r in level2 if r["id"] not in hidden_test):
         rel = r["last"]["test"][len("acceptance/"):]
         green = [x for x in runs if x["criterion"] == r["id"] and x["result"] == "pass"][-1]
         tests.append({"criterion": r["id"], "runner": r["last"]["runner"], "path": rel,
@@ -94,9 +101,10 @@ def main():
                       "last_green": {"timestamp": green["ts"], "target": "reference"}, "normalize": []})
     errors = []
     if bundle.is_dir():
-        (bundle / "manifest.json").write_text(json.dumps({"contracts": contracts.VERSION, "tests": tests}, indent=2) + "\n",
-                                              encoding="utf-8")
-        errors = [m for s, m in contracts.check_bundle(str(bundle)) if s == "error"]
+        (bundle / "manifest.json").write_text(json.dumps({"contracts": contracts.VERSION, "tests": tests + hidden},
+                                                         indent=2) + "\n", encoding="utf-8")
+        away = {f"{t['criterion']}: {t['path']} not found" for t in hidden}
+        errors = [m for s, m in contracts.check_bundle(str(bundle)) if s == "error" and m not in away]
 
     def line(label, subset):
         n = sum(1 for r in subset if r["status"] == "level-2")
