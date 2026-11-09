@@ -4,6 +4,10 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.11.0-rc.2] - 2026-11-09
+### Fixed
+- `verify_report.py` keeps every `acceptance/manifest.json` entry marked `visibility: hidden` as it was and counts its criterion at level 2. Re-running it after product-rebuild's holdout split no longer drops the hidden tests, whose files sit in the holdout repo, or lowers the MVP level 2 share.
+
 ## [0.11.0-rc.1] - 2026-11-09
 ### Added
 - Shared contracts v1 vendored byte-identical in `contracts/v1/` (contracts 1.1.1: an sdlc spec question routes to rspec without a verifier), with a test that fails when the copy drifts from its `MANIFEST`.
