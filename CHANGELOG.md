@@ -25,6 +25,10 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 - Build plan: each slice lists its criterion IDs and names the acceptance bundle (`<spec>/acceptance/`); a slice is done when every criterion with a level 2 test passes it against the build and every other criterion has a builder test. `check_spec.py` warns about a slice that leaves out a criterion ID.
 - Both CLAUDE.md templates: cite criterion IDs, never restate them; bundle tests are read-only. The sdlc variant uses `- **AC-001** → F-ISS-01.AC2`; the Claude Code variant says how to run the bundle against the build.
 
+### Known issues
+- The 02 acceptance re-run on the gophish → bigin-phish spec missed the audit targets after the 0.11 stories pass: fact accuracy 91.4% with 5 `[inferred]` criteria contradicted (all restated to the reference's code), coverage 91.9% (target met), and 23 Important consistency findings (4 fixed, 3 in part, 16 parked). Cause: tech was not re-run after the stories pass rewrote 111 stories, so the contracts no longer matched them. The `tech is stale` pointer in this release now flags that state. The tech re-run and re-audit were skipped by the user's decision; verify level 2 was not run (no runnable reference).
+- Headless runs (`claude -p`) stop subagents still running in the background when the session ends; see README, Autopilot.
+
 ## [0.10.1] - 2026-11-07
 ### Added
 - `/rspec:site` extraction snippets for three things the Apple MacBook Air run had to measure by hand (`references/site-extract.md`):

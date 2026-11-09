@@ -90,6 +90,20 @@ The spec is the source: [02-rspec.md](../../specs/rebuild-upgrade/02-rspec.md), 
 - B2–B5 content beyond the index above; each part fills its own tests.
 - Fixing existing specs' criteria content (example data, grammar): that is the next `stories` pass.
 
+## Release acceptance (0.11.0, 2026-11-09)
+
+02 §Acceptance, run on scratch copies; evidence and costs in the release-prep report (`.sdlc/.work/rspec-release-prep-report.md`, logs in the session scratchpad `rel011/`).
+
+| Item | Result |
+|---|---|
+| Unit tests for each check rule, the lock, migration, sampling, the report | `python -m unittest discover tests`: 95 OK |
+| Fixture: verify level 2, planted `spec-wrong` and `flaky` | met in part 4 (AC-015, live run USD 1.00) |
+| `/rspec:pipeline` resumes across the new stages; `--until verify` stops there | met: run 1 `--until audit`, run 2 `continue --until verify` resumed at verify; MVP 8/8 level 2 (USD 3.05) |
+| gophish → bigin-phish: audit targets still met | **not met, release with it recorded** (user decision 2026-11-09): after migration and the stories pass (649 → 0 check errors, all 608 IDs kept, 26 departures accepted), the audit gave accuracy 91.4% with 5 `[inferred]` contradicted, coverage 91.9%, and 23 Important consistency findings (16 parked). Cause: tech was not re-run after the stories pass. The stale-tech pointer (87a6130) now flags that. The tech re-run and re-audit were skipped; the 23 open decisions were not needed |
+| bigin-phish: verify level 2 share | not run: no runnable reference (no `reference.run`; Docker down; no cgo toolchain) |
+
+Fixes from the re-run: the story-writer links failure modes within its own story (aa4a683); a Drop row must link its `D-<nnn>` and the stale-tech pointer (87a6130). Also in the release: the merged production-readiness template (20bd8ee) and 0.11.0-rc.1 (6782be1, c9e78f9).
+
 ## Open questions
 
 - none (Q1–Q4 answered; see Decisions)
