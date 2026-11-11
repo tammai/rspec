@@ -11,11 +11,11 @@ class ContractsVendor(unittest.TestCase):
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
-    def test_lock_records_contracts_1_2_0(self):
+    def test_lock_records_contracts_1_3_0(self):
         root = project(stories={"F-ISS-01-a.md": story("F-ISS-01")})
         self.assertEqual(run("check_spec.py", root).returncode, 0)
         lock = json.loads((root / "docs" / "criteria.lock.json").read_text(encoding="utf-8"))
-        self.assertEqual(lock["contracts"], "1.2.0")
+        self.assertEqual(lock["contracts"], "1.3.0")
 
 
 if __name__ == "__main__":

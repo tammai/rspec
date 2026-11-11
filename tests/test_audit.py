@@ -101,6 +101,19 @@ class Audit(unittest.TestCase):
         tags, level = self.levels_after([("docs", 6)], lambda t: "NOT-CONTRADICTED")
         self.assertTrue(all(level[i] == 0 for i in tags["docs"]["sample"]))
 
+    def test_old_inferred_level_1_is_lowered_not_fatal(self):
+        root = project(stories={"F-ISS-01-a.md": story("F-ISS-01", criteria=criteria([("inferred", 1), ("docs", 1)]))})
+        self.assertEqual(run("check_spec.py", root).returncode, 0)
+        path = root / "docs" / "criteria.lock.json"
+        sha = {c["id"]: c["text_sha256"] for c in json.loads(path.read_text(encoding="utf-8"))["criteria"]}
+        (root / "docs" / "audit").mkdir()
+        (root / "docs" / "audit" / "levels.json").write_text(json.dumps({"criteria": sha}), encoding="utf-8")
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        level = {c["id"]: c["level"] for c in json.loads(path.read_text(encoding="utf-8"))["criteria"]}
+        self.assertEqual(level, {"F-ISS-01.AC1": 0, "F-ISS-01.AC2": 1})
+        self.assertRegex(r.stdout, r"WARN .*F-ISS-01\.AC1.*audit_sample\.py --levels")
+
 
 if __name__ == "__main__":
     unittest.main()

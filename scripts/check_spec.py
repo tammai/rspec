@@ -294,6 +294,10 @@ def write_lock(layout, story_map, feats, departures, capped, E, W):
                 entry["level"] = 0  # the latest verify report no longer has it green (flaky or red now)
             if entry["level"] < 1 and audited.get(cid) == sha:
                 entry["level"] = 1
+            if tag == "inferred" and entry["level"] == 1:
+                W(f"{cid}: [inferred] at level 1 from an audit before 0.12 → 0 (contracts C3); rerun "
+                  "scripts/audit_sample.py --levels")
+                entry["level"] = 0
             if cid in capped and entry["level"] > 0:
                 W(f"{cid}: level {entry['level']} capped to 0 by open {', '.join(capped[cid])}")
                 entry["level"] = 0

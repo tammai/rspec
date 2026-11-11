@@ -3,6 +3,9 @@
 All notable changes to the rspec plugin. Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed
+- **Contracts 1.3.0** (vendored byte-identical from product-rebuild f4ac06e): `check_lock` rejects a criterion tagged `inferred` at level 1, as C3 says since 1.2.0. `check_spec.py` now lowers such a level, left by an audit or a lock from before 0.12, to 0 with a warning to rerun `audit_sample.py --levels`, instead of failing; the lock records `"contracts": "1.3.0"`.
+
 ### Fixed
 - **`departures.yaml` with invalid UTF-8** is reported as an error instead of a traceback, as `unknowns.yaml` already was.
 - **The lock at handoff.** When the only errors are open unknowns blocking handoff, `check_spec.py` still writes `criteria.lock.json`, so the criteria they name show level 0 instead of the level of the last clean run; any other error leaves the lock as it was.
