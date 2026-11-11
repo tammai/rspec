@@ -27,4 +27,4 @@ As a <role>, I want <capability> so that <benefit>.
 - <research/<module>.md section or URL>
 
 ## Open questions
-- <none | Open: domain: … | Open: … (an idea no features.md row describes)>
+- <none | Open: domain: … | Open: unknown: … — probe: … | U-001: … (an open entry in unknowns.yaml) | Open: … (an idea no features.md row describes)>

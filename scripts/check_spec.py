@@ -154,8 +154,96 @@ def check_departures(docs, story_map, handoff, E, W):
     return by_criterion
 
 
-def write_lock(layout, story_map, feats, departures, E, W):
-    """Write <spec>/criteria.lock.json (contracts C3); a criterion whose text changed drops to level 0."""
+UNKNOWN_STATUSES = ("open", "resolved", "accepted")
+UNKNOWN_KEYS = {"id", "question", "criteria", "features", "probe", "status", "raised", "resolution", "evidence",
+                "decided_by"}
+U_ID = re.compile(r"^U-\d{3,}$")
+OPEN_SECTION = re.compile(r"^##\s*Open questions\s*$(.*?)(?=^##\s|\Z)", re.M | re.S)
+U_LINK = re.compile(r"^\s*-\s*(U-\d{3,}):", re.M)
+
+
+def _id_list(value):
+    return value if isinstance(value, list) and all(isinstance(v, str) for v in value) else None
+
+
+def _text(value):
+    return isinstance(value, str) and value.strip()
+
+
+def check_unknowns(docs, story_map, feats, scoped, handoff, E, W):
+    """<spec>/unknowns.yaml and the `- U-<nnn>:` lines in stories' Open questions; {criterion: [open U-ids]}."""
+    path = docs / "unknowns.yaml"
+    entries = []
+    if path.exists():
+        try:
+            entries = contracts.parse_yaml(path.read_text(encoding="utf-8-sig")) or []
+        except (contracts.YamlError, UnicodeDecodeError) as e:
+            E(f"unknowns.yaml: {e}")
+            return {}
+        if not isinstance(entries, list):
+            E("unknowns.yaml: must be a list of entries (- id: U-001 …)")
+            return {}
+    active = {fid: criterion_ids(text) for fid, (_, text, _) in story_map.items()}
+    known = {c for ids in active.values() for c in ids}
+    features = set(feats) or set(story_map)
+    seen, capped = set(), {}
+    for n, e in enumerate(entries, 1):
+        if not isinstance(e, dict):
+            E(f"unknowns.yaml: entry {n} is not a mapping")
+            continue
+        uid = e.get("id")
+        if not (isinstance(uid, str) and U_ID.match(uid)):
+            name = f"entry {n}"
+            E(f"unknowns.yaml: {name}: id must be U-<nnn>, got {uid!r}")
+        else:
+            name = uid
+            if uid in seen:
+                E(f"unknowns.yaml: {uid} is listed twice; IDs are never reused")
+            seen.add(uid)
+        extra = sorted(str(k) for k in e if k not in UNKNOWN_KEYS)
+        if extra:
+            E(f"unknowns.yaml: {name}: unknown key(s) {', '.join(extra)}; allowed: {', '.join(sorted(UNKNOWN_KEYS))}")
+        for key in ("question", "probe"):
+            if not _text(e.get(key)):
+                E(f"unknowns.yaml: {name}: {key} is required")
+        status = e.get("status")
+        if status is None:
+            E(f"unknowns.yaml: {name}: status is required (open, resolved or accepted)")
+        elif status not in UNKNOWN_STATUSES:
+            E(f"unknowns.yaml: {name}: status {status!r} must be open, resolved or accepted")
+        crits, fids = _id_list(e.get("criteria") or []), _id_list(e.get("features") or [])
+        if crits is None or fids is None:
+            E(f"unknowns.yaml: {name}: criteria and features must be lists of IDs")
+            continue
+        if not crits and not fids:
+            E(f"unknowns.yaml: {name}: names no criterion or feature; an unknown must block something")
+        missing = [c for c in crits if c not in known] + [f for f in fids if f not in features]
+        if missing:
+            (E if status == "open" else W)(f"unknowns.yaml: {name}: {', '.join(missing)} not in the spec "
+                                           "(struck, renumbered or never written)")
+        if status == "resolved" and not (_text(e.get("resolution")) and _id_list(e.get("evidence") or [])):
+            E(f"unknowns.yaml: {name}: resolved needs a resolution and the evidence that settles it")
+        if status == "accepted" and not _text(e.get("decided_by")):
+            E(f"unknowns.yaml: {name}: accepted needs decided_by (who accepted the risk, and when)")
+        if status != "open":
+            continue
+        blocked = [c for c in crits if c in known] + [c for f in fids for c in active.get(f, [])]
+        for c in blocked:
+            capped.setdefault(c, []).append(name)
+        hit = sorted({c for c in blocked if c.split(".")[0] in scoped} | {f for f in fids if f in scoped})
+        if hit:
+            msg = f"unknowns.yaml: {name} is open and blocks in-scope {', '.join(hit)}; resolve it or accept it"
+            (E if handoff else W)(msg + (" (open unknowns block handoff)" if handoff else " before handoff"))
+    for p, text, _ in story_map.values():
+        sec = OPEN_SECTION.search(text)
+        for uid in dict.fromkeys(U_LINK.findall(sec.group(1) if sec else "")):
+            if uid not in seen:
+                E(f"{p.name}: {uid} is not in unknowns.yaml")
+    return capped
+
+
+def write_lock(layout, story_map, feats, departures, capped, E, W):
+    """Write <spec>/criteria.lock.json (contracts C3); changed text, or an open unknown naming it, holds a criterion at 0."""
     path = layout.spec / "criteria.lock.json"
     prev = {}
     if path.exists():
@@ -202,6 +290,9 @@ def write_lock(layout, story_map, feats, departures, E, W):
                 entry["level"] = 0  # the latest verify report no longer has it green (flaky or red now)
             if entry["level"] < 1 and audited.get(cid) == sha:
                 entry["level"] = 1
+            if cid in capped and entry["level"] > 0:
+                W(f"{cid}: level {entry['level']} capped to 0 by open {', '.join(capped[cid])}")
+                entry["level"] = 0
             criteria.append(entry)
     unchanged = prev.get("criteria") == criteria and prev.get("generated")
     lock = {"contracts": contracts.VERSION, "spec": layout.spec.relative_to(layout.root).as_posix(),
@@ -332,6 +423,7 @@ def main():
         left = sorted(ph for ph in PLACEHOLDERS if ph in text)
         if left: E(f"{p.name}: template placeholders left in file: {', '.join(left)}")
     departures = check_departures(docs, story_map, si >= 5, E, W)
+    capped = check_unknowns(docs, story_map, feats, set(scoped), si >= 5, E, W)
     for cycle in find_cycles(dependencies(story_map)):
         E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
@@ -472,7 +564,7 @@ def main():
         W(f"{len(parked)} autopilot decision(s) parked for you in autopilot-log.md")
 
     if not errors:
-        criteria = write_lock(layout, story_map, feats, departures, E, W)
+        criteria = write_lock(layout, story_map, feats, departures, capped, E, W)
         if criteria is not None and "--mark-tech" in sys.argv:
             if cfg.get("tech_basis") != tech_basis(criteria):
                 cfg["tech_basis"] = tech_basis(criteria)

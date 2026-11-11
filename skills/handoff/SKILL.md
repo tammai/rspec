@@ -13,6 +13,13 @@ metadata:
 
 Requires stage `tech`, a finished audit (`<spec>/audit/summary.md`; run `/rspec:audit` first) and a settled verify (`<spec>/verify/summary.md`, or `reference.run.kind` `none`; run `/rspec:verify` first). Without verify, every criterion stays at level 1 or below: say so in the build plan's header. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/progress.py . --build-order` first; on resume, do only what `pending` lists; `build-plan` pending at this point while a plan exists means the engine is sdlc and a slice not yet started has more than 10 criteria (e.g. the engine changed after the plan was cut): keep the slices already mapped in `build.slices` as they are, re-cut the rest after them, and number on (`adr-approval`, `build-engine`, `build-plan`, `cutover-plan`, `claude-md`; with `production`, also write the readiness checklist if missing).
 
+## 0. Open unknowns
+Always, on a resume too (it is not in `pending`): run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_spec.py .`. For each `unknowns.yaml: U-<nnn> is open and blocks in-scope …` line (a warning before stage `handoff`, an error from it on, e.g. on a re-run), settle the unknown before anything else, so it ends `resolved` or `accepted`, never still `open`:
+- A source answers it: fix the criterion (text and tag), and set `status: resolved` with a one-line `resolution` and the `evidence` (URL or `path:line`).
+- Otherwise ask the user (AskUserQuestion, up to 4 per question) whether to build on the criterion as written. Yes: `status: accepted`, `decided_by: "<user name>, handoff <date>"`. No: ask what it should do instead, rewrite the criterion to that (or strike it), decide a deliberate difference from the original as a departure (`/rspec:stories`' departures step), and set `status: resolved` with `resolution: "decided by <user name> at handoff: <what>"` and `evidence: ["<user name>, handoff <date>"]` (plus the `D-<nnn>` when there is one).
+- In every case remove the story's `- U-<nnn>:` line from `## Open questions` (write `- none` if it was the last).
+Under autopilot, stop on them like any parked decision. From stage `handoff` on, `check_spec.py` reports an open in-scope unknown as an error.
+
 ## 1. ADR approval gate
 - List every ADR in `<decisions>/` with status `Proposed`: title, the recommended decision in one line, and the main alternative.
 - Ask the user to accept, change or reject each (one AskUserQuestion round, up to 4 per round). Update each ADR's `Status` to `Accepted` or `Rejected`, and its Decision section if they changed it.
@@ -39,6 +46,7 @@ Write `<spec>/build-plan.md` from `${CLAUDE_PLUGIN_ROOT}/templates/build-plan.md
 - Group into releases: `## Release 1: MVP` holds every MVP feature; the Later features follow in releases 2 and up, each a coherent increment a user would notice (e.g. "Planning: cycles and projects"). Group a release around one area or module where the dependencies allow, rather than following `order` blindly across modules; a feature still never comes before one it depends on. A release heading and its one-line goal name no feature IDs.
 - Group consecutive features into vertical slices by a criteria budget: without sdlc, about 30 acceptance criteria per slice (one build session can finish and test it); with sdlc, as many as needed so that no slice has more than 10 acceptance criteria (sdlc takes about 10 per change), and a story with more than 10 is a slice of its own, each ending in something a user can try (e.g. "sign in and create a workspace", "create and list issues"). The first slice is the thinnest end-to-end path.
 - For each feature list its story file, its criterion IDs (the active ones, from `<spec>/criteria.lock.json`), the `operationId`s and schemas whose `x-features` include it, and the NFRs that name it or `all`. Name the acceptance bundle `<spec>/acceptance/` once at the top. `check_spec.py` warns about a slice that leaves out a criterion ID of its features.
+- Under each slice, list its `accepted` unknowns from `<spec>/unknowns.yaml` (any that name one of its criteria or features) as known risks: ID, question and who accepted it; write `Known risks: none` when there are none.
 - State the "done when" rule for each slice: every criterion with a level 2 test passes that test against the build; every other criterion has a builder test.
 
 ## 4. Cutover plan (modernize track only)
