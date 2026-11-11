@@ -3,6 +3,13 @@
 ## Summary
 <2–3 lines: what this module is for>
 
+## Questions
+Written before the research, marked at the end: `answered`, `partly` (what is missing) or `open` (also under Open questions).
+
+| # | Question | Evidence that answers it | Status |
+|---|---|---|---|
+| Q1 | | | |
+
 ## Screens
 | Screen | Reached from | Purpose | Tag |
 |---|---|---|---|

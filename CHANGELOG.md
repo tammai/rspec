@@ -3,6 +3,10 @@
 All notable changes to the rspec plugin. Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed
+- **`[inferred]` criteria no longer reach level 1 in the audit.** `audit_sample.py --levels` used to count NOT-CONTRADICTED as confirmed, so a clean `[inferred]` sample raised every `[inferred]` criterion, sampled or not, to level 1, beside facts a source states. Level 1 now needs SUPPORTED, and an `[inferred]` criterion earns it only by being retagged with a source. `[inferred]` stays in the fact-check sample, which still catches CONTRADICTED and DECISION. Existing specs pick this up the next time `audit_sample.py --levels` and `check_spec.py` run. The C3 wording in `contracts/v1/` is vendored and unchanged; the stricter rule still satisfies it.
+- **Absence claims name their search scope.** `references/writing-rules.md` and the discovery checklist: a line saying something does not exist names where it was searched, or it is `[inferred]`; a bounded search never proves absence. The module explorer applies it to its research, the coverage auditor to MISSING rows and to Drop rows that say the product lacks something.
+- **Research files open with a question checklist.** `templates/research-module.md` gains `## Questions` (question, the evidence that answers it, status); the module explorer writes it before researching, marks each question answered, partly or open at the end, and its reply reports the three counts.
 
 ## [0.11.1] - 2026-11-09
 ### Added

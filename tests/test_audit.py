@@ -74,6 +74,33 @@ class Audit(unittest.TestCase):
         lock = json.loads((root / "docs" / "criteria.lock.json").read_text(encoding="utf-8"))
         self.assertEqual({c["id"]: c["level"] for c in lock["criteria"]}[docs_one], 0)
 
+    def levels_after(self, counts, verdict_for):
+        """Draw, write facts.md with verdict_for(tag) for every sampled criterion, run --levels; (tags, lock levels)."""
+        root = project(stories={"F-ISS-01-a.md": story("F-ISS-01", criteria=criteria(counts))})
+        run("audit_sample.py", root)
+        audit = root / "docs" / "audit"
+        tags = json.loads((audit / "sample.json").read_text(encoding="utf-8"))["tags"]
+        rows = "".join(f"| {i} | {t} | {verdict_for(t)} | https://docs.example | n |\n"
+                       for t, v in tags.items() for i in v["sample"])
+        (audit / "facts.md").write_text("| ID | Tag | Verdict | Source | Note |\n|---|---|---|---|---|\n" + rows,
+                                        encoding="utf-8")
+        r = run("audit_sample.py", root, "--levels")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(run("check_spec.py", root).returncode, 0)
+        lock = json.loads((root / "docs" / "criteria.lock.json").read_text(encoding="utf-8"))
+        return tags, {c["id"]: c["level"] for c in lock["criteria"]}
+
+    def test_inferred_criteria_never_reach_level_1(self):
+        tags, level = self.levels_after([("docs", 6), ("inferred", 12)],
+                                        lambda t: "NOT-CONTRADICTED" if t == "inferred" else "SUPPORTED")
+        self.assertLess(len(tags["inferred"]["sample"]), len(tags["inferred"]["population"]))
+        self.assertTrue(all(level[i] == 0 for i in tags["inferred"]["population"]))
+        self.assertTrue(all(level[i] == 1 for i in tags["docs"]["population"]))
+
+    def test_not_contradicted_on_a_sourced_tag_stays_level_0(self):
+        tags, level = self.levels_after([("docs", 6)], lambda t: "NOT-CONTRADICTED")
+        self.assertTrue(all(level[i] == 0 for i in tags["docs"]["sample"]))
+
 
 if __name__ == "__main__":
     unittest.main()

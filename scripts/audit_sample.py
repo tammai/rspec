@@ -7,14 +7,17 @@ Draw: for each of [docs] [api] [observed] [code] [inferred], samples min(25, max
 (all of them when fewer) with a fixed seed, and writes <spec>/audit/sample.md for the fact-checker and
 <spec>/audit/sample.json (each tag's population and sample) for --levels.
 --levels: reads the verdict column of <spec>/audit/facts.md and writes <spec>/audit/levels.json, the criteria that
-reach level 1 (contracts C3) with their text hash: sampled and confirmed, or unsampled in a population whose sample
-has no CONTRADICTED; a criterion with its own finding, or edited since the draw, never does. check_spec.py writes the level into the lock.
+reach level 1 (contracts C3) with their text hash: sampled and SUPPORTED, or unsampled in a population whose sample
+has no CONTRADICTED; a criterion with its own finding, or edited since the draw, never does. An [inferred] criterion
+never does either: not contradicted is not evidence, and retagging it with a source is how it earns level 1.
+check_spec.py writes the level into the lock.
 """
 import json, math, random, sys
 from rspec_lib import open_layout, table_cells, criteria, contracts
 
 TAGS = ("docs", "api", "observed", "code", "inferred")
-CONFIRMED = {"SUPPORTED", "NOT-CONTRADICTED"}
+CONFIRMED = {"SUPPORTED"}
+UNPROVEN = {"inferred"}
 
 
 def arg(name, default):
@@ -71,7 +74,9 @@ def levels(spec):
         sys.exit(f"not run: {len(missing)} sampled criteria have no verdict in facts.md (e.g. {', '.join(missing[:3])})")
     sha = {c[0]: c[2] for c in criteria(spec)}
     level1 = {}
-    for tag in tags.values():
+    for name, tag in tags.items():
+        if name in UNPROVEN:
+            continue
         clean = not any(found[i] == "CONTRADICTED" for i in tag["sample"])
         for cid in tag["population"]:
             verdict = found.get(cid)

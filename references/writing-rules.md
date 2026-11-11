@@ -14,4 +14,5 @@
   - One behaviour per criterion, observable by a user or an API client, and within the feature's row in features.md.
   - Clean line: the criterion ends with its tag; citations (`repo@abc1234 path:line`, URLs) go under the story's Sources.
   - Identified: each criterion starts with its ID, `**F-ISS-01.AC2**` (contracts C1 in `contracts/v1/CONTRACTS.md`). IDs are never renumbered or reused; `check_spec.py` enforces C1 and the story sections (C2).
+- Absence is a claim too. A line saying something does not exist (no such feature, setting, limit, screen or API field) names where it was searched ("not in the docs' Settings section or the API reference, 2026-11-11"); without that it is `[inferred]`. A bounded search never proves absence: "not found in X" is the fact, "the product has no X" is an inference.
 - Do not invent precision. If a limit or behaviour is unknown, write `unknown` and add it to the module's open questions.

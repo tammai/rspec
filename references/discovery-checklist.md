@@ -37,7 +37,7 @@ Tag every factual line:
 - `[docs]` stated in official docs or changelog
 - `[api]` stated in the product's public API schema or API reference (a GraphQL schema, an OpenAPI file, an SDK's types): entities, fields, enums, required-ness and documented limits. Prefer it over `[inferred]` for any data fact
 - `[observed]` seen in the running product
-- `[inferred]` deduced, not confirmed. Say from what.
+- `[inferred]` deduced, not confirmed. Say from what. A claim that something does not exist is `[inferred]` unless it names where it was searched (writing-rules.md)
 - `[3p]` from a third-party source
 - `[code]` read in the product's source (modernize, or `code: true` in the rspec track); add `path:line`, and for an open-source repo the commit it was read at (`repo@abc1234 path:line`)
 
