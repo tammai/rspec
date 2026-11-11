@@ -14,4 +14,6 @@ Goal: <what works end to end after this slice>
 |---|---|---|---|---|---|---|
 | 1 | F-<CODE>-<NN> <name> | features/<file> | F-<CODE>-<NN>.AC1, F-<CODE>-<NN>.AC2 | <operationId> | <entity> | <NFR-NN> |
 
+Known risks: <accepted unknowns of this slice, one per line as "U-001: question (accepted by name)", with no feature IDs in the question; or none>
+
 Done when: every criterion with a level 2 test in the bundle passes that test against the build, and every other criterion has a passing builder test.

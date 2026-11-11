@@ -58,6 +58,7 @@ docs/
   features/          one story file per feature in scope (MVP and Later)
   criteria.lock.json every criterion's ID, text hash and verification level, written by /rspec:check
   departures.yaml    every accepted difference from the original (D-001, …), linked from stories and Drop rows
+  unknowns.yaml      questions nobody could answer yet (U-001, …): the criteria each holds at level 0 and the probe that would settle it
   acceptance/        tests recorded against the running product (contracts C4), read-only for the build
   verify/            run log and the generated verify summary
   openapi.json       API contract (+ asyncapi.json for realtime events)
