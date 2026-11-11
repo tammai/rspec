@@ -6,7 +6,7 @@ description: >
   test is wrong. It is the only path for a criterion or a recorded test to change once the spec is handed off.
 argument-hint: "<criterion ID> \"<reason>\" | --finding <file> | <criterion ID> --test \"<reason>\""
 metadata:
-  version: "0.11.0"
+  version: "0.12.0"
 ---
 
 # /rspec:amend

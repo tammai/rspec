@@ -34,7 +34,7 @@ git switch -c release/vX.Y.Z
 All must pass before tagging:
 
 ```bash
-python -m unittest discover tests        # script tests
+python3 -m unittest discover tests       # script tests
 claude plugin validate .                 # must end with "Validation passed"
 ```
 
@@ -86,7 +86,7 @@ A bad release reaches users on their next marketplace update, so fix forward qui
 
 - [ ] Version bumped in `plugin.json` and `marketplace.json`, identical
 - [ ] `CHANGELOG.md` section for the version, dated
-- [ ] `python -m unittest discover tests` passes
+- [ ] `python3 -m unittest discover tests` passes
 - [ ] `claude plugin validate .` passes
 - [ ] Smoke test done
 - [ ] PR merged, tag `vX.Y.Z` pushed, GitHub release created
