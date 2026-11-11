@@ -3,6 +3,8 @@
 All notable changes to the rspec plugin. Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+
+## [0.12.1] - 2026-11-11
 ### Changed
 - **Contracts 1.3.0** (vendored byte-identical from product-rebuild f4ac06e): `check_lock` rejects a criterion tagged `inferred` at level 1, as C3 says since 1.2.0. `check_spec.py` now lowers such a level, left by an audit or a lock from before 0.12, to 0 with a warning to rerun `audit_sample.py --levels`, instead of failing; the lock records `"contracts": "1.3.0"`.
 
