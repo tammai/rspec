@@ -6,7 +6,7 @@ description: >
   Gets the ADRs approved, picks the build engine (sdlc or Claude Code), writes
   <spec>/build-plan.md in dependency order and adds a build section to CLAUDE.md.
 metadata:
-  version: "0.11.0"
+  version: "0.12.0"
 ---
 
 # /rspec:handoff

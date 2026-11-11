@@ -3,6 +3,8 @@
 All notable changes to the rspec plugin. Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+
+## [0.12.0] - 2026-11-11
 ### Added
 - **Tracked unknowns, `<spec>/unknowns.yaml`.** A question the sources can't answer, and whose answer changes a criterion's expected result, used to be an `## Open questions` line that `/rspec:stories` emptied. Now story writers flag it as `Open: unknown: <question> — probe: <what would settle it>`, and step 3 moves each one it can't answer into `unknowns.yaml` (`U-<nnn>`, the criteria or features it blocks, the probe, `status: open | resolved | accepted`), leaving a `- U-<nnn>:` line in the story. The audit adds one for an Important finding it can't settle; `/rspec:amend` resolves one. `check_spec.py` validates the file (unknown keys and statuses are errors) and every `- U-<nnn>:` line in a story's `## Open questions`, and holds every criterion an open unknown names at level 0 in `criteria.lock.json` (a warning names it) until it is resolved, with evidence, or accepted by the user; the audit and verify levels come back on the next run. An open unknown in scope warns before handoff and is an error from stage `handoff` on; `/rspec:handoff` settles them first, and the build plan lists accepted ones per slice as known risks. A spec without the file checks exactly as before.
 

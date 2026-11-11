@@ -6,7 +6,7 @@ description: >
   product being reverse-specced. Runs one story-writer subagent per module in parallel.
 argument-hint: "[module codes, optional; default all modules in scope]"
 metadata:
-  version: "0.11.0"
+  version: "0.12.0"
 ---
 
 # /rspec:stories
