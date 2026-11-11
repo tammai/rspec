@@ -1,5 +1,6 @@
 import json, unittest
 from helpers import project, run, story
+from test_check_spec import tech_files
 
 CRITERIA = ('- [ ] **F-ISS-01.AC1** Given team ENG with 11 issues, when a member creates "Fix login", '
             'then it is shown as ENG-12. `[docs]`\n'
@@ -202,6 +203,28 @@ class Unknowns(unittest.TestCase):
         data = CRITERIA.replace("ENG-3", "U-123")
         r = run("check_spec.py", spec(None, story_text=story("F-ISS-01", criteria=data)))
         self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_handoff_error_still_writes_the_capped_lock(self):
+        files = dict(tech_files(), **{"build-plan.md": "# Build plan\n\n## Slice 1: Issues\n| 1 | F-ISS-01 F-ISS-01.AC1 F-ISS-01.AC2 |\n"})
+        root = project(stage="handoff", stories={"F-ISS-01-a.md": story("F-ISS-01", criteria=CRITERIA)},
+                       files=files, config={"stack": "x"})
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        sha = lock(root)["F-ISS-01.AC1"]["text_sha256"]
+        (root / "docs" / "audit").mkdir()
+        (root / "docs" / "audit" / "levels.json").write_text(json.dumps({"criteria": {"F-ISS-01.AC1": sha}}), encoding="utf-8")
+        run("check_spec.py", root)
+        self.assertEqual(lock(root)["F-ISS-01.AC1"]["level"], 1)
+        set_status(root, [entry()])
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertEqual([l for l in r.stdout.splitlines() if l.startswith("ERROR")],
+                         [l for l in r.stdout.splitlines() if l.startswith("ERROR unknowns.yaml: U-001 is open")])
+        self.assertEqual(lock(root)["F-ISS-01.AC1"]["level"], 0)
+        (root / "docs" / "openapi.json").write_text("{", encoding="utf-8")  # any other error: lock left as it was
+        set_status(root, [entry(status="accepted", decided_by="Tam, handoff 2026-11-11")])
+        run("check_spec.py", root)
+        self.assertEqual(lock(root)["F-ISS-01.AC1"]["level"], 0)
 
 
 if __name__ == "__main__":
