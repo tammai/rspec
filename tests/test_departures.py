@@ -72,6 +72,14 @@ class Departures(unittest.TestCase):
         md.write_text(md.read_text(encoding="utf-8").replace("| Drop | r → D-004 |", "| Drop | was → D-004, gone |"), encoding="utf-8")
         self.assertIn("F-ISS-02 is Drop without", run("check_spec.py", linked).stdout)
 
+    def test_invalid_utf8_is_an_error(self):
+        root = project()
+        (root / "docs" / "departures.yaml").write_bytes(b"- id: D-001\n  summary: \xff\xfe\n")
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertNotIn("Traceback", r.stdout + r.stderr)
+        self.assertIn("ERROR departures.yaml:", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

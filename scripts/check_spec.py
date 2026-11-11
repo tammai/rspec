@@ -123,6 +123,14 @@ def criterion_ids(text):
             for a in [contracts.ACTIVE.match(m.group("body"))] if a]
 
 
+def report_unlisted(texts, find, known, registry, E):
+    """An error for each ID that find(text) returns and the registry file doesn't list."""
+    for name, text in texts:
+        for i in dict.fromkeys(find(text)):
+            if i not in known:
+                E(f"{name}: {i} is not in {registry}")
+
+
 def check_departures(docs, story_map, handoff, E, W):
     """C5 registry at <spec>/departures.yaml, and every D- link in the stories and features.md; {criterion: [D-ids]}."""
     path = docs / "departures.yaml"
@@ -130,7 +138,7 @@ def check_departures(docs, story_map, handoff, E, W):
     if path.exists():
         try:
             entries = contracts.parse_yaml(path.read_text(encoding="utf-8-sig")) or []
-        except contracts.YamlError as e:
+        except (contracts.YamlError, UnicodeDecodeError) as e:
             E(f"departures.yaml: {e}")
             return {}
         for sev, msg in contracts.check_departures(entries):
@@ -143,10 +151,7 @@ def check_departures(docs, story_map, handoff, E, W):
     texts = [(p.name, text) for p, text, _ in story_map.values()]
     if (docs / "features.md").exists():
         texts.append(("features.md", (docs / "features.md").read_text(encoding="utf-8-sig")))
-    for name, text in texts:
-        for did in dict.fromkeys(re.findall(r"\bD-\d{3,}\b", text)):
-            if did not in known:
-                E(f"{name}: {did} is not in departures.yaml")
+    report_unlisted(texts, lambda text: re.findall(r"\bD-\d{3,}\b", text), known, "departures.yaml", E)
     by_criterion = {}
     for d in entries:
         for cid in d.get("criteria") or []:
@@ -170,7 +175,7 @@ def _text(value):
     return isinstance(value, str) and value.strip()
 
 
-def check_unknowns(docs, story_map, feats, scoped, handoff, E, W):
+def check_unknowns(docs, story_map, feats, scoped, handoff, E, W, H):
     """<spec>/unknowns.yaml and the `- U-<nnn>:` lines in stories' Open questions; {criterion: [open U-ids]}."""
     path = docs / "unknowns.yaml"
     entries = []
@@ -233,12 +238,11 @@ def check_unknowns(docs, story_map, feats, scoped, handoff, E, W):
         hit = sorted({c for c in blocked if c.split(".")[0] in scoped} | {f for f in fids if f in scoped})
         if hit:
             msg = f"unknowns.yaml: {name} is open and blocks in-scope {', '.join(hit)}; resolve it or accept it"
-            (E if handoff else W)(msg + (" (open unknowns block handoff)" if handoff else " before handoff"))
-    for p, text, _ in story_map.values():
+            (H if handoff else W)(msg + (" (open unknowns block handoff)" if handoff else " before handoff"))
+    def open_links(text):
         sec = OPEN_SECTION.search(text)
-        for uid in dict.fromkeys(U_LINK.findall(sec.group(1) if sec else "")):
-            if uid not in seen:
-                E(f"{p.name}: {uid} is not in unknowns.yaml")
+        return U_LINK.findall(sec.group(1)) if sec else []
+    report_unlisted([(p.name, text) for p, text, _ in story_map.values()], open_links, seen, "unknowns.yaml", E)
     return capped
 
 
@@ -423,7 +427,9 @@ def main():
         left = sorted(ph for ph in PLACEHOLDERS if ph in text)
         if left: E(f"{p.name}: template placeholders left in file: {', '.join(left)}")
     departures = check_departures(docs, story_map, si >= 5, E, W)
-    capped = check_unknowns(docs, story_map, feats, set(scoped), si >= 5, E, W)
+    held = []  # errors that still let the lock be written: an open unknown at handoff is about the cap itself
+    capped = check_unknowns(docs, story_map, feats, set(scoped), si >= 5, E, W,
+                            lambda m: (errors.append(m), held.append(m)))
     for cycle in find_cycles(dependencies(story_map)):
         E(f"dependency cycle: {' -> '.join(cycle)}")
     if si >= 3:
@@ -563,7 +569,9 @@ def main():
     if parked:
         W(f"{len(parked)} autopilot decision(s) parked for you in autopilot-log.md")
 
-    if not errors:
+    if errors and all(e in held for e in errors):
+        write_lock(layout, story_map, feats, departures, capped, E, W)
+    elif not errors:
         criteria = write_lock(layout, story_map, feats, departures, capped, E, W)
         if criteria is not None and "--mark-tech" in sys.argv:
             if cfg.get("tech_basis") != tech_basis(criteria):

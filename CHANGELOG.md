@@ -3,6 +3,9 @@
 All notable changes to the rspec plugin. Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- **`departures.yaml` with invalid UTF-8** is reported as an error instead of a traceback, as `unknowns.yaml` already was.
+- **The lock at handoff.** When the only errors are open unknowns blocking handoff, `check_spec.py` still writes `criteria.lock.json`, so the criteria they name show level 0 instead of the level of the last clean run; any other error leaves the lock as it was.
 
 ## [0.12.0] - 2026-11-11
 ### Added
