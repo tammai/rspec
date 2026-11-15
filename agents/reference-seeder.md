@@ -6,7 +6,7 @@ description: |
   <example>
   Context: the reference is running and preflight passed
   user: "/rspec:verify"
-  assistant: "Preflight passed; I'll run the reference-seeder, then one criterion-recorder per module."
+  assistant: "Preflight passed; I'll run the reference-seeder, then one criterion-recorder per feature in the plan."
   <commentary>
   Recorders need the Given data to exist; one seeder writes it once so recorders share it.
   </commentary>

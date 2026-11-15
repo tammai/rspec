@@ -405,6 +405,8 @@ def main():
     if len(mvp) > 25: W(f"{len(mvp)} MVP features; consider trimming (guideline ~25)")
     scope = cfg.get("scope")
     if scope not in (None, "full", "mvp"): E(f"rspec.json: scope '{scope}' must be 'full' or 'mvp'")
+    if cfg.get("verify_scope") not in (None, "full", "mvp"):
+        E(f"rspec.json: verify_scope '{cfg.get('verify_scope')}' must be 'full' or 'mvp'")
     scoped = in_scope(feats, cfg)
 
     # stories

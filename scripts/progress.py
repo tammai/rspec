@@ -10,7 +10,7 @@ import json, re, sys
 from pathlib import Path
 from rspec_lib import (STAGES, TEMPLATES, open_layout, priorities, stories, dependencies, build_order, adr_statuses,
                        build_slices, sdlc_status, readiness_open, parked_decisions, in_scope,
-                       slice_criteria, SDLC_MAX_CRITERIA)
+                       slice_criteria, SDLC_MAX_CRITERIA, criteria)
 
 NEXT = {"init": "discover", "discovered": "features", "features-approved": "stories",
         "stories": "tech", "tech": "handoff", "handoff": "check"}
@@ -39,8 +39,9 @@ def triage_pending(docs, stage, prio, scoped, story_map):
 
 
 def verify_pending(docs, cfg, scoped):
-    """What /rspec:verify still has to do: `decide` (no reference kind yet), module codes with nothing recorded,
-    then `report`; [] once verify/summary.md exists or the reference kind is none."""
+    """What /rspec:verify still has to do: `decide` (no reference kind yet), the module codes holding a criterion in
+    verify scope with no run and no outcome yet, then `report`; [] once verify/summary.md exists or the reference
+    kind is none. Per criterion, not per module: recorders go per feature and may stop part way through a module."""
     kind = ((cfg.get("reference") or {}).get("run") or {}).get("kind", "")
     if kind == "none" or (docs / "verify" / "summary.md").exists():
         return []
@@ -50,9 +51,13 @@ def verify_pending(docs, cfg, scoped):
     for name in ("runs.jsonl", "outcomes.jsonl"):
         p = docs / "verify" / name
         if p.exists():
-            touched |= {json.loads(l)["criterion"].split("-")[1] for l in p.read_text(encoding="utf-8").splitlines() if l.strip()}
-    modules = list(dict.fromkeys(i.split("-")[1] for i in scoped))
-    return [m for m in modules if m not in touched] or ["report"]
+            touched |= {json.loads(l)["criterion"] for l in p.read_text(encoding="utf-8").splitlines() if l.strip()}
+    prio = priorities(docs)
+    wanted = {"MVP", "Later"} if cfg.get("verify_scope") == "full" else {"MVP"}
+    scoped = set(scoped)
+    todo = [c[0] for c in criteria(docs) if c[0] not in touched
+            and c[0].split(".AC")[0] in scoped and prio.get(c[0].split(".AC")[0]) in wanted]
+    return list(dict.fromkeys(c.split("-")[1] for c in todo)) or ["report"]
 
 
 def main():
