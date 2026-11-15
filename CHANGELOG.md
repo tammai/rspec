@@ -4,6 +4,50 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-15
+
+Makes verify cheaper. A CRM rebuild measured `/rspec:verify` at about 540M tokens (14.3M fresh), 71% of the
+project's spend, about 48k fresh tokens per proven criterion. These changes target the waste it found.
+
+### Added
+- **Full failing output for the judge.** A failing run whose output or failure message is longer than 300
+  characters (UI, mobile, or an HTTP json check quoting a large response) writes the whole text to `<spec>/verify/fail-output/<criterion>-<UTC>-<n>.txt`. That folder git-ignores
+  itself, because the output can quote a token. The `runs.jsonl` line keeps the 300-character tail and names the
+  file as `output`. The judge reads it, so Expected and Received are no longer cut off and no second capture pass
+  or judge round is needed. Delete the folder once the disputes are judged.
+- **An unreachable reference stops the run.** `verify_run.py` first checks that `ACCEPT_BASE_URL` answers, and
+  checks again after every failed run. Any status counts as an answer except a gateway's 502, 503 or 504. A TLS
+  certificate the client rejects also stops the run, because run_http would fail every HTTP test on it. The reason
+  names only the scheme, host and port, never a key or password in the URL. When the reference does not answer, the run is logged
+  `not run` (`reference unreachable: …`), no further run is made, and the script exits 3. The recorder then stops
+  the whole verify. When Docker died mid-sweep, 181 such runs had been logged as failures and were run again.
+- **`verify_report.py --plan [--scope mvp|full] [--only <IDs>]`** prints the criteria to record, grouped by
+  feature, and writes nothing. Without `--only` it skips criteria already at level 2 or whose latest outcome is a
+  level 1 reason. `--only` takes feature or criterion IDs of any priority except Drop. It never lists a criterion
+  whose test product-rebuild's holdout hid.
+- **`rspec.json` `verify_scope`** (`mvp` or `full`); `check_spec.py` rejects any other value.
+
+### Changed
+- **Verify records MVP criteria by default.** The verify scope is `--scope`, then `verify_scope`, then `mvp`.
+  `scope: full` still writes every story, and the report still counts Later criteria. They are recorded when a
+  slice builds them (`--only <criterion IDs>`, which product-rebuild 3.2.0's step 0 prints). To record everything
+  up front as before, set `verify_scope: full`.
+- **Flaky is judged per test version.** Each run records `test_sha256`, a hash of the test file. When any of a
+  criterion's runs carries a hash, only the runs of the current file's content count, so a failure recorded while
+  the test was being rewritten no longer pins it at flaky. A test edited since its last run is not level 2 until
+  it runs again. The hash reads CRLF as LF, so a checkout's line endings never change it. Runs logged before 0.13.0 carry no hash and keep the old rule, so existing levels don't move
+  until the criterion's test is run again.
+- **`progress.py` tracks verify per criterion.** A module stays pending while a criterion in verify scope has no run
+  and no outcome. Previously one line from the module was enough, so a resume could skip unrecorded features once
+  recording went per feature.
+- **Short agents.** One `criterion-recorder` runs per feature in the plan (it used to be one per module), is
+  briefed with paths, and stops after about 40 steps. A criterion red after 2 attempts (it used to be 3) goes to a
+  fresh `verify-judge`.
+
+### Fixed
+- **Windows:** `verify_run.py` resolves `npx` and `maestro` to their full paths, so the e2e and mobile runners no
+  longer fail with FileNotFoundError on `npx.cmd`.
+
 ## [0.12.1] - 2026-11-11
 ### Changed
 - **Contracts 1.3.0** (vendored byte-identical from product-rebuild f4ac06e): `check_lock` rejects a criterion tagged `inferred` at level 1, as C3 says since 1.2.0. `check_spec.py` now lowers such a level, left by an audit or a lock from before 0.12, to 0 with a warning to rerun `audit_sample.py --levels`, instead of failing; the lock records `"contracts": "1.3.0"`.

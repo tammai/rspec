@@ -3,6 +3,7 @@
 
 Usage: verify_report.py [project-root | spec-folder]
        verify_report.py [project-root | spec-folder] --note <criterion ID> <outcome> "<reason>"
+       verify_report.py [project-root | spec-folder] --plan [--scope mvp|full] [--only <feature or criterion IDs>]
 Reads <spec>/verify/runs.jsonl (verify_run.py) and <spec>/verify/outcomes.jsonl (--note: the judge's and the
 seeder's calls). On the latest build of a criterion's latest test, with its current text: three passes in a row and
 no failure → level 2; a pass and a failure → flaky. Writes <spec>/verify/levels.json (check_spec.py puts level 2
@@ -31,6 +32,12 @@ def status(cid, sha, runs, spec):
         return "unrecorded", None
     last = mine[-1]
     same = [r for r in mine if r["test"] == last["test"] and r["build"] == last["build"]]
+    # Runs of another version of the test file say nothing about this one, and content no run carries was never run.
+    # Runs with no test hash are judged all together, as they always were.
+    # CRLF read as LF, as verify_run.test_hash does (copied: change both).
+    cur = hashlib.sha256((spec / last["test"]).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    if any(r.get("test_sha256") for r in same):
+        same = [r for r in same if r.get("test_sha256") == cur]
     results = [r["result"] for r in same if r["result"] != "not run"]
     if not results:
         return "not-run", last
@@ -56,14 +63,81 @@ def note(spec, args):
     print(f"noted {args[0]}: {args[1]}")
 
 
+def hidden_criteria(bundle):
+    """Criteria whose test product-rebuild's holdout split moved out of the bundle: level 2, recorded elsewhere."""
+    p = bundle / "manifest.json"
+    try:
+        tests = (json.loads(p.read_text(encoding="utf-8")).get("tests") or []) if p.exists() else []
+        return {t["criterion"] for t in tests if t.get("visibility") == "hidden"}
+    except (ValueError, AttributeError, KeyError, TypeError) as e:
+        sys.exit(f"ERROR acceptance/manifest.json is not a readable manifest ({e!r}); restore it from git")
+
+
+def opt(name):
+    """The value after option `name`, None when absent; exits when the option is given with no value."""
+    if any(a.startswith(name + "=") for a in sys.argv):
+        sys.exit(f"ERROR write {name} <value>, not {name}=<value>")
+    if name not in sys.argv:
+        return None
+    i = sys.argv.index(name) + 1
+    if i >= len(sys.argv) or sys.argv[i].startswith("--") or not sys.argv[i].strip(" ,"):
+        sys.exit(f"ERROR {name} needs a value")
+    return sys.argv[i]
+
+
+def plan(spec, cfg):
+    """Print, without writing anything, the criteria /rspec:verify should record, grouped by feature (one recorder
+    each). Verify scope is --scope, else rspec.json verify_scope, else mvp: Later criteria are recorded when a slice
+    builds them. --only names features or criteria of any priority but Drop and lists them all; otherwise criteria
+    already at level 2 or whose latest outcome is a level 1 reason are skipped. A criterion whose test the holdout
+    hid is never listed: an open test for it would put the hidden test where builders read."""
+    scope = opt("--scope") or cfg.get("verify_scope") or "mvp"
+    if scope not in ("mvp", "full"):
+        sys.exit(f"ERROR verify scope '{scope}' must be mvp or full")
+    only = [i.strip() for i in (opt("--only") or "").split(",") if i.strip()]
+    prio = priorities(spec)
+    crits = criteria(spec)
+    known = {c[0] for c in crits} | set(prio)
+    unknown = [i for i in only if i not in known]
+    if unknown:
+        sys.exit(f"ERROR --only: no such feature or criterion: {', '.join(unknown)}")
+    runs = read_jsonl(spec / "verify" / "runs.jsonl")
+    latest = {o["criterion"]: o for o in read_jsonl(spec / "verify" / "outcomes.jsonl")}  # as main() reads them
+    reasons = {c for c, o in latest.items() if o.get("outcome") in ("unrecordable", "unseedable", "read-only reference")}
+    hidden = hidden_criteria(spec / "acceptance")
+    wanted = {"MVP", "Later"} if scope == "full" else {"MVP"}
+    features, skipped = {}, {"level-2": 0, "hidden": 0, "reason": 0}
+    for cid, _, sha, _, _ in crits:
+        fid = cid.split(".AC")[0]
+        if only:
+            if (fid not in only and cid not in only) or prio.get(fid) == "Drop":
+                continue
+        elif prio.get(fid) not in wanted:
+            continue
+        if cid in hidden:
+            skipped["hidden"] += 1
+            continue
+        if not only and status(cid, sha, runs, spec)[0] == "level-2":
+            skipped["level-2"] += 1
+            continue
+        if not only and cid in reasons:
+            skipped["reason"] += 1
+            continue
+        features.setdefault(fid, []).append(cid)
+    print(json.dumps({"scope": scope, "only": only, "features": features, "skipped": skipped}, indent=2))
+
+
 def main():
-    pos = [a for a in sys.argv[1:] if not a.startswith("--")]
+    pos = [a for i, a in enumerate(sys.argv[1:], 1)
+           if not a.startswith("--") and sys.argv[i - 1] not in ("--scope", "--only")]
     layout, cfg = open_layout(pos[0] if pos else ".")
     if layout is None:
         sys.exit("ERROR no rspec.json found")
     spec = layout.spec
     if "--note" in sys.argv:
         return note(spec, sys.argv[sys.argv.index("--note") + 1:])
+    if "--plan" in sys.argv:
+        return plan(spec, cfg)
     run_cfg = (cfg.get("reference") or {}).get("run") or {}
     prio = priorities(spec)
     scoped = set(in_scope(prio, cfg))
