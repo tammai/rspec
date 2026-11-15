@@ -3,6 +3,11 @@
 ## Open
 
 
+- [ ] R2-9: amend.py prints `next: /rspec:verify --only <feature>`, which re-records the whole feature after one amend; print the criterion ID (land with product-rebuild's lane_plan.py:618 line) — feature 2026-11-15-m-verify-cost (2026-11-15)
+- [ ] R2-6 / R2-14: verify_report.py takes --note's values as the project root when the root is left out; move its argument parsing to argparse (optional root, --plan, --scope, --only, --note with 3 values) — feature 2026-11-15-m-verify-cost (2026-11-15)
+- [ ] R2-7: outcomes.jsonl carries no criterion text hash, so a level 1 reason (unrecordable, unseedable) survives an amend of the criterion, in --plan and the report alike — feature 2026-11-15-m-verify-cost (2026-11-15)
+- [ ] R2-13 / R2-16: verify_report.py parses the manifest in two places (main, hidden_criteria); test_plan_lists_mvp_criteria_still_to_record checks several behaviours in one test — feature 2026-11-15-m-verify-cost (2026-11-15)
+- [ ] verify_run.py on Windows: Playwright reads the spec path as a regex and finds no tests from the repo root; the CRM's reference/verify_run_win.py works around both — feature 2026-11-15-m-verify-cost (2026-11-15)
 - [ ] verify_report.py counts a hidden criterion at level 2 even after its text changes (the holdout split moves its runs away, so the current-text rule cannot be checked); decide whether a changed hidden criterion should drop to level 0 — review M3 of the S-37 fix, scripts/verify_report.py (2026-11-09)
 - [ ] verify_report.py writes hidden manifest entries after the open ones, so the first re-run reorders a mixed manifest (entries unchanged, the committed file shows a diff) — review L1 of the S-37 fix, scripts/verify_report.py (2026-11-09)
 - [ ] verify_report.py silently leaves out a new open test recorded for a criterion that already has a hidden entry; warn or decide which wins — review L2 of the S-37 fix, scripts/verify_report.py (2026-11-09)
