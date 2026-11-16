@@ -1,4 +1,4 @@
-import json, os, shutil, subprocess, sys, tempfile, unittest
+import json, os, shutil, subprocess, sys, tempfile, unittest, urllib.request
 from pathlib import Path
 from helpers import run
 
@@ -220,9 +220,78 @@ class Verify(unittest.TestCase):
         (bundle / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
         self.assertNotIn("F-TSK-02.AC3", plan("--only", "F-TSK-02")["F-TSK-02"])
 
+    TASKS_ANY = ("criterion: F-TSK-02.AC3\nsteps:\n"
+                 "  - request: {method: GET, path: /api/tasks, account: MEMBER}\n    expect: {status: 200}\n")
+    ADAPTER = {"start": "python3 adapter.py", "base_url_env": "ACCEPT_ADAPTER_URL"}
+
+    def second_app(self):
+        """A second copy of the fixture app, standing in for the adapter: its own state, so a test can tell which
+        one it reached."""
+        app = subprocess.Popen([sys.executable, "-m", "app", "--port", "0"], cwd=self.root, stdout=subprocess.PIPE, text=True)
+        self.addCleanup(lambda: (app.kill(), app.wait(), app.stdout.close()))
+        return f"http://127.0.0.1:{app.stdout.readline().split()[-1]}"
+
+    def task_count(self, url):
+        req = urllib.request.Request(url + "/api/tasks", headers={"Authorization": "Bearer member"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read())["count"]
+
+    def test_adapter_runs_http_tests_through_it(self):
+        config(self.root, adapter=self.ADAPTER)
+        self.env["ACCEPT_ADAPTER_URL"] = adapter = self.second_app()
+        # A path template ({id}) and a capture in a path both pass the contract check.
+        r = self.record("F-TSK-02.AC3.yaml", "criterion: F-TSK-02.AC3\nsteps:\n"
+                        "  - request: {method: POST, path: /api/tasks, account: MEMBER, json: {title: Plan}}\n"
+                        "    expect: {status: 201, json: [{pointer: /id, rule: uuid, capture: task_id}]}\n"
+                        "  - request: {method: GET, path: \"/api/tasks/{task_id}\", account: MEMBER}\n"
+                        "    expect: {status: 200}\n")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual([l["result"] for l in self.runs()], ["pass"] * 3)
+        self.assertEqual((self.task_count(adapter), self.task_count(self.env["ACCEPT_BASE_URL"])), (3, 0))
+
+    def test_adapter_refuses_a_path_outside_the_contract(self):
+        config(self.root, adapter=self.ADAPTER)
+        self.env["ACCEPT_ADAPTER_URL"] = self.second_app()
+        r = self.record("F-TSK-02.AC3.yaml", LIST)  # its seed resets through /api/reset, which openapi.json lacks
+        self.assertNotEqual(r.returncode, 0, r.stdout)
+        self.assertIn("/api/reset", r.stdout + r.stderr)
+        self.assertIn("openapi.json", r.stdout + r.stderr)
+        self.assertFalse((self.root / "docs" / "verify" / "runs.jsonl").exists())
+        r = self.record("F-TSK-02.AC3.yaml", self.TASKS_ANY.replace("/api/tasks,", "\"/api/tasks?limit=1\","))
+        self.assertNotIn("openapi.json", r.stdout + r.stderr)  # the query string is not part of the path
+
+    def test_unreachable_adapter_or_reference_stops_as_not_run(self):
+        config(self.root, adapter=self.ADAPTER)
+        for adapter, reference, who in (("http://127.0.0.1:9", self.env["ACCEPT_BASE_URL"], "adapter"),
+                                        (self.second_app(), "http://127.0.0.1:9", "reference")):
+            with self.subTest(who):
+                self.env.update(ACCEPT_ADAPTER_URL=adapter, ACCEPT_BASE_URL=reference)
+                (self.root / "docs" / "verify" / "runs.jsonl").unlink(missing_ok=True)
+                r = self.record("F-TSK-02.AC3.yaml", self.TASKS_ANY)
+                self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+                self.assertEqual([l["result"] for l in self.runs()], ["not run"])
+                self.assertIn(f"{who} unreachable", self.runs()[0]["detail"])
+
+    def test_a_malformed_adapter_is_one_error_line(self):
+        for adapter in ("python3 adapter.py", {"start": "x", "base_url_env": 5},
+                        {"start": "x", "base_url_env": "ACCEPT_BASE_URL"}):
+            with self.subTest(str(adapter)):
+                config(self.root, adapter=adapter)
+                self.env["ACCEPT_ADAPTER_URL"] = self.env["ACCEPT_BASE_URL"]
+                r = self.record("F-TSK-02.AC3.yaml", self.TASKS_ANY)
+                c = run("check_spec.py", self.root)
+                self.assertEqual((r.returncode, c.returncode), (1, 1), r.stdout + r.stderr + c.stdout)
+                self.assertIn("reference.run.adapter", r.stderr)
+                self.assertNotIn("Traceback", r.stderr + c.stdout + c.stderr)
+                self.assertFalse((self.root / "docs" / "verify" / "runs.jsonl").exists())
+
     def test_reference_run_rules(self):
         for fields, needle in (({"kind": "url", "writes": True}, "writes"),
-                               ({"base_url_env": "BASE_URL"}, "ACCEPT_")):
+                               ({"base_url_env": "BASE_URL"}, "ACCEPT_"),
+                               ({"adapter": {"base_url_env": "ACCEPT_ADAPTER_URL"}}, "adapter.start"),
+                               ({"adapter": {"start": "x", "base_url_env": "ACCEPT_BASE_URL"}}, "adapter.base_url_env"),
+                               ({"base_url_env": "ACCEPT_REF_URL", "adapter": {"start": "x", "base_url_env": "ACCEPT_BASE_URL"}},
+                                "adapter.base_url_env")):
             with self.subTest(needle):
                 root = copy_fixture()
                 config(root, **fields)

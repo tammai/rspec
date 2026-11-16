@@ -26,8 +26,8 @@ You make the reference hold the example data the criteria assume. You write only
 
 **Otherwise:**
 1. Group the `Given` clauses into a few data sets (e.g. "team ENG with 11 issues", "an archived project"). One seed file per data set: `<spec>/acceptance/seed/<data-set>.yaml`, in the HTTP replay format without `criterion` (`steps:` only), each step a request with its expected status. Start from a known state when the reference offers a reset; otherwise make each seed create its own uniquely named data so runs do not collide.
-2. Use only the API the contract and the reference expose. Use the account names from `reference.run.accounts`; never a URL, token or password in a file.
+2. Use only the API the contract and the reference expose. With `reference.run.adapter` set, use only paths in `<contracts>/openapi.json`: seeds then run through the adapter now and against the build later, so a reset or admin endpoint the contract leaves out can't be used. Report a missing one as a spec question in your reply. Use the account names from `reference.run.accounts`; never a URL, token or password in a file.
 3. Write `<spec>/verify/seeds.md`: a table `| Criterion | Seed |` listing each in-scope criterion with the seed files its test should list (`-` when it needs none).
-4. A `Given` you cannot create through the reference's API: `verify_report.py . --note <ID> unseedable "<why>"`.
+4. A `Given` you cannot create through the reference's API (with an adapter, through a contract operation): `verify_report.py . --note <ID> unseedable "<why>"`.
 
 **Reply:** the seed files with one line each, the criteria noted `unseedable`, and anything a recorder must know (an ID format the reference generates, a reset that is not available).

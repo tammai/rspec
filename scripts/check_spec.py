@@ -8,7 +8,7 @@ import hashlib, json, re, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from contract_checks import check_domain, check_bodies, server_set_not_readonly
-from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows,
+from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows, adapter_problems,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
                        slice_criteria, SDLC_MAX_CRITERIA, SLICE_BUDGET)
@@ -358,6 +358,7 @@ def main():
             if not re.fullmatch(r"[A-Z0-9_]+", str(name)):
                 E(f"rspec.json: reference.run.accounts entry '{name}' must be a name like MEMBER (read from ACCEPT_ACCOUNT_MEMBER)")
         if kind == "local" and not ref.get("start"): E("rspec.json: reference.run.start is empty; a local reference needs its start command")
+        for problem in adapter_problems(ref): E(problem)
     if not modernize and cfg.get("code"):
         src = cfg.get("sources") or {}
         if not src.get("repo"): E("rspec.json: code is true but sources.repo is empty")

@@ -55,6 +55,26 @@ class Layout:
         self.changelog = self.root / self.paths["changelog"]
 
 
+def adapter_problems(ref):
+    """One rspec.json error line per problem with reference.run.adapter; [] when it is absent or valid. Shared by
+    check_spec.py and verify_run.py: a recorder runs verify_run.py before check_spec.py ever reads the file. The
+    adapter never uses ACCEPT_BASE_URL, which verify_run.py sets to the reference's URL before reading the adapter's."""
+    adapter = ref.get("adapter")
+    if adapter is None:
+        return []
+    if not isinstance(adapter, dict):
+        return ["rspec.json: reference.run.adapter must be an object: {start, stop, base_url_env}"]
+    out = []
+    if not isinstance(adapter.get("start"), str) or not adapter["start"].strip():
+        out.append("rspec.json: reference.run.adapter.start is empty; an adapter needs its start command")
+    var = adapter.get("base_url_env")
+    if not isinstance(var, str) or not re.fullmatch(r"ACCEPT_[A-Z0-9_]+", var) \
+            or var in ("ACCEPT_BASE_URL", ref.get("base_url_env")):
+        out.append("rspec.json: reference.run.adapter.base_url_env must name its own ACCEPT_* variable "
+                   "(e.g. ACCEPT_ADAPTER_URL), never ACCEPT_BASE_URL or the reference's")
+    return out
+
+
 def open_layout(arg):
     """Resolve a command-line path (project root or spec folder) to (Layout, cfg). Exits with a message on failure."""
     import sys
