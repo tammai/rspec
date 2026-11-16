@@ -7,7 +7,7 @@ description: >
   handoff, when a reference is configured.
 argument-hint: "[--scope mvp|full] [--only <feature or criterion IDs>]"
 metadata:
-  version: "0.13.0"
+  version: "0.14.0"
 ---
 
 # /rspec:verify

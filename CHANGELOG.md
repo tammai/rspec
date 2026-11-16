@@ -4,6 +4,8 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-16
+
 ### Added
 
 - **Verify through a reference adapter.** A rebuild whose locked contract isn't the reference's API (REST over the
