@@ -43,6 +43,15 @@ class Departures(unittest.TestCase):
                 self.assertEqual(r.returncode, 1, r.stdout)
                 self.assertIn(needle, r.stdout)
 
+    def test_accepted_equivalence_trace_passes(self):
+        # product-rebuild's equiv.py accept writes this entry into the workbench's docs/departures.yaml.
+        trace = ('- id: D-005\n  kind: deliberate-change\n  summary: accepted trace\n'
+                 '  match:\n    - {runner: http, rule: "equiv-trace:invoices-total"}\n'
+                 '  decided_by: "Tam"\n')
+        r = run("check_spec.py", project(stories={"F-ISS-01-a.md": story("F-ISS-01")},
+                                         files={"departures.yaml": trace}))
+        self.assertEqual(r.returncode, 0, r.stdout)
+
     def test_proposed_departure_warns_until_handoff(self):
         stories = differing("- Keys use 2-4 letters → D-004")
         r = run("check_spec.py", project(stories=stories, files={"departures.yaml": PROPOSED}))

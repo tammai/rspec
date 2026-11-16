@@ -4,6 +4,13 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+
+- **`check_spec.py` accepts a departure with an accepted equivalence trace.** Shared contracts 1.3.1, vendored
+  from product-rebuild, accept the match rule `equiv-trace:<name>` that product-rebuild's `equiv.py accept`
+  writes into a workbench's `docs/departures.yaml`; before, the check failed with `unknown rule equiv-trace:…`
+  (same bug as [tammai/bug-hunter#36](https://github.com/tammai/bug-hunter/issues/36)).
+
 ## [0.13.0] - 2026-11-15
 
 Makes verify cheaper. A CRM rebuild measured `/rspec:verify` at about 540M tokens (14.3M fresh), 71% of the
