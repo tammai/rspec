@@ -4,6 +4,15 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+
+- **Verify through a reference adapter.** A rebuild whose locked contract isn't the reference's API (REST over the
+  reference's GraphQL) can set `reference.run.adapter` (`start`, `stop`, `base_url_env`) in `rspec.json`. The
+  adapter is a pass-through service that serves `openapi.json` by calling the reference. `verify_run.py` runs HTTP
+  tests against it, refuses a test or seed that requests a path `openapi.json` lacks, and stops as `not run` when
+  the adapter doesn't answer. `check_spec.py` checks the fields. UI and mobile tests still run against the
+  reference. This is step 1 of product-rebuild's contract-shaped tests design (tammai/product-rebuild#9, item 6).
+
 ### Fixed
 
 - **`check_spec.py` accepts a departure with an accepted equivalence trace.** Shared contracts 1.3.1, vendored

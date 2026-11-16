@@ -8,12 +8,15 @@ mobile/ via `maestro test`; cli/ is not run (contracts v1 settles no cli format)
 verify_report.py, not the recording agent, decides level 2 and flaky. A failing run's full output goes to
 <spec>/verify/fail-output/ (git-ignored) for the judge. Exit 0 only when every run passed; exit 3 when the
 reference stopped answering, which stops the run and, by the recorder's rules, the whole verify.
+
+With `reference.run.adapter` (a rebuild whose locked contract is not the reference's API), an HTTP test runs
+against the adapter's URL instead, and only once every path it and its seeds request is in openapi.json.
 """
-import hashlib, http.client, json, os, shutil, ssl, subprocess, sys, urllib.error, urllib.parse, urllib.request
+import hashlib, http.client, json, os, re, shutil, ssl, subprocess, sys, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
-from rspec_lib import open_layout, criteria, contracts
+from rspec_lib import open_layout, criteria, contracts, adapter_problems
 
 RUNNERS = {"http": "http", "e2e": "playwright", "mobile": "maestro", "cli": "cli"}
 TAIL = 300  # runs.jsonl keeps this much of a runner's output; judges read the rest from verify/fail-output/
@@ -56,6 +59,42 @@ def answers(url):
         return f"nothing answers at {where} ({e.reason.__class__.__name__})"
     except (OSError, ValueError, http.client.HTTPException) as e:
         return f"nothing answers at {where} ({e.__class__.__name__})"
+
+
+def off_contract(path, openapi):
+    """Why an HTTP test can't go through the adapter, or None: a request path, in its steps or its seeds, that is
+    not a path in openapi.json. The adapter serves only the locked contract, and the build runs the same tests and
+    seeds at G6, so a reference-only call (a reset or admin endpoint) would pass here and fail on every build."""
+    try:
+        doc = json.loads(openapi.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError) as e:
+        return f"the adapter needs {openapi.name} to check paths against, and it could not be read ({e.__class__.__name__})"
+    paths = doc.get("paths") if isinstance(doc, dict) else None
+    if not isinstance(paths, dict):
+        return f"the adapter needs {openapi.name} to check paths against, and it has no paths"
+    templates = [re.compile("^" + re.sub(r"\\\{[^/]*?\\\}", "[^/]+", re.escape(p)) + "$") for p in paths]
+    root = path.parent.parent
+    try:
+        data = contracts.parse_yaml(path.read_text(encoding="utf-8"))
+        files = [(path.name, data.get("steps") or [])]
+        for s in data.get("seed") or []:
+            if not contracts._inside(str(s)):
+                return None  # run_http refuses it as an invalid test
+            # A link inside the bundle that resolves outside it would pass run_http's spelling rule and run unchecked.
+            if not (root / s).resolve().is_relative_to(root.resolve()):
+                return f"seed {s} resolves outside the acceptance bundle, so its paths can't be checked"
+            files.append((s, contracts.parse_yaml((root / s).read_text(encoding="utf-8")).get("steps") or []))
+    except (OSError, ValueError, AttributeError, TypeError, contracts.YamlError):
+        return None  # run_http reports an unreadable test or seed as invalid
+    for name, steps in files:
+        for step in steps:
+            req = (step.get("request") or {}) if isinstance(step, dict) else {}
+            # A `{capture}` stands for one segment, like a path template's `{param}`.
+            p = re.sub(r"\{[^}/]*\}", "x", str(req.get("path", "")).split("?")[0])
+            if not any(t.match(p) for t in templates):
+                return (f"{name} requests {req.get('path')}, which is not a path in {openapi.name} "
+                        "(an adapter serves only the contract)")
+    return None
 
 
 def run_once(runner, path, env):
@@ -117,22 +156,42 @@ def main():
     base_var = run_cfg.get("base_url_env") or "ACCEPT_BASE_URL"
     if env.get(base_var):
         env["ACCEPT_BASE_URL"] = env[base_var]
+    # Each (name, URL) a run needs answering. Only HTTP tests go through the adapter: the rebuild's pages are not the
+    # reference's, so a UI test is recorded against the reference itself. The adapter answers by calling the
+    # reference, so both are asked: a dead reference behind a live adapter must stop the run, not log fails.
+    targets = [("reference", env.get("ACCEPT_BASE_URL"))]
+    if run_cfg.get("adapter") is not None and runner == "http":
+        problems = adapter_problems(run_cfg)
+        if problems:
+            sys.exit("ERROR " + "; ".join(problems))
+        adapter_var = run_cfg["adapter"]["base_url_env"]
+        # Read from os.environ: env's ACCEPT_BASE_URL is already the reference's, whatever variable named it.
+        if not os.environ.get(adapter_var):
+            sys.exit(f"ERROR {adapter_var} is not set: start the adapter (reference.run.adapter.start) and set it")
+        why = off_contract(path, layout.contracts / "openapi.json")
+        if why:
+            sys.exit(f"ERROR {rel}: {why}")
+        env["ACCEPT_BASE_URL"] = os.environ[adapter_var]
+        targets.insert(0, ("adapter", env["ACCEPT_BASE_URL"]))
     build = ((cfg.get("sources") or {}).get("commit") or "unversioned")
     log = spec / "verify" / "runs.jsonl"
     log.parent.mkdir(exist_ok=True)
     # verify_report.py judges level 2 and flaky on the runs of the test content as it is now.
     test_sha = test_hash(path)
-    base = env.get("ACCEPT_BASE_URL")
-    down = answers(base) if base else None
+
+    def unreachable():
+        return next((f"{who} unreachable: {why}" for who, url in targets if url for why in [answers(url)] if why), None)
+
+    down = unreachable()
     results = []
     for n in range(1, times + 1):
         result, detail, full = ("not run", "", "") if down else run_once(runner, path, env)
         # Asked again after a failure: a reference that died mid-sweep answers nothing, in whatever words its runner
         # used, and those failures are not the criterion's.
-        if result == "fail" and base:
-            down = answers(base)
+        if result == "fail":
+            down = unreachable()
         if down:
-            result, detail, full = "not run", f"reference unreachable: {down}", ""
+            result, detail, full = "not run", down, ""
         results.append(result)
         ts = datetime.now(timezone.utc)
         line = {"ts": ts.strftime("%Y-%m-%dT%H:%M:%SZ"), "criterion": cid, "test": rel, "runner": runner,
@@ -144,7 +203,7 @@ def main():
         print(f"{cid} run {n}: {result}" + (f" ({detail})" if detail and result != "pass" else "")
               + (f"\n  full output: {line['output']}" if "output" in line else ""))
         if down:
-            print("stopped: the reference is unreachable. Start it, then run verify again.")
+            print(f"stopped: the {down.split(' unreachable')[0]} is unreachable. Start it, then run verify again.")
             sys.exit(UNREACHABLE)
     sys.exit(0 if results and all(r == "pass" for r in results) else 1)
 
