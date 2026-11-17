@@ -27,6 +27,19 @@ def monorepo_paths(slug):
             "decisions": "docs/adr", "changelog": f"docs/specs/{slug}/CHANGELOG.md"}
 
 
+def pin_lock_lf(root, spec_rel):
+    """Append `<spec>/criteria.lock.json text eol=lf` to <root>/.gitattributes; returns "created", "updated" or None."""
+    # git with core.autocrlf=true checks the lock out with CRLF, which breaks any hash a gate keeps of it.
+    attrs, line = Path(root) / ".gitattributes", f"{spec_rel}/criteria.lock.json text eol=lf"
+    old = attrs.read_bytes() if attrs.exists() else None
+    if old is not None and line in [l.strip() for l in old.decode("utf-8-sig", "replace").splitlines()]:
+        return None
+    sep = b"" if not old or old.endswith(b"\n") else b"\n"
+    with attrs.open("ab") as f:
+        f.write(sep + line.encode("utf-8") + b"\n")
+    return "created" if old is None else "updated"
+
+
 def find_spec(root):
     """The spec folder holding rspec.json: docs/, else the one docs/specs/<name>/. None if absent.
     Raises ValueError when several specs exist under docs/specs/."""

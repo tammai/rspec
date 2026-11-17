@@ -4,6 +4,21 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+
+- **`check_spec.py --no-lock`** runs every check, writes nothing, and fails when `criteria.lock.json` is out of
+  date with the stories, for a gate that hashes the committed lock (product-rebuild S1–S4 item 4h). It refuses
+  `--mark-tech`, which writes `rspec.json`.
+
+### Fixed
+
+- **The criteria lock stays LF on Windows checkouts.** `init_spec.py` and `check_spec.py` add
+  `<spec>/criteria.lock.json text eol=lf` to the project's `.gitattributes` (commit it), and `check_spec.py` rewrites
+  a lock that a `core.autocrlf=true` checkout left with CRLF, which used to break a gate's hash of it. An existing
+  spec gets both from its next `/rspec:check`.
+- **Recorded UI tests wait for hydration.** The criterion recorder waits until a server-rendered page has hydrated
+  before filling a form, and checks each value held (S1–S4 item 5a).
+
 ## [0.14.0] - 2026-11-16
 
 ### Added

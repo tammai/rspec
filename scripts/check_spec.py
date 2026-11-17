@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Validate an rspec spec folder.
 
-Usage: check_spec.py [project-root | spec-folder]
+Usage: check_spec.py [project-root | spec-folder] [--mark-tech] [--no-lock]
 Exit code 1 if any ERROR is found. WARN lines do not fail.
+--no-lock writes nothing and fails when criteria.lock.json is out of date, for a gate that hashes the committed lock.
 """
 import hashlib, json, re, sys
 from datetime import datetime, timezone
@@ -11,7 +12,7 @@ from contract_checks import check_domain, check_bodies, server_set_not_readonly
 from rspec_lib import (STAGES, PRIORITIES, STATUSES, ID_RE, FILE_ID_RE, TEMPLATES, open_layout, feature_rows, adapter_problems,
                        stories, dependencies, find_cycles, feature_refs, contract_files, adr_statuses,
                        build_slices, GOALS, md_table, readiness_open, parked_decisions, in_scope,
-                       slice_criteria, SDLC_MAX_CRITERIA, SLICE_BUDGET)
+                       slice_criteria, SDLC_MAX_CRITERIA, SLICE_BUDGET, pin_lock_lf)
 
 sys.path.insert(0, str(TEMPLATES.parent / "contracts" / "v1"))
 import contracts
@@ -246,7 +247,7 @@ def check_unknowns(docs, story_map, feats, scoped, handoff, E, W, H):
     return capped
 
 
-def write_lock(layout, story_map, feats, departures, capped, E, W):
+def write_lock(layout, story_map, feats, departures, capped, E, W, write=True):
     """Write <spec>/criteria.lock.json (contracts C3); changed text, or an open unknown naming it, holds a criterion at 0."""
     path = layout.spec / "criteria.lock.json"
     prev = {}
@@ -309,9 +310,24 @@ def write_lock(layout, story_map, feats, departures, capped, E, W):
     issues = [m for s, m in contracts.check_lock(lock, str(layout.root)) if s == "error"]
     for m in issues:
         E(f"criteria.lock.json: {m}")
-    if not issues and lock != prev:
-        path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
-    return None if issues else criteria
+    if issues:
+        return None
+    text = (json.dumps(lock, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    current = path.read_bytes() if path.exists() else None
+    if not write:
+        # Bytes, not parsed JSON: a gate hashes the file, so a CRLF checkout is as wrong as a stale lock.
+        if current != text:
+            E("criteria.lock.json differs from what check_spec.py writes (changed stories, a contracts upgrade or "
+              "CRLF line endings); run check_spec.py without --no-lock and commit it")
+        return criteria
+    if current != text:
+        path.write_bytes(text)
+    try:
+        if pin_lock_lf(layout.root, lock["spec"]):
+            W(f".gitattributes: added `{lock['spec']}/criteria.lock.json text eol=lf` so git keeps the lock LF; commit it")
+    except OSError as e:
+        W(f".gitattributes: could not add the lock's LF line ({e}); add `{lock['spec']}/criteria.lock.json text eol=lf`")
+    return criteria
 
 
 def tech_basis(criteria):
@@ -323,9 +339,12 @@ def tech_basis(criteria):
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     arg = args[0] if args else "."
-    unknown = [a for a in sys.argv[1:] if a.startswith("--") and a != "--mark-tech"]
+    unknown = [a for a in sys.argv[1:] if a.startswith("--") and a not in ("--mark-tech", "--no-lock")]
     if unknown:
-        print(f"ERROR unknown option {unknown[0]} (the only option is --mark-tech)"); sys.exit(2)
+        print(f"ERROR unknown option {unknown[0]} (options: --mark-tech, --no-lock)"); sys.exit(2)
+    write = "--no-lock" not in sys.argv
+    if not write and "--mark-tech" in sys.argv:
+        print("ERROR --mark-tech writes rspec.json; it can't run with --no-lock"); sys.exit(2)
     errors, warns = [], []
     E, W = errors.append, warns.append
 
@@ -577,9 +596,9 @@ def main():
         W(f"{len(parked)} autopilot decision(s) parked for you in autopilot-log.md")
 
     if errors and all(e in held for e in errors):
-        write_lock(layout, story_map, feats, departures, capped, E, W)
+        write_lock(layout, story_map, feats, departures, capped, E, W, write)
     elif not errors:
-        criteria = write_lock(layout, story_map, feats, departures, capped, E, W)
+        criteria = write_lock(layout, story_map, feats, departures, capped, E, W, write)
         if criteria is not None and "--mark-tech" in sys.argv:
             if cfg.get("tech_basis") != tech_basis(criteria):
                 cfg["tech_basis"] = tech_basis(criteria)
