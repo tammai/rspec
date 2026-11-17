@@ -4,7 +4,7 @@ description: >
   This skill should be used when the user runs /rspec:check or asks to validate,
   lint or review the completeness of a reverse spec.
 metadata:
-  version: "0.8.1"
+  version: "0.9.0"
 ---
 
 # /rspec:check
