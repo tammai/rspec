@@ -322,12 +322,34 @@ def write_lock(layout, story_map, feats, departures, capped, E, W, write=True):
         return criteria
     if current != text:
         path.write_bytes(text)
+        if prev and lock != prev:
+            W(f"criteria.lock.json updated: {lock_changes(prev, lock)}; commit it, and if a gate locked it, reopen "
+              "and relock it")
     try:
         if pin_lock_lf(layout.root, lock["spec"]):
             W(f".gitattributes: added `{lock['spec']}/criteria.lock.json text eol=lf` so git keeps the lock LF; commit it")
     except OSError as e:
         W(f".gitattributes: could not add the lock's LF line ({e}); add `{lock['spec']}/criteria.lock.json text eol=lf`")
     return criteria
+
+
+def lock_changes(prev, lock):
+    """What differs between two locks, as `contracts version, departures (F-ISS-01.AC1, …)`."""
+    def ids(xs):
+        return f" ({', '.join(xs[:3])}{', …' if len(xs) > 3 else ''})"
+    parts = [label for key, label in (("contracts", "contracts version"), ("spec", "spec path"))
+             if prev.get(key) != lock[key]]
+    old = {str(c.get("id")): c for c in prev.get("criteria") or [] if isinstance(c, dict)}
+    new = {c["id"]: c for c in lock["criteria"]}
+    by_field = {}
+    for cid, c in new.items():
+        for k, v in c.items():
+            if cid in old and old[cid].get(k) != v:
+                by_field.setdefault(k, []).append(cid)
+    parts += [f"{k}{ids(v)}" for k, v in by_field.items()]
+    added, removed = [i for i in new if i not in old], [i for i in old if i not in new]
+    parts += [f"{label}{ids(xs)}" for label, xs in (("added", added), ("removed", removed)) if xs]
+    return ", ".join(parts) or "format"
 
 
 def tech_basis(criteria):
