@@ -4,6 +4,8 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-11-17
+
 ### Fixed
 
 - **`check_spec.py` says when it changes the criteria lock's content.** A rewrite after a contracts upgrade, a new
