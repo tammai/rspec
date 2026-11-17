@@ -4,6 +4,8 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-17
+
 ### Added
 
 - **`check_spec.py --no-lock`** runs every check, writes nothing, and fails when `criteria.lock.json` is out of
