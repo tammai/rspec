@@ -123,6 +123,43 @@ class CriteriaIds(unittest.TestCase):
         levels = {c["id"]: c["level"] for c in json.loads(lock_path.read_text(encoding="utf-8"))["criteria"]}
         self.assertEqual(levels, {"F-ISS-01.AC1": 0, "F-ISS-01.AC2": 2})
 
+    def test_no_lock_leaves_lock_untouched(self):
+        root = project(stories={"F-ISS-01-x.md": story("F-ISS-01")})
+        self.assertEqual(run("check_spec.py", root).returncode, 0)
+        lock_path = root / "docs" / "criteria.lock.json"
+        before = lock_path.read_bytes()
+        self.assertEqual(run("check_spec.py", root, "--no-lock").returncode, 0)
+        self.assertEqual(run("check_spec.py", root, "--no-lock", "--mark-tech").returncode, 2)
+        lock_path.write_bytes(before.replace(b"\n", b"\r\n"))
+        self.assertEqual(run("check_spec.py", root, "--no-lock").returncode, 1)
+        lock_path.write_bytes(before)
+        story_path = root / "docs" / "features" / "F-ISS-01-x.md"
+        story_path.write_text(story_path.read_text(encoding="utf-8").replace("ENG-12", "ENG-13"), encoding="utf-8")
+        r = run("check_spec.py", root, "--no-lock")
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("criteria.lock.json differs from what check_spec.py writes", r.stdout)
+        self.assertEqual(lock_path.read_bytes(), before)
+
+    def test_check_rewrites_crlf_lock_and_pins_it_lf(self):
+        root = project(stories={"F-ISS-01-x.md": story("F-ISS-01")})
+        self.assertEqual(run("check_spec.py", root).returncode, 0)
+        lock_path = root / "docs" / "criteria.lock.json"
+        lf = lock_path.read_bytes()
+        (root / ".gitattributes").unlink()
+        lock_path.write_bytes(lf.replace(b"\n", b"\r\n"))
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertEqual(lock_path.read_bytes(), lf)
+        self.assertEqual((root / ".gitattributes").read_bytes(), b"docs/criteria.lock.json text eol=lf\n")
+
+    def test_unwritable_gitattributes_is_a_warning(self):
+        root = project(stories={"F-ISS-01-x.md": story("F-ISS-01")})
+        (root / ".gitattributes").mkdir()
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn("Traceback", r.stderr)
+        self.assertIn(".gitattributes: could not add the lock's LF line", r.stdout)
+
     def test_failing_check_writes_no_lock(self):
         root = project(stories={"F-ISS-01-x.md": LEGACY})
         self.assertEqual(run("check_spec.py", root).returncode, 1)

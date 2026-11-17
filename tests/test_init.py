@@ -28,5 +28,18 @@ class InitSpec(unittest.TestCase):
         self.assertEqual(cfg["paths"]["spec"], "docs")
         self.assertTrue((root / "CHANGELOG.md").exists())
 
+    def test_gitattributes_keeps_lock_lf(self):
+        fresh = Path(tempfile.mkdtemp())
+        run("init_spec.py", fresh)
+        self.assertEqual((fresh / ".gitattributes").read_bytes(), b"docs/criteria.lock.json text eol=lf\n")
+        root = Path(tempfile.mkdtemp())
+        (root / ".gitattributes").write_bytes(b"*.png binary\n")
+        first = run("init_spec.py", root)
+        r = run("init_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn(".gitattributes", json.loads(r.stdout)["kept"] + json.loads(first.stdout)["updated"])
+        self.assertEqual((root / ".gitattributes").read_bytes(),
+                         b"*.png binary\ndocs/criteria.lock.json text eol=lf\n")
+
 if __name__ == "__main__":
     unittest.main()

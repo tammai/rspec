@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create the spec skeleton from templates. Never overwrites existing files.
+"""Create the spec skeleton from templates. Never overwrites existing files; appends the lock's LF line to .gitattributes.
 
 Usage: init_spec.py [project-root] [--layout auto|single|monorepo] [--name <working name>]
                     [--track rspec|modernize] [--strategy rewrite|strangler|refactor]
@@ -8,11 +8,11 @@ single:   the spec in docs/, contracts beside it, ADRs in docs/decisions/, CHANG
 monorepo: sdlc's layout: the spec in docs/specs/<name>/, contracts in packages/api-contract/v1/,
           ADRs in docs/adr/, the spec's changelog inside its folder.
 auto (default): monorepo when .sdlc/config.json lists packages, or packages/api-contract/ or apps/ exists.
-Prints JSON: layout, paths, created and kept files.
+Prints JSON: layout, paths, created, updated and kept files.
 """
 import json, re, shutil, sys
 from pathlib import Path
-from rspec_lib import TEMPLATES, SINGLE_PATHS, monorepo_paths
+from rspec_lib import TEMPLATES, SINGLE_PATHS, monorepo_paths, pin_lock_lf
 
 
 def option(name, default=None):
@@ -84,7 +84,13 @@ def main():
         cfg_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
         created.append(cfg_path.relative_to(root).as_posix())
 
-    print(json.dumps({"layout": layout, "paths": paths, "created": created, "kept": kept}, indent=2))
+    updated = []
+    pinned = pin_lock_lf(root, paths["spec"])
+    if pinned:
+        (created if pinned == "created" else updated).append(".gitattributes")
+
+    print(json.dumps({"layout": layout, "paths": paths, "created": created, "updated": updated, "kept": kept},
+                     indent=2))
 
 
 if __name__ == "__main__":
