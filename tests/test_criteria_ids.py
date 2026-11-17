@@ -152,6 +152,22 @@ class CriteriaIds(unittest.TestCase):
         self.assertEqual(lock_path.read_bytes(), lf)
         self.assertEqual((root / ".gitattributes").read_bytes(), b"docs/criteria.lock.json text eol=lf\n")
 
+    def test_content_change_to_lock_is_announced(self):
+        root = project(stories={"F-ISS-01-x.md": story("F-ISS-01")})
+        self.assertNotIn("criteria.lock.json updated", run("check_spec.py", root).stdout)
+        lock_path = root / "docs" / "criteria.lock.json"
+        lf = lock_path.read_bytes()
+        lock_path.write_bytes(lf.replace(b"\n", b"\r\n"))
+        self.assertNotIn("criteria.lock.json updated", run("check_spec.py", root).stdout)
+        lock = json.loads(lf)
+        lock["contracts"] = "1.0.0"
+        lock["criteria"][0]["departures"] = ["D-009"]
+        lock_path.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+        r = run("check_spec.py", root)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("criteria.lock.json updated: contracts version, departures (F-ISS-01.AC1)", r.stdout)
+        self.assertIn("relock", r.stdout)
+
     def test_unwritable_gitattributes_is_a_warning(self):
         root = project(stories={"F-ISS-01-x.md": story("F-ISS-01")})
         (root / ".gitattributes").mkdir()

@@ -4,6 +4,13 @@ All notable changes to the rspec plugin. Format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+
+- **`check_spec.py` says when it changes the criteria lock's content.** A rewrite after a contracts upgrade, a new
+  departure, a level change or a changed criterion prints `criteria.lock.json updated: <what changed>; commit it,
+  and if a gate locked it, reopen and relock it`. Before, the lock changed silently, and a gate that had locked it
+  failed with "locked artifact modified" and no hint why. A rewrite that only fixes line endings stays silent.
+
 ## [0.15.0] - 2026-11-17
 
 ### Added
